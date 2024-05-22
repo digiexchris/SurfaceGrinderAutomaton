@@ -1,0 +1,93 @@
+# menu "scroll to the end for LeadscrewWarrantyVoider ELS Options"
+# endmenu
+source "Kconfig.zephyr"
+
+menu "LeadscrewWarrantyVoider ELS Options"
+
+choice SPINDLE_ENCODER_TYPE
+    prompt "Spindle Encoder Type"
+    help
+        Select the type of spindle encoder.
+
+        "TEST": No encoder, built in pulse generator emitting test pulses
+        "SDEC": SDEC (https://github.com/digiexchris/SDEC)
+        "LS7366": LS7366 QEI chip
+
+    default SPINDLE_ENCODER_TYPE_LS7366
+
+    config SPINDLE_ENCODER_TYPE_TEST
+        bool "TEST"
+
+    config SPINDLE_ENCODER_TYPE_LS7366
+        bool "LS7366"
+
+    config SPINDLE_ENCODER_TYPE_SDEC
+        bool "SDEC"
+
+endchoice
+
+menu "Board Specific GPIO Configuration"
+
+# Utilize Zephyr's board definitions directly without redefining them
+
+config BOARD_IS_RPI_PICO
+    bool
+    default y if BOARD_RPI_PICO
+    default n
+
+config BOARD_IS_STM32F411CE_BLACKPILL
+    bool
+    default y if BOARD_STM32F411CE_BLACKPILL
+    default n
+
+if BOARD_IS_RPI_PICO
+
+choice
+    prompt "Select GPIO port for encoder CS pin"
+    default ENCODER_CS_GPIO_PORT_0
+
+    config ENCODER_CS_GPIO_PORT_0
+        bool "GPIO 0"
+
+    config ENCODER_CS_GPIO_PORT_1
+        bool "GPIO 1"
+
+    # ... other GPIO options for RPi Pico
+
+endchoice
+
+endif # BOARD_IS_RPI_PICO
+
+if BOARD_IS_STM32F411CE_BLACKPILL
+
+choice
+    prompt "Select GPIO Port for encoder CS pin"
+    default ENCODER_CS_GPIO_PORT_A
+    help
+        GPIO port for encoder CS (i.e., on the STM32, if you wanted to choose PA4, select "GPIO Port A" here)
+
+    config ENCODER_CS_GPIO_PORT_A
+        bool "GPIO Port A"
+
+    config ENCODER_CS_GPIO_PORT_B
+        bool "GPIO Port B"
+
+    config ENCODER_CS_GPIO_PORT_C
+        bool "GPIO Port C"
+
+    # ... other GPIO options for STM32F411CE Blackpill
+
+endchoice
+
+endif # BOARD_IS_STM32F411CE_BLACKPILL
+
+endmenu
+
+config ENCODER_CS_GPIO_PIN
+    int "GPIO pin for encoder CS"
+    default 4
+    help
+        GPIO pin for encoder CS (i.e., on the STM32, if you wanted to choose P4, select A in
+        the port selection above, and type 4 here)
+
+endmenu

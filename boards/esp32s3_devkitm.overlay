@@ -1,0 +1,113 @@
+
+
+/ {
+	aliases {
+		qdec0 = &pcnt;
+        display0 = &st7789v0;
+	};
+
+
+};
+
+&pinctrl {
+	pcnt_default: pcnt_default {
+		group1 {
+			pinmux = <PCNT0_CH0SIG_GPIO35>,
+				<PCNT0_CH0CTRL_GPIO36>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <PCNT0_CH1SIG_GPIO34>,
+				<PCNT0_CH1CTRL_GPIO37>;
+			bias-pull-up;
+		};
+	};
+};
+
+&pcnt {
+	pinctrl-0 = <&pcnt_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	unit0@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		filter = <100>;
+		channelA@0 {
+			reg = <0>;
+			sig-pos-mode = <2>;
+			sig-neg-mode = <1>;
+			ctrl-h-mode = <0>;
+			ctrl-l-mode = <1>;
+		};
+	};
+};
+
+
+/ {
+	chosen {
+		zephyr,display = &st7789v0;
+	};
+};
+
+
+/* arduino defaults for the st7789v 
+ESP32S2 Arduino function
+9 D8 ST7789V Reset
+10 D9 ST7789V DC
+11 D10 SPI SS
+12 D11 SPI MOSI
+13 D12 SPI MISO
+14 D13 SPI SCK
+
+OR
+1 D2 DC
+2 D4 Reset
+16 D15 CS
+19 D18 SCK
+24 D23 SDA
+
+
+working on esp32s2
+#define TFT_CS   16  // Chip select control pin
+#define TFT_DC    10  // Data Command control pin
+#define TFT_RST   9  // Reset pin (could connect to RST pin)
+#define TFT_MOSI 11  // Data out
+#define TFT_SCLK 13  // Clock out
+
+
+*/
+&spi2 {
+    status = "okay";
+    cs-gpios = <&gpio 16 GPIO_ACTIVE_LOW>;    /* Example GPIO number for CS, originally GPIO 15 if using default */
+    pinctrl-0 = <&spim2_default>;
+	st7789v0:st7789v@0 { //DIN = 13  SCK = 14
+		compatible = "sitronix,st7789v";
+		spi-max-frequency = <500000>;
+		reg = <0>;
+        cmd-data-gpios = <&gpio 10 GPIO_ACTIVE_LOW>;  /* Example GPIO number for D/C, GPIO 16 in this case */
+        reset-gpios = <&gpio 9 GPIO_ACTIVE_LOW>;    /* Example GPIO number for Reset, GPIO 14 in this case */
+        width = <240>;
+		height = <320>;
+		x-offset = <0>;
+		y-offset = <0>;
+		vcom = <0x19>;
+		gctrl = <0x35>;
+		vrhs = <0x12>;
+		vdvs = <0x20>;
+		mdac = <0x00>;
+		gamma = <0x01>;
+		colmod = <0x05>;
+		lcm = <0x2c>;
+		porch-param = [0c 0c 00 33 33];
+		cmd2en-param = [5a 69 02 01];
+		pwctrl1-param = [a4 a1];
+		pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+		nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+		ram-param = [00 F0];
+		rgb-param = [CD 08 14];
+    };
+};

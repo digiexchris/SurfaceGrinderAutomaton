@@ -1,0 +1,73 @@
+{
+  //"image": "ghcr.io/zephyrproject-rtos/zephyr-build:latest",
+  "dockerFile": "Dockerfile",
+  "name": "Zephyr",
+  "runArgs": ["--privileged"] ,
+	"build": {
+		"args": {
+      "tag": "rp2040-xp200-rtu"
+			//"WORKSPACE": "${containerWorkspaceFolder}"
+		}
+	},
+	// "remoteUser": "user",
+
+	//"containerEnv": { "ZEPHYR_BASE": "${containerWorkspaceFolder}/zephyr" },
+  "capAdd": [ "SYS_PTRACE" ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "twxs.cmake",
+        "ms-vscode.cmake-tools",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "actboy168.tasks",
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer",
+        "redhat.vscode-yaml",
+        "IBM.output-colorizer",
+        "ms-vscode.cpptools-themes",
+        "josetr.cmake-language-support-vscode",
+        "derivitec-ltd.cmake-test-adapter",
+        "tenninebt.vscode-koverage",
+        "rherrmannr.code-coverage-lcov",
+        "piotrkosek.vscode-gtest-test-adapter-with-code-lens",
+        "SonarSource.sonarlint-vscode",
+        "matepek.vscode-catch2-test-adapter",
+        "Continue.continue",
+        "spmeesseman.vscode-taskexplorer",
+        "markis.code-coverage",
+        "EditorConfig.EditorConfig",
+        "bierner.markdown-mermaid",
+        "seaube.clangformat",
+        "msekoranja.clang-format-checker",
+        "nordic-semiconductor.nrf-kconfig",
+        "SanaAjani.taskrunnercode",
+        "trond-snekvik.devicetree"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest",
+      "ppa": "false"
+    }
+    // "ghcr.io/devcontainers/features/sshd:1": {},
+    //"ghcr.io/devcontainers/features/dotnet:2": {} //for some c++ extensions
+  },
+  //"postAttachCommand": "sudo service ssh start",
+  "forwardPorts": [ "2222:22" ],
+  "securityOpt": [ "seccomp=unconfined" ],
+  //"workspaceFolder": "/workspaces/local",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/local,type=bind",
+  "mounts": ["type=bind,source=/dev/bus/usb,target=/dev/bus/usb"]
+
+
+}
