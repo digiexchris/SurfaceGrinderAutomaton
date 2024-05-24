@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 ## Arguments
-ARG ZSDK_VERSION=0.16.7
+ARG ZSDK_VERSION=0.16.6
 ARG LLVM_VERSION=14
 ARG WGET_ARGS="-q --show-progress --progress=bar:force:noscroll --no-check-certificate"
 
@@ -20,7 +20,7 @@ RUN	apt-get -y update && \
             gperf build-essential libc6-dev openocd \
   ccache dfu-util device-tree-compiler wget dotnet8 dotnet-sdk-8.0 dotnet-runtime-8.0 \
   python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-  make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1 && \
+  make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1 screen && \
     apt-get clean && \
 	apt-get autoremove --purge
 

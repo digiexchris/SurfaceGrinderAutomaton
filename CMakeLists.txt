@@ -14,6 +14,8 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
+
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(app LANGUAGES C CXX ASM)
@@ -24,6 +26,44 @@ FILE(GLOB_RECURSE app_sources
 #tests
 # ./test/*.c*
 )
+include(FetchContent)
+
+set(LV_USE_ILI9341  1)
+set(LV_CONF_BUILD_DISABLE_DEMOS 1)
+set(LV_CONF_BUILD_DISABLE_THORVG_INTERNAL 1)
+set(LV_CONF_BUILD_DISABLE_EXAMPLES 1)
+# set(LV_CONF_PATH src/lv_conf.h)
+set(LV_CONF_INCLUDE_SIMPLE 1)
+
+# FetchContent_Declare(
+#     lvgl
+#     GIT_REPOSITORY https://github.com/lvgl/lvgl.git
+#     GIT_TAG v9.1.0
+# )
+
+# FetchContent_MakeAvailable(lvgl)
+
+# include_directories(${LVGL_ROOT_DIR}/src)
+include_directories(src)
+
+# MACRO(HEADER_DIRECTORIES return_list)
+#     FILE(GLOB_RECURSE new_list lib/lvgl/*.h)
+#     SET(dir_list "")
+#     FOREACH(file_path ${new_list})
+#         GET_FILENAME_COMPONENT(dir_path ${file_path} PATH)
+#         SET(dir_list ${dir_list} ${dir_path})
+#     ENDFOREACH()
+#     LIST(REMOVE_DUPLICATES dir_list)
+#     SET(${return_list} ${dir_list})
+# ENDMACRO()
+
+# HEADER_DIRECTORIES(header_list)
+
+# include_directories(${header_list})
+
+# include_directories(lib/lvgl)
+
+# target_link_libraries(app PUBLIC lvgl)
 
 if(BUILD_TESTS)
     set(NO_BUILD_TYPE_WARNING TRUE)
@@ -53,7 +93,7 @@ if(BUILD_TESTS)
     
 endif()
 
-include_directories(src)
+
 target_sources(app PRIVATE ${app_sources})
 
 if(BUILD_TESTS)

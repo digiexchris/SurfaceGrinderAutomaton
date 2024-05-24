@@ -152,7 +152,7 @@
 		"version": "2.0.0",
 		"tasks": [
 			{
-				"label": "Build blackpill_f411ce",
+				"label": "Build esp32_devkitc_wroom",
 				"type": "shell",
 				"group": {
 					"kind": "build",
@@ -164,7 +164,7 @@
 					"-p",
 					"auto",
 					"-b",
-					"blackpill_f411ce",
+					"esp32_devkitc_wroom/esp32/procpu",
 				],
 				"problemMatcher": [
 					"$gcc"
@@ -206,47 +206,47 @@
 					"$gcc"
 				],
 			},
-			{
-				"label": "OpenOCD stm32f411ce Flash",
-				"type": "shell",
-				"command": "openocd",
-				"args": [
-					"-s",
-					"/workspaces/zephyrproject/zephyr/boards/weact/blackpill_f411ce/support",
-					"-s", 
-					"/opt/toolchains/zephyr-sdk-0.16.5/sysroots/x86_64-pokysdk-linux/usr/share/openocd/scripts",
-					"-f",
-					"/workspaces/local/boards//stm32f411ce.openocd.cfg",
-					"-c",
-					"init",
-					"-c",
-					"targets",
-					"-c",
-					"reset halt",
-
-					"-c",
-					"flash write_image erase /workspaces/local/build/zephyr/zephyr.hex",
-
-					"-c",
-					"reset run",
-					"-c",
-					"shutdown"
-				],
-                "dependsOn": "Build blackpill_f411ce"
-			},
 			// {
-			// 	"label": "West Flash Openocd",
+			// 	"label": "OpenOCD stm32f411ce Flash",
 			// 	"type": "shell",
-			// 	"command": "west",
+			// 	"command": "openocd",
 			// 	"args": [
-			// 		"flash",
-			// 		"--runner",
-			// 		"openocd"
+			// 		"-s",
+			// 		"/workspaces/zephyrproject/zephyr/boards/weact/blackpill_f411ce/support",
+			// 		"-s", 
+			// 		"/opt/toolchains/zephyr-sdk-0.16.5/sysroots/x86_64-pokysdk-linux/usr/share/openocd/scripts",
+			// 		"-f",
+			// 		"/workspaces/local/boards//stm32f411ce.openocd.cfg",
+			// 		"-c",
+			// 		"init",
+			// 		"-c",
+			// 		"targets",
+			// 		"-c",
+			// 		"reset halt",
+
+			// 		"-c",
+			// 		"flash write_image erase /workspaces/local/build/zephyr/zephyr.hex",
+
+			// 		"-c",
+			// 		"reset run",
+			// 		"-c",
+			// 		"shutdown"
 			// 	],
-			// 	"problemMatcher": [
-			// 		"$gcc"
-			// 	]
+            //     "dependsOn": "Build blackpill_f411ce"
 			// },
+			{
+				"label": "West Flash",
+				"type": "shell",
+				"command": "west",
+				"args": [
+					"flash",
+					"--esp-device",
+                    "/dev/ttyUSB0"
+				],
+				"problemMatcher": [
+					"$gcc"
+				]
+			},
 			{
 				"label": "GUI Config",
 				"type": "shell",

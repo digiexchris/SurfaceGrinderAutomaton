@@ -39,15 +39,12 @@
         "tenninebt.vscode-koverage",
         "rherrmannr.code-coverage-lcov",
         "piotrkosek.vscode-gtest-test-adapter-with-code-lens",
-        "SonarSource.sonarlint-vscode",
         "matepek.vscode-catch2-test-adapter",
-        "Continue.continue",
         "spmeesseman.vscode-taskexplorer",
         "markis.code-coverage",
         "EditorConfig.EditorConfig",
         "bierner.markdown-mermaid",
         "seaube.clangformat",
-        "msekoranja.clang-format-checker",
         "nordic-semiconductor.nrf-kconfig",
         "SanaAjani.taskrunnercode",
         "trond-snekvik.devicetree"
@@ -67,7 +64,10 @@
   "securityOpt": [ "seccomp=unconfined" ],
   //"workspaceFolder": "/workspaces/local",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/local,type=bind",
-  "mounts": ["type=bind,source=/dev/bus/usb,target=/dev/bus/usb"]
+  "mounts": [
+    "type=bind,source=/dev/bus/usb,target=/dev/bus/usb",
+    "type=bind,source=/dev/ttyUSB0,target=/dev/ttyUSB0"
+]
 
 
 }

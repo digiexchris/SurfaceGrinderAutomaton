@@ -1,3 +1,5 @@
+
+#include "Display.hpp"
 #include "Enum.hpp"
 #include "config.hpp"
 #include <zephyr/kernel.h>
@@ -5,10 +7,16 @@
 
 LOG_MODULE_REGISTER(main);
 
+const Display *myDisplay;
+
 int main(void)
 {
 
-	LOG_INF("Hello World! %s\n", CONFIG_BOARD);
+	LOG_INF("Booting %s\n", CONFIG_BOARD);
+
+	myDisplay = new Display();
+
+	LOG_INF("Boot Complete\n");
 
 	while (1)
 	{
