@@ -138,33 +138,39 @@
         "editor.formatOnSave": true,
         "C_Cpp.default.intelliSenseMode": "linux-clang-arm",
         "C_Cpp.codeFolding": "disabled",
-        "devicetree.defaultBoard": "blackpill_f411ce",
+        "devicetree.defaultBoard": "rpi_pico",
         "devicetree.bindings": [
-            
-            "${zephyrBase}/dts/bindings",
-            "${zephyrBase}/../nrf/dts/bindings"
+            "/workspaces/local/dts/bindings",
+            "/workspaces/zephyrproject/zephyr/dts/bindings",
         ],
+        "devicetree.board": "rpi_pico",
+
         "[cpp]": {
             "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        },
+        "kconfig.zephyr.board": {
+            "arch": "arm",
+            "board": "rpi_pico",
+            "dir": "/workspaces/local/boards/rpi_pico",
         }
 	},
 	"tasks": {
 		"version": "2.0.0",
 		"tasks": [
 			{
-				"label": "Build esp32_devkitc_wroom",
+				"label": "Build ",
 				"type": "shell",
 				"group": {
 					"kind": "build",
 					"isDefault": true
 				},
-				"command": "west",
+				"command": "/root/.local/bin/west",
 				"args": [
 					"build",
 					"-p",
 					"auto",
 					"-b",
-					"esp32_devkitc_wroom/esp32/procpu",
+					"rpi_pico",
 				],
 				"problemMatcher": [
 					"$gcc"
@@ -196,7 +202,7 @@
 					"kind": "build",
 					"isDefault": true
 				},
-				"command": "west",
+				"command": "/root/.local/bin/west",
 				"args": [
 					"build",
 					"-t",
@@ -237,11 +243,9 @@
 			{
 				"label": "West Flash",
 				"type": "shell",
-				"command": "west",
+				"command": "/root/.local/bin/west",
 				"args": [
-					"flash",
-					"--esp-device",
-                    "/dev/ttyUSB0"
+					"flash"
 				],
 				"problemMatcher": [
 					"$gcc"
@@ -250,7 +254,7 @@
 			{
 				"label": "GUI Config",
 				"type": "shell",
-				"command": "west",
+				"command": "/root/.local/bin/west",
 				"args": [
 					"build",
 					"-t",

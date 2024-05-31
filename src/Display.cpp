@@ -35,7 +35,7 @@ void Display::BuildMainView()
 	lv_obj_t *cont_row = lv_obj_create(lv_scr_act());
 	lv_obj_set_size(cont_row, 300, 75);
 	lv_obj_align(cont_row, LV_ALIGN_TOP_MID, 0, 5);
-	lv_obj_set_flex_flow(cont_row, LV_FLEX_FLOW_ROW);
+	// lv_obj_set_flex_flow(cont_row, LV_FLEX_FLOW_ROW);
 
 	// /*Create a container with COLUMN flex direction*/
 	// lv_obj_t *cont_col = lv_obj_create(lv_scr_act());

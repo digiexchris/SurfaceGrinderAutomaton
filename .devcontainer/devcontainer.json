@@ -29,25 +29,21 @@
         "GitHub.copilot",
         "GitHub.copilot-chat",
         "actboy168.tasks",
-        "ms-vscode.test-adapter-converter",
-        "hbenl.vscode-test-explorer",
         "redhat.vscode-yaml",
         "IBM.output-colorizer",
-        "ms-vscode.cpptools-themes",
         "josetr.cmake-language-support-vscode",
-        "derivitec-ltd.cmake-test-adapter",
-        "tenninebt.vscode-koverage",
-        "rherrmannr.code-coverage-lcov",
-        "piotrkosek.vscode-gtest-test-adapter-with-code-lens",
-        "matepek.vscode-catch2-test-adapter",
         "spmeesseman.vscode-taskexplorer",
-        "markis.code-coverage",
         "EditorConfig.EditorConfig",
         "bierner.markdown-mermaid",
         "seaube.clangformat",
-        "nordic-semiconductor.nrf-kconfig",
+        //"nordic-semiconductor.nrf-kconfig",
         "SanaAjani.taskrunnercode",
-        "trond-snekvik.devicetree"
+        "trond-snekvik.devicetree",
+        "trond-snekvik.kconfig-lang",
+        "marus25.cortex-debug",
+        "marus25.cortex-debug-dp-stm32f4",
+        "marus25.cortex-debug-dp-stm32f1",
+        "dan-c-underwood.arm"
       ]
     }
   },
@@ -66,7 +62,7 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/local,type=bind",
   "mounts": [
     "type=bind,source=/dev/bus/usb,target=/dev/bus/usb",
-    "type=bind,source=/dev/ttyUSB0,target=/dev/ttyUSB0"
+    "type=bind,source=/dev/ttyACM0,target=/dev/ttyACM0"
 ]
 
 
