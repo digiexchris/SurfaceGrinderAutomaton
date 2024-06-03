@@ -2,10 +2,14 @@
   //"image": "ghcr.io/zephyrproject-rtos/zephyr-build:latest",
   "dockerFile": "Dockerfile",
   "name": "Zephyr",
-  "runArgs": ["--privileged"] ,
+  "runArgs": [
+    "--privileged",
+      //"--network=bridge",
+    "--memory=6gb"
+  ] ,
 	"build": {
 		"args": {
-      "tag": "rp2040-xp200-rtu"
+      "tag": "rp2040"
 			//"WORKSPACE": "${containerWorkspaceFolder}"
 		}
 	},
@@ -36,14 +40,10 @@
         "EditorConfig.EditorConfig",
         "bierner.markdown-mermaid",
         "seaube.clangformat",
-        //"nordic-semiconductor.nrf-kconfig",
         "SanaAjani.taskrunnercode",
-        "trond-snekvik.devicetree",
-        "trond-snekvik.kconfig-lang",
         "marus25.cortex-debug",
-        "marus25.cortex-debug-dp-stm32f4",
-        "marus25.cortex-debug-dp-stm32f1",
-        "dan-c-underwood.arm"
+        "dan-c-underwood.arm",
+        "raspberry-pi.raspberry-pi-pico"
       ]
     }
   },
@@ -56,9 +56,9 @@
     //"ghcr.io/devcontainers/features/dotnet:2": {} //for some c++ extensions
   },
   //"postAttachCommand": "sudo service ssh start",
-  "forwardPorts": [ "2222:22" ],
+//   "forwardPorts": [ "2222:22" ],
   "securityOpt": [ "seccomp=unconfined" ],
-  //"workspaceFolder": "/workspaces/local",
+  "workspaceFolder": "/workspaces/local",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/local,type=bind",
   "mounts": [
     "type=bind,source=/dev/bus/usb,target=/dev/bus/usb",

@@ -1,0 +1,464 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+        {
+			"path": "../pico-sdk"
+		}
+	],
+	"settings": {
+        "bsp": {
+            "board": "rpi_pico",
+            "target": "rp2040"
+          },
+		// Hush CMake
+        "cmake.options.statusBarVisibility": "hidden",
+        "cmake.options.advanced": {
+            "build": {
+                "statusBarVisibility": "hidden"
+            },
+            "launch": {
+                "statusBarVisibility": "hidden"
+            },
+            "debug": {
+                "statusBarVisibility": "hidden"
+            }
+        },
+        "cmake.configureOnEdit": false,
+        "cmake.automaticReconfigure": false,
+        "cmake.configureOnOpen": false,
+        "cmake.generator": "Ninja",
+        //"cmake.cmakePath": "/workspaces/pico-sdk/cmake/v3.28.0-rc6/bin/cmake",
+        "C_Cpp.debugShortcut": false,
+        "terminal.integrated.env.windows": {
+            "PICO_SDK_PATH": "/workspaces/pico-sdk",
+            //"PICO_TOOLCHAIN_PATH": "${env:USERPROFILE}/.pico-sdk/toolchain/13_2_Rel1",
+            //"Path": "${env:USERPROFILE}/.pico-sdk/toolchain/13_2_Rel1/bin;${env:USERPROFILE}/.pico-sdk/cmake/v3.28.0-rc6/bin;${env:USERPROFILE}/.pico-sdk/ninja/v1.12.1;${env:PATH}"
+        },
+        "terminal.integrated.env.linux": {
+            "PICO_SDK_PATH": "/workspaces/pico-sdk",
+            // "PICO_TOOLCHAIN_PATH": "/workspaces/pico-sdk/toolchain/13_2_Rel1",
+            // "PATH": "/workspaces/pico-sdk/toolchain/13_2_Rel1/bin:/workspaces/pico-sdk/cmake/v3.28.0-rc6/bin:/workspaces/pico-sdk/ninja/v1.12.1:${env:PATH}"
+        },
+        "raspberry-pi-pico.cmakeAutoConfigure": true,
+        "raspberry-pi-pico.useCmakeTools": false,
+        "raspberry-pi-pico.cmakePath": "/usr/bin/cmake",
+        "raspberry-pi-pico.ninjaPath": "/usr/bin/ninja",
+		"cmake.configureSettings": {
+			"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+            "PICO_DEOPTIMIZED_DEBUG": 1
+		},
+        "cmake.environment": {
+            "PICO_SDK_PATH":"/workspaces/pico-sdk"
+            },
+		"sonarlint.pathToCompileCommands": "/workspaces/local/build/compile_commands.json",
+		// IntelliSense
+		// "C_Cpp.default.compilerPath": "/opt/toolchains/zephyr-sdk-0.16.8/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc",
+		"C_Cpp.default.compileCommands": "/workspaces/local/build/compile_commands.json",
+
+		// File Associations
+		"files.associations": {
+			"algorithm": "cpp",
+			"array": "cpp",
+			"atomic": "cpp",
+			"bit": "cpp",
+			"bitset": "cpp",
+			"cctype": "cpp",
+			"charconv": "cpp",
+			"chrono": "cpp",
+			"clocale": "cpp",
+			"cmath": "cpp",
+			"compare": "cpp",
+			"concepts": "cpp",
+			"condition_variable": "cpp",
+			"csetjmp": "cpp",
+			"cstdarg": "cpp",
+			"cstddef": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"cwctype": "cpp",
+			"deque": "cpp",
+			"exception": "cpp",
+			"format": "cpp",
+			"forward_list": "cpp",
+			"fstream": "cpp",
+			"functional": "cpp",
+			"initializer_list": "cpp",
+			"iomanip": "cpp",
+			"ios": "cpp",
+			"iosfwd": "cpp",
+			"iostream": "cpp",
+			"istream": "cpp",
+			"iterator": "cpp",
+			"limits": "cpp",
+			"list": "cpp",
+			"locale": "cpp",
+			"map": "cpp",
+			"memory": "cpp",
+			"mutex": "cpp",
+			"new": "cpp",
+			"numbers": "cpp",
+			"numeric": "cpp",
+			"optional": "cpp",
+			"ostream": "cpp",
+			"queue": "cpp",
+			"random": "cpp",
+			"ranges": "cpp",
+			"ratio": "cpp",
+			"semaphore": "cpp",
+			"set": "cpp",
+			"span": "cpp",
+			"sstream": "cpp",
+			"stack": "cpp",
+			"stdexcept": "cpp",
+			"stop_token": "cpp",
+			"streambuf": "cpp",
+			"string": "cpp",
+			"system_error": "cpp",
+			"thread": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"typeinfo": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"utility": "cpp",
+			"variant": "cpp",
+			"vector": "cpp",
+			"xfacet": "cpp",
+			"xhash": "cpp",
+			"xiosbase": "cpp",
+			"xlocale": "cpp",
+			"xlocbuf": "cpp",
+			"xlocinfo": "cpp",
+			"xlocmes": "cpp",
+			"xlocmon": "cpp",
+			"xlocnum": "cpp",
+			"xloctime": "cpp",
+			"xmemory": "cpp",
+			"xstring": "cpp",
+			"xtr1common": "cpp",
+			"xtree": "cpp",
+			"xutility": "cpp",
+			"*.tcc": "cpp",
+			"memory_resource": "cpp",
+			"string_view": "cpp",
+			"cinttypes": "cpp",
+			"ztest.h": "c",
+			"hash_map": "cpp",
+			"lvgl.h": "c",
+			"lv_examples.h": "c",
+			"lv_obj.h": "c"
+		},
+		"cmake.enabledOutputParsers": [
+			"cmake",
+			"gcc",
+			"gnuld",
+			"msvc",
+			"ghs",  
+			"diab",
+			"iar"
+		],
+		"cmake.options.statusBarVisibility": "visible",
+		"cmake.additionalKits": [
+			"/workspaces/local/.devcontainer/cmake.kits.json"
+		],
+		// "cortex-debug.armToolchainPath": "/opt/toolchains/zephyr-sdk-0.16.8/arm-zephyr-eabi/bin/",
+		// "cortex-debug.armToolchainPrefix": "arm-zephyr-eabi",
+		"cortex-debug.openocdPath": "/usr/bin/openocd",
+		"cortex-debug.variableUseNaturalFormat": true,
+        "editor.detectIndentation": false,
+        "editor.defaultFormatter": "seaube.clangformat",
+        "editor.formatOnSave": true,
+        "C_Cpp.default.intelliSenseMode": "linux-clang-arm",
+        "C_Cpp.codeFolding": "disabled",
+        "devicetree.defaultBoard": "rpi_pico",
+        "devicetree.bindings": [
+            "/workspaces/local/dts/bindings",
+            "/workspaces/zephyrproject/zephyr/dts/bindings",
+        ],
+        "devicetree.board": "rpi_pico",
+
+        "[cpp]": {
+            "editor.defaultFormatter": "seaube.clangformat"
+        },
+        "kconfig.zephyr.board": {
+            "arch": "arm",
+            "board": "rpi_pico",
+            "dir": "/workspaces/local/boards/rpi_pico",
+        },
+        "cmake.buildEnvironment": {
+            "PICO_SDK_PATH": "/workspaces/pico-sdk"
+        },
+        "cmake.configureEnvironment": {
+            "PICO_SDK_PATH": "/workspaces/pico-sdk"
+        },
+        "cmake.generator": "Ninja",
+	},
+	// "tasks": {
+	// 	"version": "2.0.0",
+	// 	"tasks": [
+	// 		{
+	// 			"label": "Build ",
+	// 			"type": "shell",
+	// 			"group": {
+	// 				"kind": "build",
+	// 				"isDefault": true
+	// 			},
+	// 			"command": "west",
+	// 			"args": [
+	// 				"build",
+	// 				"-p",
+	// 				"auto",
+	// 				"-b",
+	// 				"rpi_pico",
+	// 			],
+	// 			"problemMatcher": [
+	// 				"$gcc"
+	// 			],
+	// 		},
+	// 		// {
+	// 		// 	"label": "Build ESP32 S3",
+	// 		// 	"type": "shell",
+	// 		// 	"group": {
+	// 		// 		"kind": "build",
+	// 		// 		"isDefault": true
+	// 		// 	},
+	// 		// 	"command": "west",
+	// 		// 	"args": [
+	// 		// 		"build",
+	// 		// 		"-p",
+	// 		// 		"auto",
+	// 		// 		"-b",
+	// 		// 		"esp32s3_devkitm",
+	// 		// 	],
+	// 		// 	"problemMatcher": [
+	// 		// 		"$gcc"
+	// 		// 	],
+	// 		// },
+	// 		{
+	// 			"label": "Clean",
+	// 			"type": "shell",
+	// 			"group": {
+	// 				"kind": "build",
+	// 				"isDefault": true
+	// 			},
+	// 			"command": "west",
+	// 			"args": [
+	// 				"build",
+	// 				"-t",
+	// 				"pristine",
+	// 			],
+	// 			"problemMatcher": [
+	// 				"$gcc"
+	// 			],
+	// 		},
+	// 		// {
+	// 		// 	"label": "OpenOCD stm32f411ce Flash",
+	// 		// 	"type": "shell",
+	// 		// 	"command": "openocd",
+	// 		// 	"args": [
+	// 		// 		"-s",
+	// 		// 		"/workspaces/zephyrproject/zephyr/boards/weact/blackpill_f411ce/support",
+	// 		// 		"-s", 
+	// 		// 		"/opt/toolchains/zephyr-sdk-0.16.5/sysroots/x86_64-pokysdk-linux/usr/share/openocd/scripts",
+	// 		// 		"-f",
+	// 		// 		"/workspaces/local/boards//stm32f411ce.openocd.cfg",
+	// 		// 		"-c",
+	// 		// 		"init",
+	// 		// 		"-c",
+	// 		// 		"targets",
+	// 		// 		"-c",
+	// 		// 		"reset halt",
+
+	// 		// 		"-c",
+	// 		// 		"flash write_image erase /workspaces/local/build/zephyr/zephyr.hex",
+
+	// 		// 		"-c",
+	// 		// 		"reset run",
+	// 		// 		"-c",
+	// 		// 		"shutdown"
+	// 		// 	],
+    //         //     "dependsOn": "Build blackpill_f411ce"
+	// 		// },
+	// 		{
+	// 			"label": "West Flash",
+	// 			"type": "shell",
+	// 			"command": "west",
+	// 			"args": [
+	// 				"flash"
+	// 			],
+	// 			"problemMatcher": [
+	// 				"$gcc"
+	// 			]
+	// 		},
+	// 		{
+	// 			"label": "GUI Config",
+	// 			"type": "shell",
+	// 			"command": "west",
+	// 			"args": [
+	// 				"build",
+	// 				"-t",
+	// 				"guiconfig"
+	// 			],
+	// 		}
+	// 	],
+	// 	"inputs": [
+	// 		{
+	// 			"id": "board",
+	// 			"type": "pickString",
+	// 			"default": "rpi_pico",
+	// 			"description": "See https://docs.zephyrproject.org/latest/boards/index.html",
+	// 			"options": [
+	// 				"rpi_pico",
+	// 				"stm32f411ceu6-blackpill",
+	// 				"qemu_cortex_m3"
+	// 			]
+	// 		},
+	// 		{
+	// 			"id": "pristine",
+	// 			"type": "pickString",
+	// 			"description": "Choose when to run a pristine build",
+	// 			"default": "auto",
+	// 			"options": [
+	// 				"auto",
+	// 				"always",
+	// 				"never"
+	// 			]
+	// 		}
+	// 	]
+	// },
+	// "launch": {
+	// 	"version": "0.2.0",
+	// 	"configurations": [
+
+	// 		{
+	// 			"name": "Launch",
+	// 			"device": "rp2040",
+	// 			"cwd": "/workspaces/local",
+	// 			"executable": "build/zephyr/zephyr.elf",
+	// 			"request": "launch",
+	// 			"type": "cortex-debug",
+    //             "interface": "swd",
+    //             // "numberOfProcessors": 2,
+    //             // ""
+	// 			// "runToEntryPoint": "main",
+	// 			//"breakAfterReset": true,
+	// 			"showDevDebugOutput": "raw",
+	// 			"servertype": "openocd",
+	// 			"liveWatch": {
+	// 				"enabled": true,
+	// 				"samplesPerSecond": 4
+	// 			},
+	// 			"configFiles":[
+                    
+    //                 "interface/cmsis-dap.cfg",
+    //                 "target/rp2040.cfg",
+    //                 "/workspaces/zephyrproject/zephyr/boards/raspberrypi/rpi_pico/support/openocd.cfg"
+	// 				// "/workspaces/local/boards/rpi_pico.cfg"
+	// 			],
+    //             // "swoConfig":{
+    //             //     "enabled":true,
+    //             //     "source":"probe",
+    //             //     "swoFrequency": 2000000,
+    //             //     "cpuFrequency":72000000,
+    //             //     "decoders": [
+    //             //         {
+    //             //             "port": 0,
+    //             //             "type": "console",
+    //             //             "label": "SWO output",
+    //             //             "encoding":"ascii"
+    //             //         }
+    //             //     ]
+    //             // },
+	// 			"gdbPath": "/opt/toolchains/zephyr-sdk-0.16.8/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb"
+	// 			//"preLaunchTask": "West Build"
+	// 		},
+
+    //         {
+	// 			"name": "Launch pyOCD",
+	// 			"device": "blackpill_f411ce",
+	// 			"cwd": "/workspaces/local",
+	// 			"executable": "build/zephyr/zephyr.elf",
+	// 			"request": "launch",
+	// 			"type": "cortex-debug",
+	// 			"runToEntryPoint": "main",
+	// 			//"breakAfterReset": true,
+	// 			//"showDevDebugOutput": "raw",
+	// 			"servertype": "pyocd",
+	// 			"liveWatch": {
+	// 				"enabled": true,
+	// 				"samplesPerSecond": 4
+	// 			},
+    //             "configFiles":[
+    //                 "/workspaces/local/boards/weact/blackpill_f411ce_RPM/stm32f411ce.openocd.cfg"
+    //             ],
+	// 			// "configFiles":[
+	// 			// 	"/workspaces/local/boards/stm32f411ce.openocd.cfg"
+	// 			// ],
+	// 			"gdbPath": "/opt/toolchains/zephyr-sdk-0.16.5/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb"
+	// 			//"preLaunchTask": "West Build"
+	// 		},
+	// 		{
+	// 			"name": "Attach",
+	// 			"device": "blackpill_f411ce",
+	// 			"cwd": "/workspaces/local",
+	// 			"executable": "build/zephyr/zephyr.elf",
+	// 			"request": "attach",
+	// 			"type": "cortex-debug",
+	// 			"runToEntryPoint": "main",
+	// 			"servertype": "openocd",
+	// 			"gdbPath": "/opt/toolchains/zephyr-sdk-0.16.5/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb"
+	// 		},
+	// 		{
+	// 			"name": "Debug Test",
+	// 			"device": "qemu-cortex-m3",
+	// 			"cwd": "/workspaces/local/test",
+	// 			"executable": "/workspaces/local/build/zephyr/zephyr.elf",
+	// 			"request": "launch",
+	// 			"cpu" : "cortex-m3",
+	// 			"type": "cortex-debug",
+	// 			"runToEntryPoint": "main",
+	// 			"servertype": "qemu",
+	// 			"gdbPath": "${env:ZEPHYR_SDK}/arm-zephyr-eabi-gdb.exe",
+	// 			"preLaunchTask": "Build Test"
+	// 		},
+    //         // {
+    //         //     "name": "GDBServer",
+    //         //     "device": "rp2040",
+    //         // }
+	// 		// {
+	// 		// 	"name": "Run Test",
+	// 		// 	"device": "qemu-cortex-m3",
+	// 		// 	"cwd": "/workspaces/local/test",
+	// 		// 	"executable": "/workspaces/local/build/zephyr/zephyr.elf",
+	// 		// 	"request": "launch",
+	// 		// 	"type": "",
+	// 		// 	"runToEntryPoint": "main",
+	// 		// 	"servertype": "qemu",
+	// 		// 	"gdbPath": "${env:ZEPHYR_SDK}/arm-zephyr-eabi-gdb.exe",
+	// 		// 	"preLaunchTask": "Build Test"
+	// 		// },
+	// 	]
+	// },
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.cpptools-extension-pack",
+			"ms-python.python",
+			"ms-vscode.vscode-embedded-tools",
+			"ms-vscode.vscode-serial-monitor",
+			"marus25.cortex-debug",
+			"donjayamanne.python-environment-manager",
+			"trond-snekvik.kconfig-lang",
+			"nordic-semiconductor.nrf-kconfig",
+			"spmeesseman.vscode-taskexplorer",
+			"sanaajani.taskrunnercode",
+			"actboy168.tasks",
+			"trond-snekvik.devicetree"
+		]
+	}
+}

@@ -1,119 +1,98 @@
-cmake_minimum_required(VERSION 3.13.1)
-set(CMAKE_CXX_STANDARD 20)
+# Generated Cmake Pico project file
+
+cmake_minimum_required(VERSION 3.13)
+
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-
-# list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-
-set(NO_BUILD_TYPE_WARNING TRUE)
-if(ELS_TESTS)
-set(BOARD native_sim)
-add_compile_definitions(ELS_TESTS)
-endif()
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Initialise pico_sdk from installed location
+# (note this can come from environment, CMake cache etc)
 
+# == DO NEVER EDIT THE NEXT LINES for Raspberry Pi Pico VS Code Extension to work ==
+if(WIN32)
+   set(USERHOME $ENV{USERPROFILE})
+else()
+    set(USERHOME $ENV{HOME})
+endif()
+# set(PICO_SDK_PATH ${USERHOME}/.pico-sdk/sdk/1.5.1)
+# set(PICO_TOOLCHAIN_PATH ${USERHOME}/.pico-sdk/toolchain/13_2_Rel1)
+if(WIN32)
+    set(pico-sdk-tools_DIR ${USERHOME}/.pico-sdk/tools/1.5.1)
+    include(${pico-sdk-tools_DIR}/pico-sdk-tools-config.cmake)
+    include(${pico-sdk-tools_DIR}/pico-sdk-tools-config-version.cmake)
+endif()
+# ====================================================================================
+set(PICO_BOARD pico CACHE STRING "Board type")
 
+# Pull in Raspberry Pi Pico SDK (must be before project)
+include(pico_sdk_import.cmake)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
+  message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+endif()
 
-project(app LANGUAGES C CXX ASM)
+project(SurfaceGrinderAtomaton C CXX ASM)
 
+set(PICO_CXX_ENABLE_EXCEPTIONS 1)
+
+set(PICO_CXX_ENABLE_RTTI 1)
+
+# Initialise the Raspberry Pi Pico SDK
+pico_sdk_init()
+
+# Add executable. Default name is the project name, version 0.1
 FILE(GLOB_RECURSE app_sources 
 #main app
 ./src/*.c*
+./lib/picostepper/src/picostepper/picostepper.c
 #tests
 # ./test/*.c*
 )
-include(FetchContent)
 
-set(LV_USE_ILI9341  1)
-set(LV_CONF_BUILD_DISABLE_DEMOS 1)
-set(LV_CONF_BUILD_DISABLE_THORVG_INTERNAL 1)
-set(LV_CONF_BUILD_DISABLE_EXAMPLES 1)
-# set(LV_CONF_PATH src/lv_conf.h)
-set(LV_CONF_INCLUDE_SIMPLE 1)
+add_executable(SurfaceGrinderAtomaton ${app_sources} )
 
-# FetchContent_Declare(
-#     lvgl
-#     GIT_REPOSITORY https://github.com/lvgl/lvgl.git
-#     GIT_TAG v9.1.0
-# )
+pico_set_program_name(SurfaceGrinderAtomaton "SurfaceGrinderAtomaton")
+pico_set_program_version(SurfaceGrinderAtomaton "0.1")
 
-# FetchContent_MakeAvailable(lvgl)
+# Generate PIO header
+pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/blink.pio)
+pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/lib/picostepper/src/picostepper/driver/two_wire.pio)
+pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/lib/picostepper/src/picostepper/driver/four_wire.pio)
 
-# include_directories(${LVGL_ROOT_DIR}/src)
-include_directories(src)
+# Modify the below lines to enable/disable output over UART/USB
+pico_enable_stdio_uart(SurfaceGrinderAtomaton 0)
+pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
 
-# MACRO(HEADER_DIRECTORIES return_list)
-#     FILE(GLOB_RECURSE new_list lib/lvgl/*.h)
-#     SET(dir_list "")
-#     FOREACH(file_path ${new_list})
-#         GET_FILENAME_COMPONENT(dir_path ${file_path} PATH)
-#         SET(dir_list ${dir_list} ${dir_path})
-#     ENDFOREACH()
-#     LIST(REMOVE_DUPLICATES dir_list)
-#     SET(${return_list} ${dir_list})
-# ENDMACRO()
-
-# HEADER_DIRECTORIES(header_list)
-
-# include_directories(${header_list})
-
-# include_directories(lib/lvgl)
-
-# target_link_libraries(app PUBLIC lvgl)
-
-if(BUILD_TESTS)
-    set(NO_BUILD_TYPE_WARNING TRUE)
-    set(CMAKE_C_FLAGS -m32)
-    set(CMAKE_CXX_FLAGS -m32)
-
-    include(FetchContent)
-        FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-    )
-    # For Windows: Prevent overriding the parent project's compiler/linker settings
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
-
-    FetchContent_Declare(
-        trompeloeil
-        GIT_REPOSITORY https://github.com/rollbear/trompeloeil.git
-        GIT_TAG        v47 # or a later release
-    )
-    FetchContent_MakeAvailable(trompeloeil)
-
-    # include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-    # project(app LANGUAGES C CXX ASM)
-    FILE(GLOB_RECURSE test_sources ./test/*.c*)
-    include_directories(./test/)
-    
-endif()
+# pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/stepper.pio)
+# pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/pacer.pio)
+# pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/counter.pio)
 
 
-target_sources(app PRIVATE ${app_sources})
+# Add the standard library to the build
+target_link_libraries(SurfaceGrinderAtomaton
+        pico_stdlib
+        hardware_pio
+        )
 
-if(BUILD_TESTS)
-    enable_testing()
+# Add the standard include files to the build
+target_include_directories(SurfaceGrinderAtomaton PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picostepper/src/picostepper
+)
 
-    target_link_libraries(
-    app
-    PUBLIC
-    GTest::gtest_main
-    )
+# Add any user requested libraries
+target_link_libraries(SurfaceGrinderAtomaton 
+        hardware_spi
+        hardware_i2c
+        hardware_dma
+        hardware_pio
+        hardware_interp
+        hardware_timer
+        hardware_watchdog
+        hardware_clocks
+        )
 
-    add_executable(tests ${app_sources} ${test_sources}) 
-    target_link_libraries(
-    tests
-    PUBLIC
-    trompeloeil::trompeloeil
-    GTest::gtest_main
-    )
+pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
-    include(GoogleTest)
-    gtest_discover_tests(tests)
-
-endif()

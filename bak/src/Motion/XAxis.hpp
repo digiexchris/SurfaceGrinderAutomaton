@@ -3,7 +3,6 @@
 #include "Enum.hpp"
 
 #include "drivers/Motor/Stepper.hpp"
-#include "zephyr/sys/arch_interface.h"
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 

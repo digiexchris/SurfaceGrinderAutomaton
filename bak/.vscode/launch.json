@@ -1,0 +1,160 @@
+{
+    "configurations": [
+        {
+            "name": "C++ Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/zephyr/zephyr.elf",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceRoot}",
+            "environment": [],
+            "externalConsole": false,
+            "debugServerArgs": "-s /workspaces/zephyrproject/zephyr/boards/raspberrypi/rpi_pico/support -s /opt/toolchains/zephyr-sdk-0.16.8/sysroots/x86_64-pokysdk-linux/usr/share/openocd/scripts -f /workspaces/zephyrproject/zephyr/boards/raspberrypi/rpi_pico/support/openocd.cfg -c \"tcl_port 6333\" -c \"telnet_port 4444\" -c \"gdb_port 3333\" -f /usr/share/openocd/scripts/interface/cmsis-dap.cfg -c \"transport select swd\" -f /usr/share/openocd/scripts/target/rp2040.cfg -c \"adapter speed 2000\" -c init -c targets -c halt ",
+            "serverLaunchTimeout": 20000,
+            "filterStderr": false,
+            "filterStdout": false,
+            //"serverStarted": "Info : Listening on port 4444 for telnet connections",
+            //"preLaunchTask": "mbed",
+            
+            // "setupCommands": [
+            //     // { "text": "-target extended-remote :3333", "description": "connect to target", "ignoreFailures": false },
+            //     // { "text": "-file-exec-and-symbols ${workspaceRoot}/build/zephyr/zephyr.elf", "description": "load file", "ignoreFailures": false}
+            //     // { "text": "-interpreter-exec console \"monitor endian little\"", "ignoreFailures": false },
+            //     { "text": "-interpreter-exec console \"monitor reset\"", "ignoreFailures": false },
+            //     { "text": "-interpreter-exec console \"monitor halt\"", "ignoreFailures": false },
+            //     { "text": "-interpreter-exec console \"monitor arm semihosting enable\"", "ignoreFailures": false }
+            //     // { "text": "-target-download", "description": "flash target", "ignoreFailures": false }
+            // ],
+            "logging": {
+                "moduleLoad": true,
+                "trace": true,
+                "engineLogging": true,
+                "programOutput": true,
+                "exceptions": true
+            },
+            "linux": {
+                "MIMode": "gdb",
+                "MIDebuggerPath": "/opt/toolchains/zephyr-sdk-0.16.8/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+                "debugServerPath": "/usr/bin/openocd",
+                "miDebuggerServerAddress": ":3333"
+            },
+        },
+        // {
+        // //     // Server command:  ['/usr/bin/openocd', '-s', '/workspaces/zephyrproject/zephyr/boards/raspberrypi/rpi_pico/support', '-s', '/opt/toolchains/zephyr-sdk-0.16.8/sysroots/x86_64-pokysdk-linux/usr/share/openocd/scripts', '-f', '/workspaces/zephyrproject/zephyr/boards/raspberrypi/rpi_pico/support/openocd.cfg', '-c', 'tcl_port 6333', '-c', 'telnet_port 4444', '-c', 'gdb_port 3333', '-c', 'source [find interface/cmsis-dap.cfg]', '-c', 'transport select swd', '-c', 'source [find target/rp2040.cfg]', '-c', 'set_adapter_speed_if_not_set 2000', '-c init', '-c targets', '-c halt']
+        // //     // GDB command:  ['/opt/toolchains/zephyr-sdk-0.16.8/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb', '-ex', 'target extended-remote :3333', '/workspaces/local/build/zephyr/zephyr.elf', '-ex', 'load']
+
+        //     "cwd": "${workspaceRoot}",
+        //     "executable": "build/zephyr/zephyr.elf",
+        //     "name": "Debug with OpenOCD",
+        //     "request": "launch",
+        //     "type": "cortex-debug",
+        //     "servertype": "openocd",
+        //     "configFiles": [
+                
+        //         "interface/cmsis-dap.cfg",
+        //         "target/rp2040.cfg",
+        //         "/workspaces/zephyrproject/zephyr/boards/raspberrypi/rpi_pico/support/openocd.cfg"
+        //                 ],
+        //     "openOCDPreConfigLaunchCommands": [
+        //         "tcl_port 6333",
+        //         "telnet_port 4444",
+        //         "gdb_port 3333",
+        //         "source [find interface/cmsis-dap.cfg]",
+        //         "transport select swd",
+        //         "source [find target/rp2040.cfg]",
+        //         "adapter speed 2000",
+        //         "adapter driver cmsis-dap",
+        //         "init",
+        //         "targets",
+        //         "halt"
+        //     ],
+        //     "openOCDLaunchCommands": [
+        //         "target extended-remote :3333",
+        //         "/workspaces/local/build/zephyr/zephyr.elf",
+        //         "load"
+        //     ],
+        //     "searchDir": [
+        //         "/workspaces/zephyrproject/zephyr/boards/raspberrypi/rpi_pico/support",
+        //         "/opt/toolchains/zephyr-sdk-0.16.8/sysroots/x86_64-pokysdk-linux/usr/share/openocd/scripts"
+        //     ],
+        //     // "openOCDPreConfigLaunchCommands": [
+        //     //     "adapter speed 2000",
+        //     //     "init",
+        //     //     "targets",
+        //     //     "reset halt"
+        //     // ],
+        //     // "openOCDLaunchCommands": [
+        //     //     "init",
+        //     //     "targets",
+        //     //     "reset halt"
+        //     // ],
+        //     "runToEntryPoint": "main",
+        //     "showDevDebugOutput": "raw",
+        //     "gdbPath": "/opt/toolchains/zephyr-sdk-0.16.8/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb"
+        // }
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceRoot}",
+            "executable": "build/zephyr/zephyr.elf",
+            "name": "zephyr $(config.bsp.board) Debug",
+            "device": "${config:bsp.board}",
+            "configFiles": [
+                
+                 "/workspaces/local/boards/rpi_pico.cfg"
+                    ],
+                    
+        }
+    ]
+}
+
+
+
+                        
+
+
+
+    // {
+    // 				"name": "Launch",
+    // 				"device": "rp2040",
+    // 				"cwd": "/workspaces/local",
+    // 				"executable": "build/zephyr/zephyr.elf",
+    // 				"request": "launch",
+    // 				"type": "cortex-debug",
+    //                 "interface": "swd",
+    //                 // "numberOfProcessors": 2,
+    //                 // ""
+    // 				// "runToEntryPoint": "main",
+    // 				//"breakAfterReset": true,
+    // 				"showDevDebugOutput": "raw",
+    // 				"servertype": "openocd",
+    // 				"liveWatch": {
+    // 					"enabled": true,
+    // 					"samplesPerSecond": 4
+    // 				},
+    // 				"configFiles":[
+                        
+    //                     "interface/cmsis-dap.cfg",
+    //                     "target/rp2040.cfg",
+    //                     "/workspaces/zephyrproject/zephyr/boards/raspberrypi/rpi_pico/support/openocd.cfg"
+    // 					// "/workspaces/local/boards/rpi_pico.cfg"
+    // 				],
+    //                 // "swoConfig":{
+    //                 //     "enabled":true,
+    //                 //     "source":"probe",
+    //                 //     "swoFrequency": 2000000,
+    //                 //     "cpuFrequency":72000000,
+    //                 //     "decoders": [
+    //                 //         {
+    //                 //             "port": 0,
+    //                 //             "type": "console",
+    //                 //             "label": "SWO output",
+    //                 //             "encoding":"ascii"
+    //                 //         }
+    //                 //     ]
+    //                 // },
+    // 				"gdbPath": "/opt/toolchains/zephyr-sdk-0.16.8/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb"
+    // 				//"preLaunchTask": "West Build"
+    // 			},
