@@ -15,10 +15,9 @@
 const char src[] = "Hello, world! (from DMA)";
 char dst[count_of(src)];
 
-#include "blink.pio.h"
-
 extern "C"
 {
+#include "blink.pio.h"
 #include "picostepper.h"
 }
 
@@ -39,18 +38,18 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
 	pio->txf[sm] = (125000000 / (2 * freq)) - 3;
 }
 
-int64_t alarm_callback(alarm_id_t id, void *user_data)
-{
-	// Put your timeout handler code in here
-	return 0;
-}
-
 int main()
 {
 	stdio_init_all();
 
-	sleep_ms(1000);
+	sleep_ms(1000); // time for uart to connect for debugging, comment out later
 
+	// Watchdog example code
+	if (watchdog_caused_reboot())
+	{
+		printf("Rebooted by Watchdog!\n");
+		// Whatever action you may take if a watchdog caused a reboot
+	}
 	// STEPPERS
 
 	uint base_pin = 10;
@@ -78,13 +77,6 @@ int main()
 #else
 	blink_pin_forever(pio, 0, offset, 6, 3);
 #endif
-
-	// Watchdog example code
-	if (watchdog_caused_reboot())
-	{
-		printf("Rebooted by Watchdog!\n");
-		// Whatever action you may take if a watchdog caused a reboot
-	}
 
 	// Enable the watchdog, requiring the watchdog to be updated every 100ms or the chip will reboot
 	// second arg is pause on debug which means the watchdog will pause when stepping through code

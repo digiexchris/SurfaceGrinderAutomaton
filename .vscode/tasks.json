@@ -20,7 +20,7 @@
         {
             "label": "Flash",
             "type": "process",
-            "command": "/usr/bin/openocd",
+            "command": "/workspaces/pico/openocd/v0.12.0-2/bin/openocd",
             "args": [
                 "-f",
                 "interface/cmsis-dap.cfg",

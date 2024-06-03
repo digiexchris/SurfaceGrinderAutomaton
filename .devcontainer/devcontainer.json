@@ -1,7 +1,7 @@
 {
   //"image": "ghcr.io/zephyrproject-rtos/zephyr-build:latest",
   "dockerFile": "Dockerfile",
-  "name": "Zephyr",
+  "name": "Pi Pico",
   "runArgs": [
     "--privileged",
       //"--network=bridge",
@@ -43,7 +43,8 @@
         "SanaAjani.taskrunnercode",
         "marus25.cortex-debug",
         "dan-c-underwood.arm",
-        "raspberry-pi.raspberry-pi-pico"
+        "raspberry-pi.raspberry-pi-pico",
+        "llvm-vs-code-extensions.vscode-clangd"
       ]
     }
   },
@@ -61,8 +62,8 @@
   "workspaceFolder": "/workspaces/local",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/local,type=bind",
   "mounts": [
-    "type=bind,source=/dev/bus/usb,target=/dev/bus/usb",
-    "type=bind,source=/dev/ttyACM0,target=/dev/ttyACM0"
+    "type=bind,source=/dev/bus/usb,target=/dev/bus/usb"
+    //"type=bind,source=/dev/ttyACM0,target=/dev/ttyACM0"
 ]
 
 

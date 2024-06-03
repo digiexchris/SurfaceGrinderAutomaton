@@ -4,7 +4,7 @@
 			"path": "."
 		},
         {
-			"path": "../pico-sdk"
+			"path": "../pico/"
 		}
 	],
 	"settings": {
@@ -12,8 +12,6 @@
             "board": "rpi_pico",
             "target": "rp2040"
           },
-		// Hush CMake
-        "cmake.options.statusBarVisibility": "hidden",
         "cmake.options.advanced": {
             "build": {
                 "statusBarVisibility": "hidden"
@@ -28,18 +26,17 @@
         "cmake.configureOnEdit": false,
         "cmake.automaticReconfigure": false,
         "cmake.configureOnOpen": false,
-        "cmake.generator": "Ninja",
         //"cmake.cmakePath": "/workspaces/pico-sdk/cmake/v3.28.0-rc6/bin/cmake",
         "C_Cpp.debugShortcut": false,
         "terminal.integrated.env.windows": {
-            "PICO_SDK_PATH": "/workspaces/pico-sdk",
-            //"PICO_TOOLCHAIN_PATH": "${env:USERPROFILE}/.pico-sdk/toolchain/13_2_Rel1",
-            //"Path": "${env:USERPROFILE}/.pico-sdk/toolchain/13_2_Rel1/bin;${env:USERPROFILE}/.pico-sdk/cmake/v3.28.0-rc6/bin;${env:USERPROFILE}/.pico-sdk/ninja/v1.12.1;${env:PATH}"
+            "PICO_SDK_PATH": "/workspaces/pico/pico-sdk",
+            "PICO_TOOLCHAIN_PATH": "${env:USERPROFILE}/.pico-sdk/toolchain/13_2_Rel1",
+            "Path": "${env:USERPROFILE}/.pico-sdk/toolchain/13_2_Rel1/bin;${env:USERPROFILE}/.pico-sdk/cmake/v3.28.0-rc6/bin;${env:USERPROFILE}/.pico-sdk/ninja/v1.12.1;${env:PATH}"
         },
         "terminal.integrated.env.linux": {
-            "PICO_SDK_PATH": "/workspaces/pico-sdk",
-            // "PICO_TOOLCHAIN_PATH": "/workspaces/pico-sdk/toolchain/13_2_Rel1",
-            // "PATH": "/workspaces/pico-sdk/toolchain/13_2_Rel1/bin:/workspaces/pico-sdk/cmake/v3.28.0-rc6/bin:/workspaces/pico-sdk/ninja/v1.12.1:${env:PATH}"
+            "PICO_SDK_PATH": "/workspaces/pico/pico-sdk",
+            //"PICO_TOOLCHAIN_PATH": "/workspaces/pico-sdk/toolchain/13_2_Rel1",
+            //"PATH": "/workspaces/pico-sdk/toolchain/13_2_Rel1/bin:/workspaces/pico-sdk/cmake/v3.28.0-rc6/bin:/workspaces/pico-sdk/ninja/v1.12.1:${env:PATH}"
         },
         "raspberry-pi-pico.cmakeAutoConfigure": true,
         "raspberry-pi-pico.useCmakeTools": false,
@@ -50,7 +47,7 @@
             "PICO_DEOPTIMIZED_DEBUG": 1
 		},
         "cmake.environment": {
-            "PICO_SDK_PATH":"/workspaces/pico-sdk"
+            "PICO_SDK_PATH":"/workspaces/pico/pico-sdk"
             },
 		"sonarlint.pathToCompileCommands": "/workspaces/local/build/compile_commands.json",
 		// IntelliSense
@@ -192,10 +189,10 @@
             "dir": "/workspaces/local/boards/rpi_pico",
         },
         "cmake.buildEnvironment": {
-            "PICO_SDK_PATH": "/workspaces/pico-sdk"
+            "PICO_SDK_PATH": "/workspaces/pico/pico-sdk"
         },
         "cmake.configureEnvironment": {
-            "PICO_SDK_PATH": "/workspaces/pico-sdk"
+            "PICO_SDK_PATH": "/workspaces/pico/pico-sdk"
         },
         "cmake.generator": "Ninja",
 	},
@@ -452,13 +449,14 @@
 			"ms-vscode.vscode-embedded-tools",
 			"ms-vscode.vscode-serial-monitor",
 			"marus25.cortex-debug",
-			"donjayamanne.python-environment-manager",
+            "IBM.output-colorizer",
+            "seaube.clangformat",
+            "llvm-vs-code-extensions.vscode-clangd",
 			"trond-snekvik.kconfig-lang",
-			"nordic-semiconductor.nrf-kconfig",
 			"spmeesseman.vscode-taskexplorer",
 			"sanaajani.taskrunnercode",
 			"actboy168.tasks",
-			"trond-snekvik.devicetree"
+            "raspberry-pi.raspberry-pi-pico"
 		]
 	}
 }
