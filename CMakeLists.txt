@@ -45,7 +45,6 @@ pico_sdk_init()
 FILE(GLOB_RECURSE app_sources 
 #main app
 ./src/*.c*
-./lib/picostepper/src/picostepper/picostepper.c
 #tests
 # ./test/*.c*
 )
@@ -57,12 +56,11 @@ pico_set_program_version(SurfaceGrinderAtomaton "0.1")
 
 # Generate PIO header
 pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/blink.pio)
-pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/lib/picostepper/src/picostepper/driver/two_wire.pio)
-pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/lib/picostepper/src/picostepper/driver/four_wire.pio)
+pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/stepper.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(SurfaceGrinderAtomaton 0)
-pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
+# pico_enable_stdio_uart(SurfaceGrinderAtomaton 0)
+# pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
 
 # pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/stepper.pio)
 # pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/pacer.pio)
@@ -79,7 +77,6 @@ target_link_libraries(SurfaceGrinderAtomaton
 target_include_directories(SurfaceGrinderAtomaton PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picostepper/src/picostepper
 )
 
 # Add any user requested libraries

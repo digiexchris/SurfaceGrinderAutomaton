@@ -1,0 +1,51 @@
+{
+    "folders": [
+		{
+			"path": "."
+		},
+        {
+			"name": "PICO_SDK",
+			"path": "/home/chris/pico/"
+		}
+	],
+	"cmake.configureOnOpen": false,
+	"cmake.statusbar.advanced": {
+	  "debug" : {
+		"visibility": "hidden"
+				},
+	  "launch" : {
+		"visibility": "hidden"
+				 },
+	  "build" : {
+		"visibility": "hidden"
+				 },
+	  "buildTarget" : {
+		"visibility": "hidden"
+				 }
+	},
+	"cmake.generator": "Ninja",
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.cpptools-extension-pack",
+			"ms-vscode.vscode-embedded-tools",
+			"ms-vscode.vscode-serial-monitor",
+			"marus25.cortex-debug",
+            "IBM.output-colorizer",
+            "seaube.clangformat",
+            "llvm-vs-code-extensions.vscode-clangd",
+			"trond-snekvik.kconfig-lang",
+			"spmeesseman.vscode-taskexplorer",
+			"sanaajani.taskrunnercode",
+			"actboy168.tasks",
+            "raspberry-pi.raspberry-pi-pico",
+			"ms-vscode.cmake-tools",
+			"EditorConfig.EditorConfig",
+			"SanaAjani.taskrunnercode",
+			"GitHub.copilot",
+			"GitHub.copilot-chat",
+			"josetr.cmake-language-support-vscode",
+			"raspberry-pi.raspberry-pi-pico",
+			"llvm-vs-code-extensions.vscode-clangd"
+		]
+	}
+}
