@@ -3,6 +3,8 @@
 
 #define ENABLE_DISPLAY 1
 
+#define STEPPER1_ENABLE_POLARITY 0
+
 #define TFT_MISO 16
 #define TFT_MOSI 13
 #define TFT_SCLK 14

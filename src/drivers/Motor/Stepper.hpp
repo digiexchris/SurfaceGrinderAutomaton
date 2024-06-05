@@ -1,35 +1,22 @@
 #pragma once
 #include "Enum.hpp"
-#include "zephyr/drivers/gpio.h"
-#include "zephyr/drivers/pwm.h"
-#include "zephyr/kernel.h"
-#include <sys/_stdint.h>
-#include <vector>
-#include <zephyr/sys/util.h>
+#include "hardware/pio.h"
+#include <cstdint>
 
-struct StepperConfig
+struct StepperDevice
 {
-	struct gpio_dt_spec stepGpio;
-	struct gpio_dt_spec dirGpio;
-	struct gpio_dt_spec enableGpio;
-	uint32_t maxSpeed;
-	uint32_t maxAcceleration;
-	uint32_t maxDeceleration;
-	uint8_t enablePolarity;
-	uint8_t dirPolarity;
+    int StepsToTake = 0;
+    bool activedir = true;
+    bool dirchange = true;
+    float ActiveAngle = 0.0; // 360/res
+    int DIR_PIN = 11;
+    int STEP_PIN = 10;
+	int EN_PIN = 9;
+    int directionChangeDelayCounter = 0;
+    PIO stm_pio = pio0;
+    int stm_sm;
+	int directionChangeDelay = 50;
 };
-
-#define STEPPER_MOTOR_INIT(node_id, max_speed, max_acceleration, max_deceleration) \
-	{                                                                              \
-		.stepGpio = GPIO_DT_SPEC_GET(node_id, step_gpios),                         \
-		.dirGpio = GPIO_DT_SPEC_GET(node_id, dir_gpios),                           \
-		.enableGpio = GPIO_DT_SPEC_GET(node_id, enable_gpios),                     \
-		.maxSpeed = max_speed,                                                     \
-		.maxAcceleration = max_acceleration,                                       \
-		.maxDeceleration = max_deceleration,                                       \
-		.enablePolarity = DT_PROP(node_id, enable_polarity),                       \
-		.dirPolarity = DT_PROP(node_id, dir_polarity)                              \
-	}
 
 /**
  * @brief Stepper motor driver
@@ -71,7 +58,9 @@ public:
 		CONTINUOUS
 	};
 
-	Stepper(const StepperConfig &aStepperConfig, uint32_t aDisableDelay = 0);
+	Stepper() = delete;
+
+	Stepper(int aDirPin, int aStepPin, int anEnablePin, uint32_t aDisableDelay = 0);
 
 	/**
 	 * @brief Set the maximum speed for the stepper motor.
@@ -122,6 +111,8 @@ public:
 	*/
 	void Move(int steps, int speed);
 
+	void MoveRelative(int steps, DirectionState dir);
+
 	/**
 		* @brief Move the stepper motor continuously in a given direction at a given speed.
 		* This continually adds a movement to the movement queue at the same speed as the moves are removed from the movement queue and executed, while respecting acceleration and deceleration.
@@ -139,10 +130,18 @@ public:
 	 */
 	void Stop();
 
-	bool HasQueuedSteps();
+	/**
+	 * @brief Update the stepper motor.
+	 * This should be called periodically to update the stepper motor state in case
+	 * the initial move did not completely finish all of the steps.
+	 * @return true if the stepper motor is still moving, false if it has stopped.
+	 */
+	bool Update();
+
+	uint32_t GetRemainingSteps();
 
 private:
-	struct StepperConfig myStepperConfig;
+	StepperDevice* myStepperDevice;
 
 	uint32_t myDisableDelay;
 
@@ -155,20 +154,13 @@ private:
 	int mySpeed = 0;
 	int myAcceleration = 0;
 	int myDeceleration = 0;
-	struct k_fifo myMovementQueue;
 
-	struct StepCommand
-	{
-		int delay;
-		sys_snode_t node; // Required for Zephyr FIFO
-	};
-
-	struct k_timer myStepTimer;
-
-	void UpdateMovement();
-	void ExecuteMovement(const StepCommand &command);
-	void CalculateSpeedProfile(int steps, int targetSpeed, std::vector<int> &delays);
-	void StartStepTimer(int delay);
-	void StepTimerHandler();
-	static void TimerHandlerWrapper(struct k_timer *timer);
+	bool privChangeMotorDirection();
+	void privSetupPIO();
+	void privSetupGPIO();
+	inline uint32_t privConstruct32bits(int pulsecnt);
+	bool privUpdatePendingMovement();
+	float privCountAngle(float currentAngle, float counterVal, bool dir); //???
+	void privPutStepsBlocking(uint32_t steps);
+	void privMoveRelative(int steps, DirectionState dir); //(degree position, steppernumber, direction to move (0-fastest route,1-forward,2-backward))
 };

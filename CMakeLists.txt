@@ -6,6 +6,17 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+MACRO(HEADER_DIRECTORIES return_list)
+    FILE(GLOB_RECURSE new_list *.h*)
+    SET(dir_list "")
+    FOREACH(file_path ${new_list})
+        GET_FILENAME_COMPONENT(dir_path ${file_path} PATH)
+        SET(dir_list ${dir_list} ${dir_path})
+    ENDFOREACH()
+    LIST(REMOVE_DUPLICATES dir_list)
+    SET(${return_list} ${dir_list})
+ENDMACRO()
+
 # Initialise pico_sdk from installed location
 # (note this can come from environment, CMake cache etc)
 
@@ -49,6 +60,15 @@ FILE(GLOB_RECURSE app_sources
 # ./test/*.c*
 )
 
+list(LENGTH header_dir_list header_dir_list_count)
+message(STATUS "[INFO] Found ${header_dir_list_count} header directories.")
+
+# target_include_directories(
+#     my_program
+#     PUBLIC
+#     ${header_dir_list} # Recursive
+# )
+
 add_executable(SurfaceGrinderAtomaton ${app_sources} )
 
 pico_set_program_name(SurfaceGrinderAtomaton "SurfaceGrinderAtomaton")
@@ -76,6 +96,8 @@ target_link_libraries(SurfaceGrinderAtomaton
 # Add the standard include files to the build
 target_include_directories(SurfaceGrinderAtomaton PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
+  ${CMAKE_CURRENT_LIST_DIR}/src
+  ${header_dir_list}
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
 )
 
