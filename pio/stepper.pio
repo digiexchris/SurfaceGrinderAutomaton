@@ -1,37 +1,20 @@
-.program stepper_1
-;.side_set 1
-
-.define public STD 1
+.program stepper
+.side_set 1
 
 .wrap_target
-bitloop:
-    out x, 1       ; Side-set still takes place when instruction stalls
-    jmp !x do_zero ; Branch on the bit we shifted out
-do_one:
-    set pins 1     [STD + 3]
-    set pins 0     [STD]
-    jmp  bitloop   
-do_zero:
-    set pins 0   ; Or drive low, for a short pulse
+    pull block          side 0   ; Pull delay value from TX FIFO, side set to 0
+    mov x, osr          side 0   ; Move to x register, side set to 0
+    jmp !x, end         side 0   ; If x is zero, end program, side set to 0
+loop:
+    set pins, 1         side 1   ; Set step pin high
+delay_high:
+    jmp x--, delay_high side 0   ; Delay loop while step pin is high, side set to 0
+    set pins, 0         side 0   ; Set step pin low
+delay_low:
+    jmp x--, delay_low  side 0   ; Delay loop while step pin is low, side set to 0
+    pull block          side 0   ; Pull next delay value from FIFO, side set to 0
+    mov x, osr          side 0   ; Move to x register, side set to 0
+    jmp loop            side 0   ; Loop back to generate next step pulse
+end:
+    jmp end             side 0   ; Stay here indefinitely, side set to 0
 .wrap
-
-% c-sdk {
-#include "hardware/clocks.h"
-
-static inline void stepper_1_program_init(PIO pio, uint sm, uint offset, uint pin, float freq, bool step) {
-
-    pio_gpio_init(pio, pin);
-    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
-
-    pio_sm_config c = stepper_1_program_get_default_config(offset);
-    sm_config_set_set_pins(&c, pin, 1);
-    sm_config_set_out_shift(&c, false, true, step ? 32 : 32);
-    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
-
-    float div = clock_get_hz(clk_sys) / (freq);
-    sm_config_set_clkdiv(&c, div);
-
-    pio_sm_init(pio, sm, offset, &c);
-    pio_sm_set_enabled(pio, sm, true);
-}
-%}
