@@ -1,9 +1,8 @@
 #ifndef STEPPER_HPP
 #define STEPPER_HPP
 
-#include <vector>
-#include "pico/stdlib.h"
 #include "hardware/pio.h"
+#include <vector>
 
 class Stepper {
 public:
@@ -13,16 +12,15 @@ public:
     void Move(int totalSteps);
 
 private:
-    void GenerateDelays(std::vector<uint32_t> &delays);
-
     uint stepPin;
     uint dirPin;
-    bool direction;
-    float maxSpeed; // steps per second
-    float acceleration; // steps per second squared
-    int totalSteps;
+    float maxSpeed;
+    float acceleration;
     PIO pio;
     uint sm;
+    bool direction;
+
+    void GenerateDelays(int totalSteps, std::vector<uint32_t> &delays);
 };
 
 #endif // STEPPER_HPP

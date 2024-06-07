@@ -5,7 +5,6 @@
 #include <string.h>
 #include <iostream>
 #include "blink.pio.h"
-
 #include "drivers/Motor/Stepper.hpp"
 
 void InitBlinkPIO(PIO pio, uint sm, uint offset, uint pin, uint freq) {
@@ -48,7 +47,7 @@ int main() {
     // You need to call this function at least more often than the 100ms in the enable call to prevent a reboot
     watchdog_update();
 
-    Stepper stepper1(10, 9, 200.0f, 50.0f, pio, 1); // Step pin is 10, direction pin is 9
+    Stepper stepper1(10, 9, 500.0f, 250.0f, pio, 1); // Step pin is 10, direction pin is 9
 
     stepper1.InitPIO();
 
@@ -56,7 +55,7 @@ int main() {
         printf("Moving stepper left\n");
         watchdog_update();
         stepper1.SetDirection(true);
-        stepper1.Move(1000);
+        stepper1.Move(10000);
         sleep_ms(1000);
 
         printf("Moving stepper right\n");
