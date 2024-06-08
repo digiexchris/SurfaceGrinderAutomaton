@@ -11,6 +11,7 @@
 
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
+#include "portmacro.h"
 
 enum class AxisStop
 {
@@ -20,13 +21,31 @@ enum class AxisStop
 
 enum class AxisCommandName
 {
-	MOVE
+	MOVE,
+	WAIT
 };
 
 struct AxisCommand
 {
 	AxisCommandName cmd;
-	void *data;
+};
+
+struct AxisMoveCommand : public AxisCommand
+{
+	AxisMoveCommand(int32_t aDistance) : distance(aDistance)
+	{
+		cmd = AxisCommandName::MOVE;
+	}
+	int32_t distance;
+};
+
+struct AxisWaitCommand : AxisCommand
+{
+	AxisWaitCommand(int32_t aDurationMs) : durationMs(aDurationMs)
+	{
+		cmd = AxisCommandName::WAIT;
+	}
+	int32_t durationMs;
 };
 
 /**
@@ -46,13 +65,14 @@ enum class AxisState
 {
 	STOPPED,
 	MOVING,
+	WAITING,
 	LOCKED // locked by mutex
 };
 
 class Axis
 {
 public:
-	Axis(Stepper *aStepper, QueueHandle_t aCommandQueue);
+	Axis(Stepper *aStepper);
 	void SetPosition(int32_t aPosition);
 	int32_t GetPosition();
 	void SetMinStop(int32_t aMinStop);
@@ -60,8 +80,13 @@ public:
 	void SetMaxStop(int32_t aMaxStop);
 	int32_t GetMaxStop();
 	void Move(int32_t aDistance);
+	void Wait(int32_t aDurationMs);
 	AxisState GetState();
 	AxisDirection GetPreviosDirection();
+
+	bool IsMovementComplete(TickType_t aTimeout);
+
+	uint8_t GetQueueSize();
 
 	/**
 	* @brief Stop the axis from moving
@@ -81,7 +106,7 @@ public:
 private:
 	SemaphoreHandle_t myStateMutex;
 	SemaphoreHandle_t myDirectionMutex;
-	static void CommandThread(void *pvParameters);
+	SemaphoreHandle_t myQueueIsProcessing;
 	AxisDirection myPreviousDirection = AxisDirection::POS;
 	AxisDirection myDirection = AxisDirection::POS;
 	AxisState myState = AxisState::STOPPED;
@@ -90,4 +115,7 @@ private:
 	int32_t myMinStop = 0;
 	int32_t myMaxStop = 0;
 	QueueHandle_t myCommandQueue;
+
+	static void privProcessCommandQueue(void *pvParameters);
+	void privMove(int32_t aDistance);
 };

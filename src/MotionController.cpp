@@ -3,6 +3,7 @@
 #include "mpu_wrappers.h"
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
+#include "portmacro.h"
 #include <Enum.hpp>
 #include <cstdio>
 
@@ -10,7 +11,7 @@ MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Step
 {
 	self = this;
 	printf("MotionController\n");
-	myAxes[AxisLabel::X] = new Axis(anXStepper, myXCommandQueue);
+	myAxes[AxisLabel::X] = new Axis(anXStepper);
 	// myAxes[AxisLabel::Z] = new Axis(aZStepper, myZCommandQueue);
 
 	// for future expansion
@@ -42,16 +43,18 @@ void MotionController::MotionXThread(void *pvParameters)
 
 	axis->SetMaxStop(1000);
 	axis->SetMinStop(-1000);
+
 	while (true)
 	{
-		int32_t minStop = axis->GetMinStop();
-		int32_t maxStop = axis->GetMaxStop();
-		printf("minStop: %d, maxStop: %d\n", minStop, maxStop);
+
+		// printf("minStop: %d, maxStop: %d\n", minStop, maxStop);
 		if (mc->myXMotionState == MotionState::AUTOMATIC)
 		{
-			AxisState state = axis->GetState();
-			// todo: just making a basic cycler here for the first iteration
-			if (state == AxisState::STOPPED)
+			int32_t minStop = axis->GetMinStop();
+			int32_t maxStop = axis->GetMaxStop();
+			uint8_t queueCount = axis->GetQueueSize();
+			// todo: change this into blocking on a semaphore in Axis instead, no need to have it churn
+			if (axis->IsMovementComplete(100 * portTICK_PERIOD_MS)) // blocks until true, or false if timeout
 			{
 				if (axis->GetPreviosDirection() == AxisDirection::POS)
 				{
@@ -62,14 +65,12 @@ void MotionController::MotionXThread(void *pvParameters)
 				{
 					axis->Move(maxStop - axis->GetPosition());
 				}
-			}
-			else if (state == AxisState::LOCKED)
-			{
-				continue;
+
+				axis->Wait(1000);
 			}
 			else
 			{
-				vTaskDelay(1000 / portTICK_PERIOD_MS);
+				vTaskDelay(100 / portTICK_PERIOD_MS);
 			}
 		}
 	}

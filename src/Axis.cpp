@@ -7,14 +7,23 @@
 #include <cstdio>
 #include <semphr.h>
 
-Axis::Axis(Stepper *aStepper, QueueHandle_t aCommandQueue)
+Axis::Axis(Stepper *aStepper)
 {
 	myStepper = aStepper;
-	myCommandQueue = aCommandQueue;
+
+	myCommandQueue = xQueueCreate(10, sizeof(AxisCommand *));
 	myStateMutex = xSemaphoreCreateMutex();
+	myQueueIsProcessing = xSemaphoreCreateBinary();
 	myDirectionMutex = xSemaphoreCreateMutex();
 	configASSERT(myStateMutex);
 	configASSERT(myDirectionMutex);
+	configASSERT(myQueueIsProcessing);
+
+	BaseType_t status = xTaskCreate(privProcessCommandQueue, "AxisCommandThread", 2048, this, 4, NULL);
+
+	configASSERT(status == pdPASS);
+
+	xSemaphoreGive(myQueueIsProcessing); // let the first consumer add something to the empty queue
 }
 
 int32_t Axis::GetPosition()
@@ -75,6 +84,82 @@ AxisDirection Axis::GetPreviosDirection()
 
 void Axis::Move(int32_t aDistance)
 {
+	AxisMoveCommand *cmd = new AxisMoveCommand(aDistance);
+	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
+	printf("Axis: Move %d\n queued", aDistance);
+}
+
+uint8_t Axis::GetQueueSize()
+{
+	return uxQueueMessagesWaiting(myCommandQueue);
+}
+
+bool Axis::IsMovementComplete(TickType_t aTimeout)
+{
+	if (uxQueueMessagesWaiting(myCommandQueue) == 0)
+	{
+		return true;
+	}
+
+	BaseType_t status = xQueueSemaphoreTake(myQueueIsProcessing, aTimeout);
+
+	if (status == pdTRUE)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void Axis::privProcessCommandQueue(void *pvParameters)
+{
+	Axis *axis = static_cast<Axis *>(pvParameters);
+	while (true)
+	{
+		AxisCommand *command;
+		if (xQueueReceive(axis->myCommandQueue, &command, portMAX_DELAY) == pdTRUE)
+		{
+			switch (command->cmd)
+			{
+			case AxisCommandName::MOVE:
+			{
+				AxisMoveCommand *moveCommand = static_cast<AxisMoveCommand *>(command);
+				axis->privMove(moveCommand->distance);
+				break;
+			}
+			case AxisCommandName::WAIT:
+			{
+				xSemaphoreTake(axis->myStateMutex, portMAX_DELAY);
+				axis->myState = AxisState::WAITING;
+				xSemaphoreGive(axis->myStateMutex);
+				AxisWaitCommand *waitCommand = static_cast<AxisWaitCommand *>(command);
+				vTaskDelay(waitCommand->durationMs / portTICK_PERIOD_MS);
+
+				xSemaphoreTake(axis->myStateMutex, portMAX_DELAY);
+				axis->myState = AxisState::STOPPED;
+				xSemaphoreGive(axis->myStateMutex);
+				break;
+			}
+			default:
+				printf("Unknown command");
+				configASSERT(false);
+			}
+
+			delete command; // Free the command after processing
+		}
+
+		// queue is empty, inform whoever cares
+		if (uxQueueMessagesWaiting(axis->myCommandQueue) == 0)
+		{
+			xSemaphoreGive(axis->myQueueIsProcessing);
+		}
+	}
+}
+
+void Axis::privMove(int32_t aDistance)
+{
 	bool directionChanged = false;
 	xSemaphoreTake(myStateMutex, portMAX_DELAY);
 	myState = AxisState::MOVING;
@@ -129,23 +214,9 @@ void Axis::Move(int32_t aDistance)
 	xSemaphoreGive(myStateMutex);
 }
 
-void Axis::CommandThread(void *pvParameters)
+void Axis::Wait(int32_t aDurationMs)
 {
-	Axis *axis = static_cast<Axis *>(pvParameters);
-	while (true)
-	{
-
-		AxisCommand command;
-		if (xQueueReceive(axis->myCommandQueue, &command, portMAX_DELAY) == pdTRUE)
-		{
-			switch (command.cmd)
-			{
-			case AxisCommandName::MOVE:
-				axis->Move(*static_cast<int32_t *>(command.data));
-				break;
-			default:
-				printf("Unknown command");
-			}
-		}
-	}
+	AxisWaitCommand *cmd = new AxisWaitCommand(aDurationMs);
+	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
+	printf("Axis: Wait %d\n queued", aDurationMs);
 }
