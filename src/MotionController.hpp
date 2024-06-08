@@ -31,6 +31,7 @@ public:
 	void ManualMove(AxisLabel anAxis, int32_t aDistance);
 
 private:
+	MotionController *self;
 	std::unordered_map<AxisLabel, Axis *> myAxes;
 
 	MotionState myZMotionState = MotionState::STOPPED;

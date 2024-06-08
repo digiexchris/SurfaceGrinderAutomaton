@@ -60,7 +60,11 @@ int main()
 
 	MotionController *mc = new MotionController(&stepper1, nullptr, nullptr);
 
+	printf("MotionController created\n");
+
 	vTaskStartScheduler();
+
+	printf("Scheduler started\n");
 
 	while (true)
 	{

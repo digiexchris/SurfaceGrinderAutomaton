@@ -2,15 +2,19 @@
 #include "config.hpp"
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
+#include "portmacro.h"
 #include <cmath>
+#include <cstdio>
+#include <semphr.h>
 
 Axis::Axis(Stepper *aStepper, QueueHandle_t aCommandQueue)
 {
 	myStepper = aStepper;
 	myCommandQueue = aCommandQueue;
-	mutex_init(myStateMutex);
-	the problem is here
-		mutex_init(myDirectionMutex);
+	myStateMutex = xSemaphoreCreateMutex();
+	myDirectionMutex = xSemaphoreCreateMutex();
+	configASSERT(myStateMutex);
+	configASSERT(myDirectionMutex);
 }
 
 int32_t Axis::GetPosition()
@@ -45,33 +49,56 @@ void Axis::SetPosition(int32_t aPosition)
 
 AxisState Axis::GetState()
 {
-	uint32_t timeout = 10;
-	if (!mutex_try_enter(myStateMutex, &timeout))
+	uint32_t timeout = 10 * portTICK_PERIOD_MS;
+	AxisState state;
+	if (xSemaphoreTake(myStateMutex, timeout) != pdPASS)
 	{
 		return AxisState::LOCKED;
 	}
+	state = myState;
+	xSemaphoreGive(myStateMutex);
 	return myState;
 }
 
 AxisDirection Axis::GetPreviosDirection()
 {
-	uint32_t timeout = 10;
-	if (!mutex_try_enter(myDirectionMutex, &timeout))
+	uint32_t timeout = 10 * portTICK_PERIOD_MS;
+	AxisDirection direction;
+	if (xSemaphoreTake(myDirectionMutex, timeout) != pdPASS)
 	{
 		return AxisDirection::LOCKED;
 	}
-	return myPreviousDirection;
+	direction = myPreviousDirection;
+	xSemaphoreGive(myDirectionMutex);
+	return direction;
 }
 
 void Axis::Move(int32_t aDistance)
 {
-	mutex_enter_blocking(myStateMutex);
+	bool directionChanged = false;
+	xSemaphoreTake(myStateMutex, portMAX_DELAY);
 	myState = AxisState::MOVING;
-	mutex_exit(myStateMutex);
+	xSemaphoreGive(myStateMutex);
+
+	if (aDistance == 0)
+	{
+		return;
+	}
+
+	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
+	if (aDistance > 0)
+	{
+		myDirection = AxisDirection::POS;
+	}
+	else
+	{
+		myDirection = AxisDirection::NEG;
+	}
 
 	if (myPreviousDirection != myDirection)
 	{
-		mutex_enter_blocking(myDirectionMutex);
+
+		directionChanged = true;
 		if (myDirection == AxisDirection::POS)
 		{
 
@@ -84,18 +111,22 @@ void Axis::Move(int32_t aDistance)
 			myPreviousDirection = AxisDirection::NEG;
 			myStepper->SetDirection(false);
 		}
-		mutex_exit(myDirectionMutex);
+	}
+	xSemaphoreGive(myDirectionMutex);
+
+	// wait the amount of time after toggling the pin required by the driver before a step occurs
+	if (directionChanged)
+	{
 		// TODO this seems high, maybe it's 5uS? no wiat make it configurable
 		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS / portTICK_PERIOD_MS);
 	}
-
 	myStepper->Move(std::abs(aDistance));
 
 	myPosition += aDistance;
 
-	mutex_enter_blocking(myStateMutex);
+	xSemaphoreTake(myStateMutex, portMAX_DELAY);
 	myState = AxisState::STOPPED;
-	mutex_exit(myStateMutex);
+	xSemaphoreGive(myStateMutex);
 }
 
 void Axis::CommandThread(void *pvParameters)
@@ -113,7 +144,7 @@ void Axis::CommandThread(void *pvParameters)
 				axis->Move(*static_cast<int32_t *>(command.data));
 				break;
 			default:
-				assert("Unknown command");
+				printf("Unknown command");
 			}
 		}
 	}

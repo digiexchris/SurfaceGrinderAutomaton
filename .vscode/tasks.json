@@ -18,9 +18,14 @@
             }
         },
         {
-            "label": "Flash",
+            "label": "Flash Pico",
             "type": "process",
             "command": "/usr/bin/openocd",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
             "args": [
                 "-f",
                 "interface/cmsis-dap.cfg",

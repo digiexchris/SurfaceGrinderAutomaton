@@ -3,8 +3,11 @@
 #include "Enum.hpp"
 #include "drivers/Motor/Stepper.hpp"
 #include <FreeRTOS.h>
-#include <mutex>
 #include <queue.h>
+#include <semphr.h>
+#include <task.h>
+
+#include <config.hpp>
 
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
@@ -76,8 +79,8 @@ public:
 	void EStop();
 
 private:
-	mutex_t *myStateMutex;
-	mutex_t *myDirectionMutex;
+	SemaphoreHandle_t myStateMutex;
+	SemaphoreHandle_t myDirectionMutex;
 	static void CommandThread(void *pvParameters);
 	AxisDirection myPreviousDirection = AxisDirection::POS;
 	AxisDirection myDirection = AxisDirection::POS;

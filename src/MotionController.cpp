@@ -8,6 +8,7 @@
 
 MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Stepper *aYStepper)
 {
+	self = this;
 	printf("MotionController\n");
 	myAxes[AxisLabel::X] = new Axis(anXStepper, myXCommandQueue);
 	// myAxes[AxisLabel::Z] = new Axis(aZStepper, myZCommandQueue);
@@ -19,7 +20,12 @@ MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Step
 		// myAxes[AxisLabel::Y] = new Axis(aYStepper);
 	}
 
-	xTaskCreate(MotionXThread, "MotionXThread", 2048, myAxes[AxisLabel::X], 4, NULL);
+	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 2048, self, 4, NULL);
+
+	if (status != pdPASS)
+	{
+		printf("Failed to create MotionXThread\n");
+	}
 
 	printf("MotionController done\n");
 }
@@ -49,7 +55,8 @@ void MotionController::MotionXThread(void *pvParameters)
 			{
 				if (axis->GetPreviosDirection() == AxisDirection::POS)
 				{
-					axis->Move(minStop - axis->GetPosition());
+					int32_t distance = minStop - axis->GetPosition();
+					axis->Move(distance);
 				}
 				else
 				{

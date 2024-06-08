@@ -47,5 +47,9 @@
 			"raspberry-pi.raspberry-pi-pico",
 			"llvm-vs-code-extensions.vscode-clangd"
 		]
+	},
+	"settings": {
+		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+		"C_Cpp.default.intelliSenseMode": "linux-gcc-arm"
 	}
 }
