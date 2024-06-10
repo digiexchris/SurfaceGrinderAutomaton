@@ -12,11 +12,24 @@
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
 #include "portmacro.h"
+/**
+ * @brief Enum class for the direction of the Z travel
+ * POS = move the Z axis in the positive direction
+ * NEG = move the Z axis in the negative direction
+ * ignored for MANUAL
+ */
+enum class AxisDirection
+{
+	POS,
+	NEG,
+	LOCKED // locked by mutex
+};
 
 enum class AxisStop
 {
-	MIN,
-	MAX
+	MIN = -1,
+	MAX = 1,
+	NEITHER = 0
 };
 
 enum class AxisCommandName
@@ -32,11 +45,13 @@ struct AxisCommand
 
 struct AxisMoveCommand : public AxisCommand
 {
-	AxisMoveCommand(int32_t aDistance) : distance(aDistance)
+	AxisMoveCommand(int32_t aDistance, AxisDirection aDirection, uint16_t aSpeed) : distance(aDistance), direction(aDirection), speed(aSpeed)
 	{
 		cmd = AxisCommandName::MOVE;
 	}
 	int32_t distance;
+	AxisDirection direction;
+	uint16_t speed;
 };
 
 struct AxisWaitCommand : AxisCommand
@@ -46,19 +61,6 @@ struct AxisWaitCommand : AxisCommand
 		cmd = AxisCommandName::WAIT;
 	}
 	int32_t durationMs;
-};
-
-/**
- * @brief Enum class for the direction of the Z travel
- * POS = move the Z axis in the positive direction
- * NEG = move the Z axis in the negative direction
- * ignored for MANUAL
- */
-enum class AxisDirection
-{
-	POS,
-	NEG,
-	LOCKED // locked by mutex
 };
 
 enum class AxisState
@@ -72,19 +74,20 @@ enum class AxisState
 class Axis
 {
 public:
-	Axis(Stepper *aStepper);
+	Axis(Stepper *aStepper, AxisLabel anAxisLabel);
 	void SetPosition(int32_t aPosition);
 	int32_t GetPosition();
 	void SetMinStop(int32_t aMinStop);
 	int32_t GetMinStop();
 	void SetMaxStop(int32_t aMaxStop);
 	int32_t GetMaxStop();
-	void Move(int32_t aDistance);
+	void Move(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed);
 	void Wait(int32_t aDurationMs);
 	AxisState GetState();
-	AxisDirection GetPreviosDirection();
+	AxisStop IsAtStop();
+	AxisDirection GetPreviousDirection();
 
-	bool IsMovementComplete(TickType_t aTimeout);
+	bool IsMovementComplete(TickType_t aTimeout = portMAX_DELAY);
 
 	uint8_t GetQueueSize();
 
@@ -115,7 +118,8 @@ private:
 	int32_t myMinStop = 0;
 	int32_t myMaxStop = 0;
 	QueueHandle_t myCommandQueue;
+	AxisLabel myAxisLabel;
 
 	static void privProcessCommandQueue(void *pvParameters);
-	void privMove(int32_t aDistance);
+	void privMove(uint32_t aDistance, AxisDirection aDirection);
 };

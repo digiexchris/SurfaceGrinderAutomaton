@@ -7,12 +7,19 @@
 
 #define STEPPER1_ENABLE_POLARITY 0
 
+#define XAXIS_STEPS_PER_MM 400
+#define XAXIS_MAX_SPEED 1000.0f	  // steps per second
+#define XAXIS_ACCELERATION 250.0f // steps per second squared
+#define XAXIS_STEP_PIN 10
+#define XAXIS_DIR_PIN 9
+#define XAXIS_ENABLE_PIN 8
+
 #define ZAXIS_STEPS_PER_MM 400
-#define ZAXIS_MAX_SPEED 1000
-#define ZAXIS_ACCELERATION 1000
-#define ZAXIS_STEP_PIN 10
-#define ZAXIS_DIR_PIN 9
-#define ZAXIS_ENABLE_PIN 8
+#define ZAXIS_MAX_SPEED 1000.0f				// steps per second
+#define ZAXIS_ACCELERATION 250.0f			// steps per second squared
+#define ZAXIS_STEP_PIN PICO_DEFAULT_LED_PIN // 7
+#define ZAXIS_DIR_PIN 6
+#define ZAXIS_ENABLE_PIN 5
 
 #define TFT_MISO 16
 #define TFT_MOSI 13

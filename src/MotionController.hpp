@@ -6,19 +6,13 @@
 
 #include <FreeRTOS.h>
 #include <queue.h>
+#include <semphr.h>
 #include <task.h>
-
-enum class AxisMotionContolState
-{
-	AUTOMATIC,
-	MANUAL,
-	STOPPED
-};
 
 class MotionController
 {
 public:
-	MotionController(Stepper *anXStepper, Stepper *aYStepper, Stepper *aZStepper = nullptr);
+	MotionController(Stepper *anXStepper, Stepper *aZStepper, Stepper *aYStepper = nullptr);
 	void SetStop(AxisLabel anAxis, AxisStop anAxisStop, int32_t aPosition);
 	void SetAdvanceZType(AdvanceZType anAdvanceType);
 	void SetRepeatZType(RepeatZType aRepeatType);
@@ -34,11 +28,27 @@ private:
 	MotionController *self;
 	std::unordered_map<AxisLabel, Axis *> myAxes;
 
-	MotionState myZMotionState = MotionState::STOPPED;
+	SemaphoreHandle_t myZTriggerSemaphore;
+
+	uint32_t myZAdvanceRate = 100;
+
+	MotionState myZMotionState = MotionState::AUTOMATIC;
 	MotionState myXMotionState = MotionState::AUTOMATIC;
 
+	AdvanceZType myAdvanceZType = AdvanceZType::AT_BOTH_ENDS;
+	// AdvanceZType myAdvanceZType = AdvanceZType::CONSTANT;
+	RepeatZTrigger myRepeatZTrigger = RepeatZTrigger::AUTOMATIC;
+	RepeatZType myRepeatZType = RepeatZType::REVERSE;
+
+	uint16_t myZConstantSpeed = 100;
+
+	AxisStop myXIsAtStop = AxisStop::NEITHER;
+
 	static void MotionXThread(void *pvParameters);
+	static void MotionZThread(void *pvParameters);
 	void HandleXEndStop(void *pvParameters);
+	void privZMoveIncrement();
+	void privZMoveConstant();
 	QueueHandle_t myXCommandQueue;
 	QueueHandle_t myZCommandQueue;
 };

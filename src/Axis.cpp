@@ -1,4 +1,5 @@
 #include "Axis.hpp"
+#include "Enum.hpp"
 #include "config.hpp"
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
@@ -7,9 +8,10 @@
 #include <cstdio>
 #include <semphr.h>
 
-Axis::Axis(Stepper *aStepper)
+Axis::Axis(Stepper *aStepper, AxisLabel anAxisLabel)
 {
 	myStepper = aStepper;
+	myAxisLabel = anAxisLabel;
 
 	myCommandQueue = xQueueCreate(10, sizeof(AxisCommand *));
 	myStateMutex = xSemaphoreCreateMutex();
@@ -69,7 +71,23 @@ AxisState Axis::GetState()
 	return myState;
 }
 
-AxisDirection Axis::GetPreviosDirection()
+AxisStop Axis::IsAtStop()
+{
+	if (myPosition <= myMinStop)
+	{
+		return AxisStop::MIN;
+	}
+	else if (myPosition >= myMaxStop)
+	{
+		return AxisStop::MAX;
+	}
+	else
+	{
+		return AxisStop::NEITHER;
+	}
+}
+
+AxisDirection Axis::GetPreviousDirection()
 {
 	uint32_t timeout = 10 * portTICK_PERIOD_MS;
 	AxisDirection direction;
@@ -82,11 +100,11 @@ AxisDirection Axis::GetPreviosDirection()
 	return direction;
 }
 
-void Axis::Move(int32_t aDistance)
+void Axis::Move(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed)
 {
-	AxisMoveCommand *cmd = new AxisMoveCommand(aDistance);
+	AxisMoveCommand *cmd = new AxisMoveCommand(aDistance, aDirection, aSpeed);
 	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
-	printf("Axis: Move %d\n queued", aDistance);
+	printf("Axis %d: Move %d queued\n", myAxisLabel, aDistance);
 }
 
 uint8_t Axis::GetQueueSize()
@@ -126,7 +144,7 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 			case AxisCommandName::MOVE:
 			{
 				AxisMoveCommand *moveCommand = static_cast<AxisMoveCommand *>(command);
-				axis->privMove(moveCommand->distance);
+				axis->privMove(moveCommand->distance, moveCommand->direction);
 				break;
 			}
 			case AxisCommandName::WAIT:
@@ -158,7 +176,7 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 	}
 }
 
-void Axis::privMove(int32_t aDistance)
+void Axis::privMove(uint32_t aDistance, AxisDirection aDirection)
 {
 	bool directionChanged = false;
 	xSemaphoreTake(myStateMutex, portMAX_DELAY);
@@ -171,14 +189,8 @@ void Axis::privMove(int32_t aDistance)
 	}
 
 	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
-	if (aDistance > 0)
-	{
-		myDirection = AxisDirection::POS;
-	}
-	else
-	{
-		myDirection = AxisDirection::NEG;
-	}
+
+	myDirection = aDirection;
 
 	if (myPreviousDirection != myDirection)
 	{
@@ -205,7 +217,7 @@ void Axis::privMove(int32_t aDistance)
 		// TODO this seems high, maybe it's 5uS? no wiat make it configurable
 		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS / portTICK_PERIOD_MS);
 	}
-	myStepper->Move(std::abs(aDistance));
+	myStepper->Move(aDistance);
 
 	myPosition += aDistance;
 
@@ -218,5 +230,5 @@ void Axis::Wait(int32_t aDurationMs)
 {
 	AxisWaitCommand *cmd = new AxisWaitCommand(aDurationMs);
 	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
-	printf("Axis: Wait %d\n queued", aDurationMs);
+	printf("Axis %d: Wait %d queued\n", myAxisLabel, aDurationMs);
 }
