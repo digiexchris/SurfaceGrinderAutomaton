@@ -121,5 +121,5 @@ private:
 	AxisLabel myAxisLabel;
 
 	static void privProcessCommandQueue(void *pvParameters);
-	void privMove(uint32_t aDistance, AxisDirection aDirection);
+	void privMove(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed);
 };

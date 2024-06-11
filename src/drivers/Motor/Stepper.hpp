@@ -9,7 +9,7 @@ public:
     Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm);
     void InitPIO();
     void SetDirection(bool direction);
-    void Move(int totalSteps);
+    void Move(int totalSteps, uint16_t aSpeed);
 
 private:
     uint stepPin;

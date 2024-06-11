@@ -33,7 +33,7 @@ void Stepper::SetDirection(bool direction) {
     printf("Direction set to %d\n", direction);
 }
 
-void Stepper::Move(int totalSteps) {
+void Stepper::Move(int totalSteps, uint16_t aSpeed) {
     // Ensure the FIFO is empty before sending new commands
     while (!pio_sm_is_tx_fifo_empty(pio, sm)) {
         tight_loop_contents();
@@ -41,7 +41,7 @@ void Stepper::Move(int totalSteps) {
 
     float currentSpeed = 0;
     float stepDelay = 0;
-    float targetSpeed = maxSpeed;
+    float targetSpeed = aSpeed;
     
     // Calculate the maximum steps for acceleration and deceleration
     int maxStepsToAccelerate = (targetSpeed * targetSpeed) / (2 * acceleration);
@@ -84,5 +84,5 @@ void Stepper::Move(int totalSteps) {
         pio_sm_put_blocking(pio, sm, delay);
     }
 
-    printf("Move called with totalSteps: %d\n", totalSteps);
+    printf("Move done with totalSteps: %d\n", totalSteps);
 }

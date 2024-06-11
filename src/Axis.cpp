@@ -144,7 +144,7 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 			case AxisCommandName::MOVE:
 			{
 				AxisMoveCommand *moveCommand = static_cast<AxisMoveCommand *>(command);
-				axis->privMove(moveCommand->distance, moveCommand->direction);
+				axis->privMove(moveCommand->distance, moveCommand->direction, moveCommand->speed);
 				break;
 			}
 			case AxisCommandName::WAIT:
@@ -176,7 +176,7 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 	}
 }
 
-void Axis::privMove(uint32_t aDistance, AxisDirection aDirection)
+void Axis::privMove(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed)
 {
 	bool directionChanged = false;
 	xSemaphoreTake(myStateMutex, portMAX_DELAY);
@@ -214,12 +214,18 @@ void Axis::privMove(uint32_t aDistance, AxisDirection aDirection)
 	// wait the amount of time after toggling the pin required by the driver before a step occurs
 	if (directionChanged)
 	{
-		// TODO this seems high, maybe it's 5uS? no wiat make it configurable
-		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS / portTICK_PERIOD_MS);
+		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
 	}
-	myStepper->Move(aDistance);
+	myStepper->Move(aDistance, aSpeed);
 
-	myPosition += aDistance;
+	if(aDirection == AxisDirection::POS)
+	{
+		myPosition += aDistance;
+	}	
+	else
+	{
+		myPosition -= aDistance;
+	}
 
 	xSemaphoreTake(myStateMutex, portMAX_DELAY);
 	myState = AxisState::STOPPED;

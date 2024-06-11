@@ -38,6 +38,13 @@ MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Step
 		printf("Failed to create MotionXThread\n");
 	}
 
+	status = xTaskCreate(MotionZThread, "MotionZThread", 2048, self, 4, NULL);
+
+	if (status != pdPASS)
+	{
+		printf("Failed to create MotionZThread\n");
+	}
+
 	printf("MotionController done\n");
 }
 
@@ -66,21 +73,18 @@ void MotionController::StartZAdvance()
 				if (xStop == AxisStop::MIN || xStop == AxisStop::MAX)
 				{
 					xSemaphoreGive(myZTriggerSemaphore);
-					z->IsMovementComplete();
 				}
 				break;
 			case AdvanceZType::AT_LEFT:
 				if (xStop == AxisStop::MIN)
 				{
 					xSemaphoreGive(myZTriggerSemaphore);
-					z->IsMovementComplete();
 				}
 				break;
 			case AdvanceZType::AT_RIGHT:
 				if (xStop == AxisStop::MAX)
 				{
 					xSemaphoreGive(myZTriggerSemaphore);
-					z->IsMovementComplete();
 				}
 				break;
 			case AdvanceZType::CONSTANT:
@@ -103,11 +107,18 @@ void MotionController::MotionXThread(void *pvParameters)
 		{
 			int32_t minStop = axis->GetMinStop();
 			int32_t maxStop = axis->GetMaxStop();
-			if (axis->IsMovementComplete()) // blocks until true, or false if timeout
+			if (axis->IsMovementComplete()) // blocks until true, or false if timeout is set
 			{
 
 				if (mc->myRepeatZTrigger == RepeatZTrigger::MANUAL)
 				{
+					// wait for the user to trigger the repeat
+					// todo this doesn't work right, it needs to
+					// trigger the moving back to the start of the pass,
+					// rather than be involved in each loop iteration
+					// ie. it needs to check of the Z pass is complete, and if so, then check for
+					// the semaphore, and trigger the z to move to the
+					// start and reset the starting conditions so it can do it again
 					xSemaphoreTake(mc->myZTriggerSemaphore, portMAX_DELAY);
 				}
 
@@ -128,11 +139,13 @@ void MotionController::MotionXThread(void *pvParameters)
 				if ((bool)axis->IsAtStop())
 				{
 					mc->StartZAdvance();
+					mc->myAxes[AxisLabel::Z]->IsMovementComplete();
 				}
 
 				AxisDirection direction = axis->GetPreviousDirection();
 
-				/* Traverse to the opposite stop*/
+				/* Traverse to the opposite stop
+				side effect: if you stop it mid-pass it will reverse immediately. fine for now, fix it later*/
 				if (direction == AxisDirection::POS)
 				{
 					int32_t distance = minStop - axis->GetPosition();

@@ -50,6 +50,12 @@
 	},
 	"settings": {
 		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
-		"C_Cpp.default.intelliSenseMode": "linux-gcc-arm"
+		"C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
+		"files.associations": {
+			"optional": "cpp",
+			"format": "cpp",
+			"future": "cpp",
+			"variant": "cpp"
+		}
 	}
 }
