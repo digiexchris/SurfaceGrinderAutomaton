@@ -19,8 +19,8 @@ MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Step
 
 	myAxes[AxisLabel::X]->SetMaxStop(1000);
 	myAxes[AxisLabel::X]->SetMinStop(-1000);
-	myAxes[AxisLabel::Z]->SetMaxStop(100);
-	myAxes[AxisLabel::Z]->SetMinStop(-100);
+	myAxes[AxisLabel::Z]->SetMaxStop(250);
+	myAxes[AxisLabel::Z]->SetMinStop(-250);
 
 	myZTriggerSemaphore = xSemaphoreCreateBinary();
 
@@ -161,6 +161,11 @@ void MotionController::MotionXThread(void *pvParameters)
 				we're pausing to wait for the Z traverse, this could probably
 				be very short or even zero*/
 				axis->Wait(50);
+
+				if (PRINTF_AXIS_POSITIONS)
+				{
+					printf("X: %d\n", axis->GetPosition());
+				}
 			}
 			else
 			{
@@ -261,6 +266,11 @@ void MotionController::privZMoveIncrement()
 	}
 
 	axis->IsMovementComplete();
+
+	if (PRINTF_AXIS_POSITIONS)
+	{
+		printf("Z: %d\n", axis->GetPosition());
+	}
 }
 
 void MotionController::privZMoveConstant()
@@ -305,5 +315,9 @@ void MotionController::privZMoveConstant()
 
 		z->Move(distance, direction, myZConstantSpeed);
 		z->IsMovementComplete();
+		if (PRINTF_AXIS_POSITIONS)
+		{
+			printf("Z: %d", z->GetPosition());
+		}
 	}
 }

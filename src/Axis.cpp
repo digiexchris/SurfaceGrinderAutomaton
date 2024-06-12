@@ -104,7 +104,11 @@ void Axis::Move(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed)
 {
 	AxisMoveCommand *cmd = new AxisMoveCommand(aDistance, aDirection, aSpeed);
 	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
-	printf("Axis %d: Move %d queued\n", myAxisLabel, aDistance);
+
+	if (PRINTF_AXIS_DEBUG)
+	{
+		printf("Axis %d: Move %d queued\n", myAxisLabel, aDistance);
+	}
 }
 
 uint8_t Axis::GetQueueSize()
@@ -216,12 +220,23 @@ void Axis::privMove(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpee
 	{
 		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
 	}
+
+	int targetPosition = myPosition + aDistance;
+	if (aDirection == AxisDirection::POS && targetPosition > myMaxStop)
+	{
+		aDistance = myMaxStop - myPosition;
+	}
+	else if (aDirection == AxisDirection::NEG && targetPosition < myMinStop)
+	{
+		aDistance = myMinStop - myPosition;
+	}
+
 	myStepper->Move(aDistance, aSpeed);
 
-	if(aDirection == AxisDirection::POS)
+	if (aDirection == AxisDirection::POS)
 	{
 		myPosition += aDistance;
-	}	
+	}
 	else
 	{
 		myPosition -= aDistance;
@@ -236,5 +251,8 @@ void Axis::Wait(int32_t aDurationMs)
 {
 	AxisWaitCommand *cmd = new AxisWaitCommand(aDurationMs);
 	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
-	printf("Axis %d: Wait %d queued\n", myAxisLabel, aDurationMs);
+	if (PRINTF_AXIS_DEBUG)
+	{
+		printf("Axis %d: Wait %d queued\n", myAxisLabel, aDurationMs);
+	}
 }

@@ -56,6 +56,9 @@
 			"format": "cpp",
 			"future": "cpp",
 			"variant": "cpp"
+		},
+		"[cpp]": {
+			"editor.defaultFormatter": "seaube.clangformat"
 		}
 	}
 }
