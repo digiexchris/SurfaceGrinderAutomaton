@@ -21,7 +21,7 @@ Axis::Axis(Stepper *aStepper, AxisLabel anAxisLabel)
 	configASSERT(myDirectionMutex);
 	configASSERT(myQueueIsProcessing);
 
-	BaseType_t status = xTaskCreate(privProcessCommandQueue, "AxisCommandThread", 2048, this, 4, NULL);
+	BaseType_t status = xTaskCreate(privProcessCommandQueue, "AxisCommandThread", 2048, this, 1, NULL);
 
 	configASSERT(status == pdPASS);
 

@@ -32,8 +32,8 @@ private:
 
 	uint32_t myZAdvanceRate = 100;
 
-	MotionState myZMotionState = MotionState::AUTOMATIC;
-	MotionState myXMotionState = MotionState::AUTOMATIC;
+	MotionState myZMotionState = MotionState::STOPPED;
+	MotionState myXMotionState = MotionState::STOPPED;
 
 	AdvanceZType myAdvanceZType = AdvanceZType::AT_BOTH_ENDS;
 	// AdvanceZType myAdvanceZType = AdvanceZType::CONSTANT;

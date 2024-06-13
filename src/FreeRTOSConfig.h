@@ -1,5 +1,5 @@
 /*
- * FreeRTOS V202212.00
+ * FreeRTOS V202107.00
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -19,9 +19,10 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * https://www.FreeRTOS.org
- * https://github.com/FreeRTOS
+ * http://www.FreeRTOS.org
+ * http://aws.amazon.com/freertos
  *
+ * 1 tab == 4 spaces!
  */
 
 #ifndef FREERTOS_CONFIG_H
@@ -43,16 +44,13 @@
 #define configUSE_PREEMPTION 1
 #define configUSE_TICKLESS_IDLE 0
 #define configUSE_IDLE_HOOK 0
-#define configUSE_TICK_HOOK 0
-#define configCPU_CLOCK_HZ 133000000
-#define configTICK_RATE_HZ ((TickType_t)1000)
+#define configUSE_TICK_HOOK 1
+#define configTICK_RATE_HZ ((TickType_t)20000)
 #define configMAX_PRIORITIES 32
 #define configMINIMAL_STACK_SIZE (configSTACK_DEPTH_TYPE)256
 #define configUSE_16_BIT_TICKS 0
 
 #define configIDLE_SHOULD_YIELD 1
-
-#define configENABLE_MPU 0
 
 /* Synchronization Related */
 #define configUSE_MUTEXES 1
@@ -73,7 +71,7 @@
 /* Memory allocation related definitions. */
 #define configSUPPORT_STATIC_ALLOCATION 0
 #define configSUPPORT_DYNAMIC_ALLOCATION 1
-#define configTOTAL_HEAP_SIZE (128 * 1024)
+#define configTOTAL_HEAP_SIZE (64 * 1024)
 #define configAPPLICATION_ALLOCATED_HEAP 0
 
 /* Hook function related definitions. */
@@ -85,6 +83,10 @@
 #define configGENERATE_RUN_TIME_STATS 0
 #define configUSE_TRACE_FACILITY 1
 #define configUSE_STATS_FORMATTING_FUNCTIONS 0
+
+/* Co-routine related definitions. */
+#define configUSE_CO_ROUTINES 0
+#define configMAX_CO_ROUTINE_PRIORITIES 1
 
 /* Software timer related definitions. */
 #define configUSE_TIMERS 1
@@ -100,9 +102,9 @@
 */
 
 /* SMP port only */
-#define configNUMBER_OF_CORES 2
-#define configTICK_CORE 0
-#define configRUN_MULTIPLE_PRIORITIES 0
+#define configNUM_CORES 2
+#define configTICK_CORE 1
+#define configRUN_MULTIPLE_PRIORITIES 1
 
 /* RP2040 specific */
 #define configSUPPORT_PICO_SYNC_INTEROP 1
@@ -132,9 +134,5 @@ to exclude the API function. */
 #define INCLUDE_xQueueGetMutexHolder 1
 
 /* A header file that defines trace macro can be included here. */
-
-/* SMP Related config. */
-#define configUSE_PASSIVE_IDLE_HOOK 0
-#define portSUPPORT_SMP 1
 
 #endif /* FREERTOS_CONFIG_H */

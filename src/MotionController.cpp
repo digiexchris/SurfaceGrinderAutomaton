@@ -31,18 +31,20 @@ MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Step
 		// myAxes[AxisLabel::Y] = new Axis(aYStepper);
 	}
 
-	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 2048, self, 4, NULL);
+	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 1 * 2048, this, 1, NULL);
 
 	if (status != pdPASS)
 	{
 		printf("Failed to create MotionXThread\n");
+		assert(false);
 	}
 
-	status = xTaskCreate(MotionZThread, "MotionZThread", 2048, self, 4, NULL);
+	status = xTaskCreate(MotionZThread, "MotionZThread", 1 * 2048, this, 1, NULL);
 
 	if (status != pdPASS)
 	{
 		printf("Failed to create MotionZThread\n");
+		assert(false);
 	}
 
 	printf("MotionController done\n");

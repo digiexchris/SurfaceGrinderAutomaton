@@ -55,7 +55,10 @@
 			"optional": "cpp",
 			"format": "cpp",
 			"future": "cpp",
-			"variant": "cpp"
+			"variant": "cpp",
+			"sstream": "cpp",
+			"microsh_config.h": "c",
+			"microrl.h": "c"
 		},
 		"[cpp]": {
 			"editor.defaultFormatter": "seaube.clangformat"

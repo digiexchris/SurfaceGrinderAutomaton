@@ -21,7 +21,7 @@ target_compile_definitions(freertos_config
   INTERFACE
     projCOVERAGE_TEST=0
 )
-set( FREERTOS_HEAP "4" CACHE STRING "" FORCE)
+set( FREERTOS_HEAP "1" CACHE STRING "" FORCE)
 set(PICO_DEOPTIMIZED_DEBUG 1)
 set(FREERTOS_PORT "GCC_RP2040" CACHE STRING "" FORCE)
 set(PICO_BOARD pico CACHE STRING "Board type")
@@ -47,12 +47,18 @@ MACRO(HEADER_DIRECTORIES return_list)
     SET(${return_list} ${dir_list})
 ENDMACRO()
 
+# target_compile_definitions(FreeRTOS-Kernel INTERFACE -Wno-unused-variable)
+#header_directories(header_dir_list)
+
 FILE(GLOB_RECURSE app_sources 
 #main app
 ./src/*.c*
+./lib/ecdc/src/*.c*
 #tests
 # ./test/*.c*
 )
+
+include_directories(./lib/ecdc/src/ecdc)
 
 pico_sdk_init()
 
@@ -68,17 +74,33 @@ ${app_sources}
 # target_compile_definitions(SurfaceGrinderAtomaton PRIVATE
 #         mainCREATE_SIMPLE_BLINKY_DEMO_ONLY=1
 #         )
+# Set global compiler options
+add_compile_options(
+    ### Gnu/Clang C Options
+    $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always>
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-fcolor-diagnostics>
 
-target_compile_options( SurfaceGrinderAtomaton PUBLIC
-        ### Gnu/Clang C Options
-        $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always>
-        $<$<COMPILE_LANG_AND_ID:C,Clang>:-fcolor-diagnostics>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wall>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wextra>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Werror>
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-Weverything>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wno-unused-variable>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wno-unused-parameter>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wno-type-limits>
+)
 
-        $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wall>
-        $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wextra>
-        $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Werror>
-        $<$<COMPILE_LANG_AND_ID:C,Clang>:-Weverything>
-        )
+# # Override compiler options for SurfaceGrinderAtomaton
+# target_compile_options(SurfaceGrinderAtomaton PRIVATE
+#     ### Gnu/Clang C Options
+#     $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always>
+#     $<$<COMPILE_LANG_AND_ID:C,Clang>:-fcolor-diagnostics>
+
+#     $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wall>
+#     $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wextra>
+#     $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Werror>
+#     $<$<COMPILE_LANG_AND_ID:C,Clang>:-Weverything>
+#     # Remove the -Wno-unused-variable flag for this target
+# )
 
 target_include_directories(SurfaceGrinderAtomaton PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
