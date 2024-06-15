@@ -5,8 +5,8 @@
 #include "pico/stdlib.h"
 #include "portmacro.h"
 #include <cmath>
-#include <cstdio>
 #include <semphr.h>
+#include <stdio.h>
 
 Axis::Axis(Stepper *aStepper, AxisLabel anAxisLabel)
 {
@@ -157,7 +157,8 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 				axis->myState = AxisState::WAITING;
 				xSemaphoreGive(axis->myStateMutex);
 				AxisWaitCommand *waitCommand = static_cast<AxisWaitCommand *>(command);
-				vTaskDelay(waitCommand->durationMs / portTICK_PERIOD_MS);
+				const unsigned int timeout = waitCommand->durationMs / portTICK_PERIOD_MS;
+				vTaskDelay(timeout == 0 ? 1 : timeout);
 
 				xSemaphoreTake(axis->myStateMutex, portMAX_DELAY);
 				axis->myState = AxisState::STOPPED;
@@ -165,8 +166,8 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 				break;
 			}
 			default:
-				printf("Unknown command");
-				configASSERT(false);
+				panic("Unknown command");
+				// configASSERT(false);
 			}
 
 			delete command; // Free the command after processing
@@ -186,11 +187,6 @@ void Axis::privMove(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpee
 	xSemaphoreTake(myStateMutex, portMAX_DELAY);
 	myState = AxisState::MOVING;
 	xSemaphoreGive(myStateMutex);
-
-	if (aDistance == 0)
-	{
-		return;
-	}
 
 	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
 
@@ -219,6 +215,11 @@ void Axis::privMove(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpee
 	if (directionChanged)
 	{
 		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
+	}
+
+	if (aDistance == 0)
+	{
+		return;
 	}
 
 	int targetPosition = myPosition + aDistance;

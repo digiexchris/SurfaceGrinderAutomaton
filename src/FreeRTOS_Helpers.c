@@ -1,7 +1,7 @@
-#include <FreeRTOS.h>
-#include <task.h>
 #include "pico/stdlib.h"
+#include <FreeRTOS.h>
 #include <stdio.h>
+#include <task.h>
 
 void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 									StackType_t **ppxTimerTaskStackBuffer,
@@ -83,10 +83,7 @@ void vApplicationMallocFailedHook(void)
 	timers, and semaphores.  The size of the FreeRTOS heap is set by the
 	configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h. */
 
-	printf("Malloc Failed\n");
-
-	/* Force an assert. */
-	configASSERT((volatile void *)NULL);
+	panic("Malloc Failed\n");
 }
 /*-----------------------------------------------------------*/
 
@@ -100,29 +97,17 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 	function is called if a stack overflow is detected. */
 
 	panic("Stack overflow in task %s\n", pcTaskName);
-
-	/* Force an assert. */
-	configASSERT((volatile void *)NULL);
 }
 /*-----------------------------------------------------------*/
 
-// void vApplicationIdleHook(void)
-// {
-// 	volatile size_t xFreeHeapSpace;
-
-// 	/* This is just a trivial example of an idle hook.  It is called on each
-// 	cycle of the idle task.  It must *NOT* attempt to block.  In this case the
-// 	idle task just queries the amount of FreeRTOS heap that remains.  See the
-// 	memory management section on the http://www.FreeRTOS.org web site for memory
-// 	management options.  If there is a lot of heap memory free then the
-// 	configTOTAL_HEAP_SIZE value in FreeRTOSConfig.h can be reduced to free up
-// 	RAM. */
-// 	xFreeHeapSpace = xPortGetFreeHeapSize();
-
-// 	/* Remove compiler warning about xFreeHeapSpace being set but never used. */
-// 	(void)xFreeHeapSpace;
-// }
-
-void vApplicationTickHook (void)
-{
+void vApplicationTickHook(void) {
 };
+
+// just to supress a getentropy unimplemented linker error from newlib
+// if we end up using random numbers we'll have to implement this
+int getentropy(void *buffer, size_t length)
+{
+	buffer = buffer;
+	length = length;
+	return -88;
+}

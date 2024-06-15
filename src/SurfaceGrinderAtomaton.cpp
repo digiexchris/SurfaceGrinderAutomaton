@@ -1,9 +1,8 @@
-#include "blink.pio.h"
 #include "config.hpp"
 #include "drivers/Motor/Stepper.hpp"
-#include "hardware/watchdog.h"
+// #include "hardware/watchdog.h"
 #include "pico/stdlib.h"
-#include <MotionController.hpp>
+#include <Motion/MotionController.hpp>
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +10,7 @@
 
 #include "debug/Console/Console.hpp"
 #include <FreeRTOS.h>
+#include <cstdio>
 #include <task.h>
 
 MotionController *mc;
@@ -53,9 +53,9 @@ int main()
 
 	printf("MotionController created\n");
 
-	Console::Init(nullptr);
+	Console::Init(mc);
 
-	printf("Console initialized\n");
+	printf("Boot Complete\n");
 
 	vTaskStartScheduler();
 	// It'll never get past here, vTaskStartScheduler() never returns

@@ -9,9 +9,65 @@
 
 #include <config.hpp>
 
-#include "pico/mutex.h"
-#include "pico/stdlib.h"
+#include "pico/stdlib.h" // IWYU pragma: keep
 #include "portmacro.h"
+#include <string>
+enum class AxisMode
+{
+	STOPPED,
+	AUTOMATIC,
+	ONE_SHOT,
+	MANUAL,
+	ERROR
+};
+
+inline AxisMode AxisModeFromString(const std::string &aMode)
+{
+	if (aMode == "S")
+	{
+		return AxisMode::STOPPED;
+	}
+	else if (aMode == "A")
+	{
+		return AxisMode::AUTOMATIC;
+	}
+	else if (aMode == "O")
+	{
+		return AxisMode::ONE_SHOT;
+	}
+	else if (aMode == "M")
+	{
+		return AxisMode::MANUAL;
+	}
+	else if (aMode == "E")
+	{
+		return AxisMode::ERROR;
+	}
+	else
+	{
+		return AxisMode::ERROR;
+	}
+}
+
+inline std::string AxisModeToString(AxisMode aMode)
+{
+	switch (aMode)
+	{
+	case AxisMode::STOPPED:
+		return "STOPPED";
+	case AxisMode::AUTOMATIC:
+		return "AUTOMATIC";
+	case AxisMode::ONE_SHOT:
+		return "ONE_SHOT";
+	case AxisMode::MANUAL:
+		return "MANUAL";
+	case AxisMode::ERROR:
+		return "ERROR";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 /**
  * @brief Enum class for the direction of the Z travel
  * POS = move the Z axis in the positive direction
@@ -56,7 +112,7 @@ struct AxisMoveCommand : public AxisCommand
 
 struct AxisWaitCommand : AxisCommand
 {
-	AxisWaitCommand(int32_t aDurationMs) : durationMs(aDurationMs)
+	AxisWaitCommand(int32_t aDurationMs = 1) : durationMs(aDurationMs)
 	{
 		cmd = AxisCommandName::WAIT;
 	}

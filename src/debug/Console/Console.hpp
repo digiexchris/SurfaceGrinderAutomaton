@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Motion/MotionController.hpp"
 #include "microsh.h"
 
 #define UART_ID uart0
@@ -14,11 +15,13 @@
 class Console
 {
 public:
-	static void Init(void *aStateMachine);
+	static void Init(MotionController *aMotionController);
 
 private:
 	static microsh_t *mySh;
+	static MotionController *myMotionController;
 	static void uartRxInterruptHandler();
 	static int privPrintFn(microrl_t *mrl, const char *str);
 	static int statusCmdCallback(struct microsh *msh, int argc, const char *const *argv);
+	static int modeCmdCallback(struct microsh *msh, int argc, const char *const *argv);
 };

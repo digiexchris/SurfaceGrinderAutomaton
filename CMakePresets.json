@@ -1,0 +1,43 @@
+
+
+  {
+    "version": 3,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 19,
+      "patch": 0
+    },
+    "configurePresets": [
+      {
+        "name": "default",
+        "generator": "Ninja",
+        "description": "Default configuration for Raspberry Pi Pico with ARM Clang",
+        "binaryDir": "${sourceDir}/build",
+        "cacheVariables": {
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "YES",
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_C_COMPILER": "/usr/bin/arm-none-eabi-gcc",
+          "CMAKE_CXX_COMPILER": "/usr/bin/arm-none-eabi-g++",
+          "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja",
+          "PICO_PLATFORM": "rp2040",
+          "CMAKE_CXX_STANDARD": "20"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "default",
+        "configurePreset": "default",
+        "description": "Build using the default configuration",
+        "targets": ["all"]
+      }
+    ],
+    "testPresets": [
+      {
+        "name": "default",
+        "configurePreset": "default",
+        "description": "Test using the default configuration"
+      }
+    ]
+  }
+  

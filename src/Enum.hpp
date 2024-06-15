@@ -1,11 +1,48 @@
 #pragma once
 
+#include <string>
+
 enum class AxisLabel
 {
 	X,
 	Y,
-	Z
+	Z,
+	ERROR
 };
+
+inline std::string AxisLabelToString(AxisLabel label)
+{
+	switch (label)
+	{
+	case AxisLabel::X:
+		return "X";
+	case AxisLabel::Y:
+		return "Y";
+	case AxisLabel::Z:
+	default:
+		return "ERROR";
+	}
+}
+
+inline AxisLabel AxisLabelFromString(const std::string &label)
+{
+	if (label == "X")
+	{
+		return AxisLabel::X;
+	}
+	else if (label == "Y")
+	{
+		return AxisLabel::Y;
+	}
+	else if (label == "Z")
+	{
+		return AxisLabel::Z;
+	}
+	else
+	{
+		return AxisLabel::ERROR;
+	}
+}
 
 /**
  * @brief Enum class for the type of Z travel moves
@@ -36,17 +73,6 @@ enum class RepeatZType
 	NO_REPEAT,
 	REVERSE,
 	START_AT_SAME_POSITION
-};
-
-/**
- * @brief Enum class for the action that triggers the Z travel to repeat
- * AUTOMATIC = the Z travel repeats automatically when it reaches the end position
- * MANUAL = the Z travel repeats when the user presses a button
- */
-enum class RepeatZTrigger
-{
-	AUTOMATIC,
-	MANUAL
 };
 
 enum class MotionState

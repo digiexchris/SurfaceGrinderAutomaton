@@ -1,15 +1,20 @@
 
 
 #include "Console.hpp"
+#include "Axis.hpp"
+#include "Enum.hpp"
+#include "Motion/MotionController.hpp"
 #include "microsh.h"
-#include "pico/stdlib.h"
-#include <cstdio>
 #include <malloc.h>
+#include <stdio.h>
+#include <string>
 
 microsh_t *Console::mySh = nullptr;
+MotionController *Console::myMotionController = nullptr;
 
-void Console::Init(void *aStateMachine)
+void Console::Init(MotionController *aMotionController)
 {
+	myMotionController = aMotionController;
 	printf("Initializing console" MICRORL_CFG_END_LINE);
 	uart_init(UART_ID, BAUD_RATE);
 
@@ -53,14 +58,21 @@ void Console::Init(void *aStateMachine)
 
 	if (cmdRegisterStatus != microshOK)
 	{
-		printf("Failed microsh init!" MICRORL_CFG_END_LINE);
+		panic("Failed microsh init!" MICRORL_CFG_END_LINE);
 	}
 
-	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "s", statusCmdCallback, "Prints the status of the system");
+	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "status", statusCmdCallback, "Prints the status of the system");
 
 	if (cmdRegisterStatus != microshOK)
 	{
-		printf("No memory to register all commands!" MICRORL_CFG_END_LINE);
+		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
+	}
+
+	cmdRegisterStatus = microsh_cmd_register(mySh, 3, "mode", modeCmdCallback, "mode <axis> <mode> - Sets the mode of the axis \n\r <axis> = X, Y, Z \n\r <mode> = S, A, O, M (Stopped, Automatic, One Shot, Manual)");
+
+	if (cmdRegisterStatus != microshOK)
+	{
+		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
 	}
 
 	printf("Console initialized" MICRORL_CFG_END_LINE);
@@ -68,8 +80,36 @@ void Console::Init(void *aStateMachine)
 
 int Console::statusCmdCallback(struct microsh *msh, int argc, const char *const *argv)
 {
+	std::string xMode = AxisModeToString(myMotionController->GetMode(AxisLabel::X));
+	std::string zMode = AxisModeToString(myMotionController->GetMode(AxisLabel::Z));
+	printf("Status: OK, X Mode: %s, Z Mode, %s" MICRORL_CFG_END_LINE, xMode.c_str(), zMode.c_str());
 
-	printf("Status: OK" MICRORL_CFG_END_LINE);
+	return microshEXEC_OK;
+}
+
+int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	if (argc != 3)
+	{
+		printf("Usage: mode <axis> <mode>" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	AxisLabel axis = AxisLabelFromString(argv[1]);
+	if (axis == AxisLabel::ERROR)
+	{
+		printf("Invalid axis" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+	AxisMode mode = AxisModeFromString(argv[2]);
+	if (mode == AxisMode::ERROR)
+	{
+		printf("Invalid mode" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+	myMotionController->SetMode(axis, mode);
+	printf("Status: OK, %s Mode: %s" MICRORL_CFG_END_LINE, AxisLabelToString(axis), AxisModeToString(myMotionController->GetMode(axis)));
+
 	return microshEXEC_OK;
 }
 
@@ -104,6 +144,7 @@ void Console::uartRxInterruptHandler()
 				uart_putc(UART_ID, ch);
 			}
 		}
+
 		microrl_processing_input(&mySh->mrl, &ch, 1);
 	}
 }

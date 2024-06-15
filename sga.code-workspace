@@ -32,10 +32,9 @@
 			"marus25.cortex-debug",
             "IBM.output-colorizer",
             "seaube.clangformat",
-            "llvm-vs-code-extensions.vscode-clangd",
-			"trond-snekvik.kconfig-lang",
+			
 			"spmeesseman.vscode-taskexplorer",
-			"sanaajani.taskrunnercode",
+		
 			"actboy168.tasks",
             "raspberry-pi.raspberry-pi-pico",
 			"ms-vscode.cmake-tools",
@@ -50,7 +49,7 @@
 	},
 	"settings": {
 		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
-		"C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
+		"C_Cpp.default.intelliSenseMode": "linux-clang-arm",
 		"files.associations": {
 			"optional": "cpp",
 			"format": "cpp",
@@ -62,6 +61,8 @@
 		},
 		"[cpp]": {
 			"editor.defaultFormatter": "seaube.clangformat"
-		}
+		},
+		"editor.defaultFoldingRangeProvider": "ms-vscode.cpptools",
+		"editor.folding": false
 	}
 }

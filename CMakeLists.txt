@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.13)
 include(pico_sdk_import.cmake)
 project(SurfaceGrinderAtomaton C CXX ASM)
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # set(FREERTOS_KERNEL_RP2040_RELATIVE_PATH "portable/ThirdParty/GCC/RP2040")
@@ -53,12 +53,9 @@ ENDMACRO()
 FILE(GLOB_RECURSE app_sources 
 #main app
 ./src/*.c*
-./lib/ecdc/src/*.c*
 #tests
 # ./test/*.c*
 )
-
-include_directories(./lib/ecdc/src/ecdc)
 
 pico_sdk_init()
 
@@ -110,8 +107,15 @@ target_include_directories(SurfaceGrinderAtomaton PRIVATE
 pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/blink.pio)
 pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/stepper.pio)
 
+# Create an interface target to set system include directories for Pico SDK libraries
+add_library(pico_system_include_dirs INTERFACE)
+target_include_directories(pico_system_include_dirs SYSTEM INTERFACE ${PICO_INCLUDE_DIRS})
 
-target_link_libraries(SurfaceGrinderAtomaton pico_stdlib hardware_pio FreeRTOS-Kernel FreeRTOS-Kernel-Heap1)
+# Include directories for other Pico SDK libraries
+target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio)
+
+
+target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs FreeRTOS-Kernel FreeRTOS-Kernel-Heap1)
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
 # Use USB uart
