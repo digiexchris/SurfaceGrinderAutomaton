@@ -21,7 +21,7 @@ target_compile_definitions(freertos_config
   INTERFACE
     projCOVERAGE_TEST=0
 )
-set( FREERTOS_HEAP "1" CACHE STRING "" FORCE)
+set( FREERTOS_HEAP "4" CACHE STRING "" FORCE)
 set(PICO_DEOPTIMIZED_DEBUG 1)
 set(FREERTOS_PORT "GCC_RP2040" CACHE STRING "" FORCE)
 set(PICO_BOARD pico CACHE STRING "Board type")
@@ -99,6 +99,11 @@ add_compile_options(
 #     # Remove the -Wno-unused-variable flag for this target
 # )
 
+add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded!"
+    COMMAND /bin/bash ${CMAKE_CURRENT_LIST_DIR}/flash.sh
+)
+
 target_include_directories(SurfaceGrinderAtomaton PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
         ${header_dir_list}
@@ -112,10 +117,11 @@ add_library(pico_system_include_dirs INTERFACE)
 target_include_directories(pico_system_include_dirs SYSTEM INTERFACE ${PICO_INCLUDE_DIRS})
 
 # Include directories for other Pico SDK libraries
-target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio)
+target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio pico_printf
+)
 
 
-target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs FreeRTOS-Kernel FreeRTOS-Kernel-Heap1)
+target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs FreeRTOS-Kernel FreeRTOS-Kernel-Heap4)
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
 # Use USB uart

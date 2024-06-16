@@ -17,8 +17,9 @@ inline std::string AxisLabelToString(AxisLabel label)
 	case AxisLabel::X:
 		return "X";
 	case AxisLabel::Y:
-		return "Y";
+		return "NOT IMPLEMENTED";
 	case AxisLabel::Z:
+		return "Z";
 	default:
 		return "ERROR";
 	}

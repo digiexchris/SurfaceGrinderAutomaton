@@ -20,6 +20,8 @@ public:
 	MotionController(Stepper *anXStepper, Stepper *aZStepper, Stepper *aYStepper = nullptr);
 	bool SetMode(AxisLabel anAxisLabel, AxisMode aMode);
 	AxisMode GetMode(AxisLabel anAxisLabel);
+	bool SetAdvanceIncrement(AxisLabel anAxisLabel, uint32_t anIncrement);
+	uint32_t GetAdvanceIncrement(AxisLabel anAxisLabel);
 
 private:
 	MotionController *self;

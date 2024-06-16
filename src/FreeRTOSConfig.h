@@ -45,7 +45,7 @@
 #define configUSE_TICKLESS_IDLE 0
 #define configUSE_IDLE_HOOK 0
 #define configUSE_TICK_HOOK 0
-#define configTICK_RATE_HZ ((TickType_t)20000)
+#define configTICK_RATE_HZ ((TickType_t)1000) //((TickType_t)1000)
 #define configMAX_PRIORITIES 32
 #define configMINIMAL_STACK_SIZE (configSTACK_DEPTH_TYPE)256
 #define configUSE_16_BIT_TICKS 0
@@ -105,6 +105,9 @@
 #define configNUM_CORES 1
 #define configTICK_CORE 1
 #define configRUN_MULTIPLE_PRIORITIES 1
+
+#define traceTASK_SWITCHED_IN() vTaskSwitchedIn()
+#define traceTASK_SWITCHED_OUT() vTaskSwitchedOut()
 
 /* RP2040 specific */
 #define configSUPPORT_PICO_SYNC_INTEROP 1

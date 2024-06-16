@@ -18,29 +18,16 @@ bool ZRepeatReverse::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
 	if (zStop == AxisStop::MIN && direction == AxisDirection::NEG)
 	{
 		direction = AxisDirection::POS;
+		axis->SetDirection(direction);
 	}
 	else if (zStop == AxisStop::MAX && direction == AxisDirection::POS)
 	{
 		direction = AxisDirection::NEG;
-	}
-	else if (zStop == AxisStop::NEITHER)
-	{
-		// not at a stop, nothing to do
-		outMoved = false;
-		return true;
+		axis->SetDirection(direction);
 	}
 
-	// Don't move, just change direction. It'll probably air cut, but otherwise I'd have to know about the Z increment here. I'll do it later if this is annoying or detrimental.
-	axis->Move(0, direction, ZAXIS_MAX_SPEED);
+	outMoved = false; // only setting direction, not moving
 
-	axis->IsMovementComplete(); // wait till it's done
-
-	if (PRINTF_AXIS_POSITIONS)
-	{
-		printf("Z: %d\n", axis->GetPosition());
-	}
-
-	outMoved = true; // this type always results in a move
 	return true;
 }
 
@@ -72,7 +59,7 @@ bool ZNoRepeat::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
 		aZAxisSM->SetMode(AxisMode::STOPPED);
 	}
 
-	if (PRINTF_AXIS_POSITIONS)
+	if (PRINTF_AXIS_POSITIONS && aZAxisSM->GetMode() != AxisMode::STOPPED)
 	{
 		printf("Z: %d\n", axis->GetPosition());
 	}
@@ -102,18 +89,22 @@ bool ZRepeatAtStart::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
 
 	if (zStop == AxisStop::MIN && direction == AxisDirection::NEG)
 	{
-		axis->Move(std::abs(axis->GetMaxStop() - axis->GetPosition()), AxisDirection::POS, ZAXIS_MAX_SPEED);
+		axis->SetDirection(AxisDirection::POS);
+		axis->Move(std::abs(axis->GetMaxStop() - axis->GetPosition()), ZAXIS_MAX_SPEED);
+		axis->SetDirection(AxisDirection::NEG);
 		outMoved = true;
 	}
 	else if (zStop == AxisStop::MAX && direction == AxisDirection::POS)
 	{
-		axis->Move(std::abs(axis->GetMinStop() - axis->GetPosition()), AxisDirection::NEG, ZAXIS_MAX_SPEED);
+		axis->SetDirection(AxisDirection::NEG);
+		axis->Move(std::abs(axis->GetMinStop() - axis->GetPosition()), ZAXIS_MAX_SPEED);
+		axis->SetDirection(AxisDirection::POS);
 		outMoved = true;
 	}
 
 	axis->IsMovementComplete();
 
-	if (PRINTF_AXIS_POSITIONS)
+	if (PRINTF_AXIS_POSITIONS && outMoved)
 	{
 		printf("Z: %d\n", axis->GetPosition());
 	}

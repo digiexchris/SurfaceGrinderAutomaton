@@ -20,7 +20,10 @@
           "CMAKE_CXX_COMPILER": "/usr/bin/arm-none-eabi-g++",
           "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja",
           "PICO_PLATFORM": "rp2040",
-          "CMAKE_CXX_STANDARD": "20"
+          "CMAKE_CXX_STANDARD": "20",
+          "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
+          "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g"
+          
         }
       }
     ],

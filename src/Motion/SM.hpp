@@ -5,6 +5,7 @@
 class MotionControllerSM
 {
 protected:
+	SemaphoreHandle_t myModeMutex;
 	AxisMode myAxisMode;
 	AxisStop myIsAtStop;
 	Axis *myAxis;
@@ -30,17 +31,23 @@ public:
 
 	MotionControllerSM(Axis *anAxis) : myAxis(anAxis), myAxisMode(AxisMode::STOPPED), myIsAtStop(AxisStop::NEITHER)
 	{
+		myModeMutex = xSemaphoreCreateMutex();
 		myManualTriggerSemaphore = xSemaphoreCreateBinary();
 	}
 
 	void SetMode(AxisMode aState)
 	{
+		xSemaphoreTake(myModeMutex, portMAX_DELAY);
 		myAxisMode = aState;
+		xSemaphoreGive(myModeMutex);
 	}
 
 	AxisMode GetMode() const
 	{
-		return myAxisMode;
+		xSemaphoreTake(myModeMutex, portMAX_DELAY);
+		AxisMode mode = myAxisMode;	 // Access the protected resource
+		xSemaphoreGive(myModeMutex); // Release the mutex
+		return mode;
 	}
 
 	void SetIsAtStop(AxisStop aStop)

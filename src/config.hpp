@@ -6,7 +6,7 @@
 #define PRINTF_AXIS_POSITIONS 1
 #define PRINTF_AXIS_DEBUG 0
 #define PRINTF_MOTION_DEBUG 0
-#define PRINTF_STEPPER_DEBUG 0
+#define PRINTF_STEPPER_DEBUG 1
 
 #define ENABLE_DISPLAY 1
 
@@ -20,9 +20,9 @@
 #define XAXIS_ENABLE_PIN 8
 
 #define ZAXIS_STEPS_PER_MM 400
-#define ZAXIS_MAX_SPEED 1000.0f				// steps per second
-#define ZAXIS_ACCELERATION 250.0f			// steps per second squared
-#define ZAXIS_STEP_PIN 7 //PICO_DEFAULT_LED_PIN // 7
+#define ZAXIS_MAX_SPEED 1000.0f	  // steps per second
+#define ZAXIS_ACCELERATION 250.0f // steps per second squared
+#define ZAXIS_STEP_PIN 7		  // PICO_DEFAULT_LED_PIN // 7
 #define ZAXIS_DIR_PIN 6
 #define ZAXIS_ENABLE_PIN 5
 

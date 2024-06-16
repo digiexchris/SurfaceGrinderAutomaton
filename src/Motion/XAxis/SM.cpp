@@ -36,17 +36,23 @@ void XAxisSM::Update()
 
 			AxisDirection direction = myAxis->GetPreviousDirection();
 
+			bool moveOccurred = false;
+
 			/* Traverse to the opposite stop
 			side effect: if you stop it mid-pass it will reverse immediately. fine for now, fix it later*/
 			if (direction == AxisDirection::POS)
 			{
 				int32_t distance = minStop - myAxis->GetPosition();
-				myAxis->Move(std::abs(distance), AxisDirection::NEG, XAXIS_MAX_SPEED);
+				myAxis->SetDirection(AxisDirection::NEG);
+				myAxis->Move(std::abs(distance), XAXIS_MAX_SPEED);
+				moveOccurred = true;
 			}
 			else
 			{
 				int32_t distance = maxStop - myAxis->GetPosition();
-				myAxis->Move(std::abs(distance), AxisDirection::POS, XAXIS_MAX_SPEED);
+				myAxis->SetDirection(AxisDirection::POS);
+				myAxis->Move(std::abs(distance), XAXIS_MAX_SPEED);
+				moveOccurred = true;
 			}
 
 			/* tiny bit of time for everything to settle, but considering
@@ -54,7 +60,11 @@ void XAxisSM::Update()
 			be very short or even zero*/
 			myAxis->Wait(50);
 
-			if (PRINTF_AXIS_POSITIONS)
+			taskYIELD(); // if this thread is the same priority as the axis, let it move
+
+			myAxis->IsMovementComplete();
+
+			if (PRINTF_AXIS_POSITIONS && moveOccurred)
 			{
 				printf("X: %d\n", myAxis->GetPosition());
 			}

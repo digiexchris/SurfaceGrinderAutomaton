@@ -1,5 +1,6 @@
 #include "Axis.hpp"
 #include "Enum.hpp"
+#include "FreeRTOS.h"
 #include "config.hpp"
 #include "pico/mutex.h"
 #include "pico/stdlib.h"
@@ -100,14 +101,24 @@ AxisDirection Axis::GetPreviousDirection()
 	return direction;
 }
 
-void Axis::Move(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed)
+void Axis::Move(uint32_t aDistance, uint16_t aSpeed)
 {
-	AxisMoveCommand *cmd = new AxisMoveCommand(aDistance, aDirection, aSpeed);
+	AxisMoveCommand *cmd = new AxisMoveCommand(aDistance, aSpeed);
 	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
 
 	if (PRINTF_AXIS_DEBUG)
 	{
 		printf("Axis %d: Move %d queued\n", myAxisLabel, aDistance);
+	}
+}
+
+void Axis::SetDirection(AxisDirection aDirection)
+{
+	AxisSetDirectionCommand *cmd = new AxisSetDirectionCommand(aDirection);
+	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
+	if (PRINTF_AXIS_DEBUG)
+	{
+		printf("Axis %d: SetDirection %d queued\n", myAxisLabel, aDirection);
 	}
 }
 
@@ -148,7 +159,15 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 			case AxisCommandName::MOVE:
 			{
 				AxisMoveCommand *moveCommand = static_cast<AxisMoveCommand *>(command);
-				axis->privMove(moveCommand->distance, moveCommand->direction, moveCommand->speed);
+				axis->privMove(moveCommand->distance, moveCommand->speed);
+				break;
+			}
+			case AxisCommandName::SET_DIRECTION:
+			{
+				AxisSetDirectionCommand *setDirectionCommand = static_cast<AxisSetDirectionCommand *>(command);
+				xSemaphoreTake(axis->myDirectionMutex, portMAX_DELAY);
+				axis->privSetDirection(setDirectionCommand->direction);
+				xSemaphoreGive(axis->myDirectionMutex);
 				break;
 			}
 			case AxisCommandName::WAIT:
@@ -157,7 +176,12 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 				axis->myState = AxisState::WAITING;
 				xSemaphoreGive(axis->myStateMutex);
 				AxisWaitCommand *waitCommand = static_cast<AxisWaitCommand *>(command);
-				const unsigned int timeout = waitCommand->durationMs / portTICK_PERIOD_MS;
+				float period = portTICK_PERIOD_MS;
+				if (period == 0)
+				{
+					panic("Period is 0");
+				}
+				const unsigned int timeout = waitCommand->durationMs / period;
 				vTaskDelay(timeout == 0 ? 1 : timeout);
 
 				xSemaphoreTake(axis->myStateMutex, portMAX_DELAY);
@@ -181,48 +205,24 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 	}
 }
 
-void Axis::privMove(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed)
+void Axis::privMove(uint32_t aDistance, uint16_t aSpeed)
 {
-	bool directionChanged = false;
 	xSemaphoreTake(myStateMutex, portMAX_DELAY);
 	myState = AxisState::MOVING;
 	xSemaphoreGive(myStateMutex);
 
-	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
-
-	myDirection = aDirection;
-
-	if (myPreviousDirection != myDirection)
-	{
-
-		directionChanged = true;
-		if (myDirection == AxisDirection::POS)
-		{
-
-			myPreviousDirection = AxisDirection::POS;
-
-			myStepper->SetDirection(true);
-		}
-		else
-		{
-			myPreviousDirection = AxisDirection::NEG;
-			myStepper->SetDirection(false);
-		}
-	}
-	xSemaphoreGive(myDirectionMutex);
-
-	// wait the amount of time after toggling the pin required by the driver before a step occurs
-	if (directionChanged)
-	{
-		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
-	}
-
 	if (aDistance == 0)
 	{
+		xSemaphoreTake(myStateMutex, portMAX_DELAY);
+		myState = AxisState::STOPPED;
+		xSemaphoreGive(myStateMutex);
 		return;
 	}
 
 	int targetPosition = myPosition + aDistance;
+	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
+	AxisDirection aDirection = myDirection;
+	xSemaphoreGive(myDirectionMutex);
 	if (aDirection == AxisDirection::POS && targetPosition > myMaxStop)
 	{
 		aDistance = myMaxStop - myPosition;
@@ -256,4 +256,17 @@ void Axis::Wait(int32_t aDurationMs)
 	{
 		printf("Axis %d: Wait %d queued\n", myAxisLabel, aDurationMs);
 	}
+}
+
+void Axis::privSetDirection(AxisDirection aDirection)
+{
+	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
+	if (myDirection != aDirection)
+	{
+		myPreviousDirection = myDirection;
+		myDirection = aDirection;
+		myStepper->SetDirection((bool)myDirection);
+		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
+	}
+	xSemaphoreGive(myDirectionMutex);
 }

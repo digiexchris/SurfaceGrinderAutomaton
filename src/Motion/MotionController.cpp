@@ -36,7 +36,7 @@ MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Step
 		// myAxes[AxisLabel::Y] = new Axis(aYStepper);
 	}
 
-	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 1 * 2048, this, 4, NULL);
+	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 1 * 2048, this, 1, NULL);
 
 	if (status != pdPASS)
 	{
@@ -48,7 +48,7 @@ MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Step
 
 void MotionController::MotionXThread(void *pvParameters)
 {
-	printf("MotionXThread\n");
+	printf("MotionXThread Started\n");
 	MotionController *mc = static_cast<MotionController *>(pvParameters);
 
 	while (true)
@@ -63,10 +63,10 @@ bool MotionController::SetMode(AxisLabel anAxisLabel, AxisMode aMode)
 	switch (anAxisLabel)
 	{
 	case AxisLabel::X:
-		myZAxisSM->SetMode(aMode);
+		myXAxisSM->SetMode(aMode);
 		break;
 	case AxisLabel::Z:
-		myXAxisSM->SetMode(aMode);
+		myZAxisSM->SetMode(aMode);
 		break;
 	default:
 		return false;
@@ -74,14 +74,43 @@ bool MotionController::SetMode(AxisLabel anAxisLabel, AxisMode aMode)
 	return true;
 }
 
+bool MotionController::SetAdvanceIncrement(AxisLabel anAxisLabel, uint32_t anIncrement)
+{
+	switch (anAxisLabel)
+	{
+	case AxisLabel::X:
+		myXAxisSM->SetAdvanceIncrement(anIncrement);
+		break;
+	case AxisLabel::Z:
+		myZAxisSM->SetAdvanceIncrement(anIncrement);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+uint32_t MotionController::GetAdvanceIncrement(AxisLabel anAxisLabel)
+{
+	switch (anAxisLabel)
+	{
+	case AxisLabel::X:
+		return myXAxisSM->GetAdvanceIncrement();
+	case AxisLabel::Z:
+		return myZAxisSM->GetAdvanceIncrement();
+	default:
+		return 0;
+	}
+}
+
 AxisMode MotionController::GetMode(AxisLabel anAxisLabel)
 {
 	switch (anAxisLabel)
 	{
 	case AxisLabel::X:
-		return myZAxisSM->GetMode();
-	case AxisLabel::Z:
 		return myXAxisSM->GetMode();
+	case AxisLabel::Z:
+		return myZAxisSM->GetMode();
 	default:
 		return AxisMode::ERROR;
 	}

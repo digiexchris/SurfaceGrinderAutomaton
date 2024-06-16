@@ -76,8 +76,8 @@ inline std::string AxisModeToString(AxisMode aMode)
  */
 enum class AxisDirection
 {
-	POS,
-	NEG,
+	POS = true,
+	NEG = false,
 	LOCKED // locked by mutex
 };
 
@@ -91,6 +91,7 @@ enum class AxisStop
 enum class AxisCommandName
 {
 	MOVE,
+	SET_DIRECTION,
 	WAIT
 };
 
@@ -101,12 +102,11 @@ struct AxisCommand
 
 struct AxisMoveCommand : public AxisCommand
 {
-	AxisMoveCommand(int32_t aDistance, AxisDirection aDirection, uint16_t aSpeed) : distance(aDistance), direction(aDirection), speed(aSpeed)
+	AxisMoveCommand(int32_t aDistance, uint16_t aSpeed) : distance(aDistance), speed(aSpeed)
 	{
 		cmd = AxisCommandName::MOVE;
 	}
 	int32_t distance;
-	AxisDirection direction;
 	uint16_t speed;
 };
 
@@ -117,6 +117,15 @@ struct AxisWaitCommand : AxisCommand
 		cmd = AxisCommandName::WAIT;
 	}
 	int32_t durationMs;
+};
+
+struct AxisSetDirectionCommand : AxisCommand
+{
+	AxisSetDirectionCommand(AxisDirection aDirection) : direction(aDirection)
+	{
+		cmd = AxisCommandName::SET_DIRECTION;
+	}
+	AxisDirection direction;
 };
 
 enum class AxisState
@@ -137,7 +146,8 @@ public:
 	int32_t GetMinStop();
 	void SetMaxStop(int32_t aMaxStop);
 	int32_t GetMaxStop();
-	void Move(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed);
+	void Move(uint32_t aDistance, uint16_t aSpeed);
+	void SetDirection(AxisDirection aDirection);
 	void Wait(int32_t aDurationMs);
 	AxisState GetState();
 	AxisStop IsAtStop();
@@ -177,5 +187,6 @@ private:
 	AxisLabel myAxisLabel;
 
 	static void privProcessCommandQueue(void *pvParameters);
-	void privMove(uint32_t aDistance, AxisDirection aDirection, uint16_t aSpeed);
+	void privMove(uint32_t aDistance, uint16_t aSpeed);
+	void privSetDirection(AxisDirection aDirection);
 };

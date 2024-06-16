@@ -21,7 +21,7 @@ void ZMoveBothEnds::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM)
 		// up against a stop, gotta wait for the next cycle for the Reverse mode to switch direction
 		return;
 	}
-	axis->Move(aZAxisSM->GetAdvanceIncrement(), direction, ZAXIS_MAX_SPEED);
+	axis->Move(aZAxisSM->GetAdvanceIncrement(), ZAXIS_MAX_SPEED);
 
 	axis->IsMovementComplete();
 

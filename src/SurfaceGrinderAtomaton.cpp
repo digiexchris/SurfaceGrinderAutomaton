@@ -4,6 +4,7 @@
 #include "pico/stdlib.h"
 #include <Motion/MotionController.hpp>
 #include <iostream>
+#include <pico.h>
 #include <stdio.h>
 #include <string.h>
 #include <string>
@@ -13,9 +14,79 @@
 #include <cstdio>
 #include <task.h>
 
+#include "pico/printf.h"
+
 MotionController *mc;
 Stepper *zStepper;
 Stepper *xStepper;
+
+extern "C" void vTaskSwitchedIn(void);
+extern "C" void vTaskSwitchedOut(void);
+
+void vTaskSwitchedIn(void)
+{
+	// TaskHandle_t xTask;
+	// char *pcTaskName;
+
+	// xTask = xTaskGetCurrentTaskHandle();
+	// pcTaskName = pcTaskGetName(xTask);
+
+	// if (pcTaskName != nullptr && strcmp(pcTaskName, "Tmr Svc") != 0)
+	// {
+	// 	printf("Task Switched In: %s\n", pcTaskName);
+	// }
+}
+
+void vTaskSwitchedOut(void)
+{
+	// TaskHandle_t xTask;
+	// char *pcTaskName;
+
+	// xTask = xTaskGetCurrentTaskHandle();
+	// pcTaskName = pcTaskGetName(xTask);
+
+	// if (pcTaskName != nullptr && strcmp(pcTaskName, "Tmr Svc") != 0)
+	// {
+	// 	printf("Task Switched Out: %s\n", pcTaskName);
+	// }
+}
+
+// Forward declaration of the HardFault_Handler
+extern "C" void isr_hardfault(void);
+
+extern "C" void PrintStackTrace(uint32_t *stackPointer);
+
+void PrintStackTrace(uint32_t *stackPointer)
+{
+	printf("Hard Fault detected!\n");
+	printf("R0  = %08lx\n", stackPointer[0]);
+	printf("R1  = %08lx\n", stackPointer[1]);
+	printf("R2  = %08lx\n", stackPointer[2]);
+	printf("R3  = %08lx\n", stackPointer[3]);
+	printf("R12 = %08lx\n", stackPointer[4]);
+	printf("LR  = %08lx\n", stackPointer[5]);
+	printf("PC  = %08lx\n", stackPointer[6]);
+	printf("PSR = %08lx\n", stackPointer[7]);
+
+	while (true)
+	{
+		tight_loop_contents();
+	}
+}
+
+extern "C" void isr_hardfault(void)
+{
+	__asm volatile(
+		"MOVS R0, #4 \n"
+		"MOV R1, LR \n"
+		"TST R0, R1 \n"
+		"BEQ _MSP \n"
+		"MRS R0, PSP \n"
+		"B PrintStackTrace \n"
+		"_MSP: \n"
+		"MRS R0, MSP \n"
+		"B PrintStackTrace \n");
+}
 
 int main()
 {
@@ -51,7 +122,7 @@ int main()
 
 	mc = new MotionController(xStepper, zStepper, nullptr);
 
-	printf("MotionController created\n");
+	// printf("MotionController created\n");
 
 	Console::Init(mc);
 
