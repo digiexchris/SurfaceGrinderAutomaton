@@ -163,8 +163,10 @@ int Console::statusCmdCallback(struct microsh *msh, int argc, const char *const 
 void Console::privStatusCommand(ConsoleCommandStatus &aCommand)
 {
 	auto xMode = AxisModeToString(myMotionController->GetMode(AxisLabel::X));
+	auto xDirection = AxisDirectionToString(myMotionController->GetDirection(AxisLabel::X));
 	auto zMode = AxisModeToString(myMotionController->GetMode(AxisLabel::Z));
-	printf("Status: OK, X Mode: %s, Z Mode, %s" MICRORL_CFG_END_LINE, xMode.c_str(), zMode.c_str());
+	auto zDirection = AxisDirectionToString(myMotionController->GetDirection(AxisLabel::Z));
+	printf("Status: OK, X Mode: %s, Dir: %s \n\r Z Mode: %s, Dir: %s" MICRORL_CFG_END_LINE, xMode.c_str(), xDirection.c_str(), zMode.c_str(), zDirection.c_str());
 }
 
 int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -224,6 +226,8 @@ int Console::setAdvanceIncrementCallback(struct microsh *msh, int argc, const ch
 		return microshEXEC_ERROR;
 	}
 
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
 	std::string a = argv[1];
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
@@ -236,8 +240,14 @@ int Console::setAdvanceIncrementCallback(struct microsh *msh, int argc, const ch
 
 	uint32_t increment = std::stoi(argv[2]);
 
-	ConsoleCommandSetAdvanceIncrement command(axis, increment);
-	xQueueSend(myCommandQueue, &command, portMAX_DELAY);
+	ConsoleCommandSetAdvanceIncrement *command = new ConsoleCommandSetAdvanceIncrement(axis, increment);
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send set advance increment command to queue" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
 	return microshEXEC_OK;
 }

@@ -2,8 +2,8 @@
 
 #include <cmath>
 #include <cstdio>
-
-XAxisSM::XAxisSM(Axis *anAxis, ZAxisSM *aZAxisSM) : myZAxisSM(aZAxisSM), MotionControllerSM(anAxis) {}
+#include <pico/printf.h>
+#include <task.h>
 
 void XAxisSM::Update()
 {
@@ -19,20 +19,12 @@ void XAxisSM::Update()
 			/* Check and execute a Z move if necessary */
 			if (myAxis->GetPosition() <= minStop)
 			{
-				myIsAtStop = AxisStop::MIN;
+				myAxis->SetDirection(AxisDirection::POS);
 			}
 			else if (myAxis->GetPosition() >= maxStop)
 			{
-				myIsAtStop = AxisStop::MAX;
+				myAxis->SetDirection(AxisDirection::NEG);
 			}
-			else
-			{
-				myIsAtStop = AxisStop::NEITHER;
-			}
-
-			myZAxisSM->Update();
-
-			// TODO: this is a good place to trigger the Z execute call, passing in X's stop and position. It probably doesn't need separate threads??
 
 			AxisDirection direction = myAxis->GetPreviousDirection();
 
@@ -43,22 +35,26 @@ void XAxisSM::Update()
 			if (direction == AxisDirection::POS)
 			{
 				int32_t distance = minStop - myAxis->GetPosition();
-				myAxis->SetDirection(AxisDirection::NEG);
-				myAxis->Move(std::abs(distance), XAXIS_MAX_SPEED);
-				moveOccurred = true;
+				if (distance != 0)
+				{
+					myAxis->Move(std::abs(distance), XAXIS_MAX_SPEED);
+					moveOccurred = true;
+				}
 			}
 			else
 			{
 				int32_t distance = maxStop - myAxis->GetPosition();
-				myAxis->SetDirection(AxisDirection::POS);
-				myAxis->Move(std::abs(distance), XAXIS_MAX_SPEED);
-				moveOccurred = true;
+				if (distance != 0)
+				{
+					myAxis->Move(std::abs(distance), XAXIS_MAX_SPEED);
+					moveOccurred = true;
+				}
 			}
 
 			/* tiny bit of time for everything to settle, but considering
 			we're pausing to wait for the Z traverse, this could probably
 			be very short or even zero*/
-			myAxis->Wait(50);
+			myAxis->Wait(100);
 
 			taskYIELD(); // if this thread is the same priority as the axis, let it move
 
@@ -68,6 +64,11 @@ void XAxisSM::Update()
 			{
 				printf("X: %d\n", myAxis->GetPosition());
 			}
+
+			/* Notify the Z axis to advance */
+			xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::Z));
+			/* Wait for the Z axis to finish */
+			xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
 		}
 	}
 	break;
@@ -75,7 +76,6 @@ void XAxisSM::Update()
 	case AxisMode::MANUAL:
 	case AxisMode::STOPPED:
 	default:
-		myZAxisSM->Update();
 		break;
 	}
 }

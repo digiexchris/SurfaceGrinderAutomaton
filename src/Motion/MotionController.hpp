@@ -4,6 +4,7 @@
 #include "drivers/Motor/Stepper.hpp"
 #include <unordered_map>
 
+#include "Enum.hpp"
 #include <FreeRTOS.h>
 #include <queue.h>
 #include <semphr.h>
@@ -14,17 +15,18 @@
 #include "Motion/XAxis/SM.hpp"
 #include "Motion/ZAxis/SM.hpp"
 
-class MotionController
+class MotionController : public Controller
 {
 public:
 	MotionController(Stepper *anXStepper, Stepper *aZStepper, Stepper *aYStepper = nullptr);
-	bool SetMode(AxisLabel anAxisLabel, AxisMode aMode);
-	AxisMode GetMode(AxisLabel anAxisLabel);
+	virtual bool SetMode(AxisLabel anAxisLabel, AxisMode aMode) override;
+	virtual AxisMode GetMode(AxisLabel anAxisLabel) override;
 	bool SetAdvanceIncrement(AxisLabel anAxisLabel, uint32_t anIncrement);
 	uint32_t GetAdvanceIncrement(AxisLabel anAxisLabel);
+	AxisDirection GetDirection(AxisLabel anAxisLabel);
+	TaskHandle_t GetTaskHandle(AxisLabel anAxisLabel);
 
 private:
-	MotionController *self;
 	std::unordered_map<AxisLabel, Axis *> myAxes;
 
 	SemaphoreHandle_t myZTriggerSemaphore;
@@ -34,6 +36,9 @@ private:
 	ZAxisSM *myZAxisSM;
 	XAxisSM *myXAxisSM;
 
+	std::unordered_map<AxisLabel, TaskHandle_t *> myTaskHandles;
+
 	uint16_t myZConstantSpeed = 100;
 	static void MotionXThread(void *pvParameters);
+	static void MotionZThread(void *pvParameters);
 };

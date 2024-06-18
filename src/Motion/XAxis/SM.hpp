@@ -1,15 +1,13 @@
 #pragma once
 #include "../../Axis.hpp"
 #include "../SM.hpp"
-#include "../ZAxis/SM.hpp"
 
 class XAxisSM : public MotionControllerSM
 {
 public:
-	XAxisSM(Axis *anXAxis, ZAxisSM *aZAxisSM);
-
+	XAxisSM(Axis *anAxis, Controller *aMotionController) : MotionControllerSM(anAxis, aMotionController){};
 	virtual void Update() override;
 
 private:
-	ZAxisSM *myZAxisSM;
+	int32_t myPreviousPosition = 0;
 };

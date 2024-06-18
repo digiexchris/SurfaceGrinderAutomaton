@@ -1,19 +1,48 @@
 #pragma once
 
 #include "../Axis.hpp"
+// #include "MotionController.hpp"
+#include "Enum.hpp"
+
+#include <semphr.h>
+
+/**
+ * @brief Base class for all repeat modes
+ * used to block processing until a synchronization event occurs
+ * primarily used in the ZAxisSM::Update() thread
+ */
+#define BEGIN_TRIGGER_SECTION()              \
+	BaseType_t res = anSM->WaitForTrigger(); \
+	if (res == pdFALSE)                      \
+	{                                        \
+		return false;                        \
+	}
+
+#define END_TRIGGER_SECTION()                  \
+	if (anSM->GetMode() == AxisMode::ONE_SHOT) \
+	{                                          \
+		anSM->SetMode(AxisMode::MANUAL);       \
+	}
 
 class MotionControllerSM
 {
 protected:
+	SemaphoreHandle_t myTriggerSemaphore;
 	SemaphoreHandle_t myModeMutex;
 	AxisMode myAxisMode;
 	AxisStop myIsAtStop;
 	Axis *myAxis;
 	uint16_t myAdvanceIncrement;
-
-	SemaphoreHandle_t myManualTriggerSemaphore;
+	Controller *myMotionController;
 
 public:
+	MotionControllerSM(Axis *anAxis, Controller *aMotionController)
+		: myAxis(anAxis), myMotionController(aMotionController), myAxisMode(AxisMode::STOPPED), myIsAtStop(AxisStop::NEITHER)
+	{
+		myModeMutex = xSemaphoreCreateMutex();
+		myTriggerSemaphore = xSemaphoreCreateBinary();
+	}
+
 	void SetAdvanceIncrement(uint16_t anIncrement)
 	{
 		myAdvanceIncrement = anIncrement;
@@ -24,15 +53,14 @@ public:
 		return myAdvanceIncrement;
 	}
 
-	BaseType_t WaitForManualTrigger()
+	AxisDirection GetDirection() const
 	{
-		return xSemaphoreTake(myManualTriggerSemaphore, 200 * portTICK_PERIOD_MS);
+		return myAxis->GetDirection();
 	}
 
-	MotionControllerSM(Axis *anAxis) : myAxis(anAxis), myAxisMode(AxisMode::STOPPED), myIsAtStop(AxisStop::NEITHER)
+	BaseType_t WaitForTrigger()
 	{
-		myModeMutex = xSemaphoreCreateMutex();
-		myManualTriggerSemaphore = xSemaphoreCreateBinary();
+		return xSemaphoreTake(myTriggerSemaphore, 100 * portTICK_PERIOD_MS);
 	}
 
 	void SetMode(AxisMode aState)
@@ -60,9 +88,9 @@ public:
 		return myIsAtStop;
 	}
 
-	void TriggerManualState()
+	void Trigger()
 	{
-		xSemaphoreGive(myManualTriggerSemaphore);
+		xSemaphoreGive(myTriggerSemaphore);
 	}
 
 	virtual void Update() = 0;

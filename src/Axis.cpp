@@ -22,11 +22,13 @@ Axis::Axis(Stepper *aStepper, AxisLabel anAxisLabel)
 	configASSERT(myDirectionMutex);
 	configASSERT(myQueueIsProcessing);
 
-	BaseType_t status = xTaskCreate(privProcessCommandQueue, "AxisCommandThread", 2048, this, 1, NULL);
+	BaseType_t status = xTaskCreate(privProcessCommandQueue, "AxisCommandThread", 2048, this, 1, &myCommandQueueTask);
 
 	configASSERT(status == pdPASS);
 
 	xSemaphoreGive(myQueueIsProcessing); // let the first consumer add something to the empty queue
+	xSemaphoreGive(myStateMutex);
+	xSemaphoreGive(myDirectionMutex);
 }
 
 int32_t Axis::GetPosition()
@@ -57,6 +59,16 @@ int32_t Axis::GetMaxStop()
 void Axis::SetPosition(int32_t aPosition)
 {
 	// myStepper->SetPosition(aPosition);
+}
+
+AxisDirection Axis::GetDirection()
+{
+	AxisDirection direction;
+	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
+
+	direction = myDirection;
+	xSemaphoreGive(myDirectionMutex);
+	return direction;
 }
 
 AxisState Axis::GetState()
@@ -90,12 +102,8 @@ AxisStop Axis::IsAtStop()
 
 AxisDirection Axis::GetPreviousDirection()
 {
-	uint32_t timeout = 10 * portTICK_PERIOD_MS;
 	AxisDirection direction;
-	if (xSemaphoreTake(myDirectionMutex, timeout) != pdPASS)
-	{
-		return AxisDirection::LOCKED;
-	}
+	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
 	direction = myPreviousDirection;
 	xSemaphoreGive(myDirectionMutex);
 	return direction;
@@ -104,7 +112,11 @@ AxisDirection Axis::GetPreviousDirection()
 void Axis::Move(uint32_t aDistance, uint16_t aSpeed)
 {
 	AxisMoveCommand *cmd = new AxisMoveCommand(aDistance, aSpeed);
-	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
+
+	if (xQueueSend(myCommandQueue, &cmd, portMAX_DELAY) != pdPASS)
+	{
+		printf("Failed to send move command to queue\n");
+	}
 
 	if (PRINTF_AXIS_DEBUG)
 	{
@@ -115,7 +127,10 @@ void Axis::Move(uint32_t aDistance, uint16_t aSpeed)
 void Axis::SetDirection(AxisDirection aDirection)
 {
 	AxisSetDirectionCommand *cmd = new AxisSetDirectionCommand(aDirection);
-	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
+	if (xQueueSend(myCommandQueue, &cmd, portMAX_DELAY) != pdPASS)
+	{
+		printf("Failed to send set direction command to queue\n");
+	}
 	if (PRINTF_AXIS_DEBUG)
 	{
 		printf("Axis %d: SetDirection %d queued\n", myAxisLabel, aDirection);
@@ -148,6 +163,7 @@ bool Axis::IsMovementComplete(TickType_t aTimeout)
 
 void Axis::privProcessCommandQueue(void *pvParameters)
 {
+	printf("Axis Command Thread Started\n");
 	Axis *axis = static_cast<Axis *>(pvParameters);
 	while (true)
 	{
@@ -165,9 +181,7 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 			case AxisCommandName::SET_DIRECTION:
 			{
 				AxisSetDirectionCommand *setDirectionCommand = static_cast<AxisSetDirectionCommand *>(command);
-				xSemaphoreTake(axis->myDirectionMutex, portMAX_DELAY);
 				axis->privSetDirection(setDirectionCommand->direction);
-				xSemaphoreGive(axis->myDirectionMutex);
 				break;
 			}
 			case AxisCommandName::WAIT:
@@ -202,6 +216,8 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 		{
 			xSemaphoreGive(axis->myQueueIsProcessing);
 		}
+
+		PrintStackHighWaterMark(axis->myCommandQueueTask);
 	}
 }
 

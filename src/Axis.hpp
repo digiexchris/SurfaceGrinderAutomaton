@@ -12,61 +12,6 @@
 #include "pico/stdlib.h" // IWYU pragma: keep
 #include "portmacro.h"
 #include <string>
-enum class AxisMode
-{
-	STOPPED,
-	AUTOMATIC,
-	ONE_SHOT,
-	MANUAL,
-	ERROR
-};
-
-inline AxisMode AxisModeFromString(const std::string &aMode)
-{
-	if (aMode == "S")
-	{
-		return AxisMode::STOPPED;
-	}
-	else if (aMode == "A")
-	{
-		return AxisMode::AUTOMATIC;
-	}
-	else if (aMode == "O")
-	{
-		return AxisMode::ONE_SHOT;
-	}
-	else if (aMode == "M")
-	{
-		return AxisMode::MANUAL;
-	}
-	else if (aMode == "E")
-	{
-		return AxisMode::ERROR;
-	}
-	else
-	{
-		return AxisMode::ERROR;
-	}
-}
-
-inline std::string AxisModeToString(AxisMode aMode)
-{
-	switch (aMode)
-	{
-	case AxisMode::STOPPED:
-		return "STOPPED";
-	case AxisMode::AUTOMATIC:
-		return "AUTOMATIC";
-	case AxisMode::ONE_SHOT:
-		return "ONE_SHOT";
-	case AxisMode::MANUAL:
-		return "MANUAL";
-	case AxisMode::ERROR:
-		return "ERROR";
-	default:
-		return "UNKNOWN";
-	}
-}
 
 /**
  * @brief Enum class for the direction of the Z travel
@@ -78,8 +23,23 @@ enum class AxisDirection
 {
 	POS = true,
 	NEG = false,
-	LOCKED // locked by mutex
+	ERROR = -1 // locked by mutex
 };
+
+inline std::string AxisDirectionToString(AxisDirection aDirection)
+{
+	switch (aDirection)
+	{
+	case AxisDirection::POS:
+		return "+";
+	case AxisDirection::NEG:
+		return "-";
+	case AxisDirection::ERROR:
+		return "E";
+	default:
+		return "UNKNOWN";
+	}
+}
 
 enum class AxisStop
 {
@@ -150,6 +110,7 @@ public:
 	void SetDirection(AxisDirection aDirection);
 	void Wait(int32_t aDurationMs);
 	AxisState GetState();
+	AxisDirection GetDirection();
 	AxisStop IsAtStop();
 	AxisDirection GetPreviousDirection();
 
@@ -173,6 +134,7 @@ public:
 	void EStop();
 
 private:
+	TaskHandle_t myCommandQueueTask;
 	SemaphoreHandle_t myStateMutex;
 	SemaphoreHandle_t myDirectionMutex;
 	SemaphoreHandle_t myQueueIsProcessing;

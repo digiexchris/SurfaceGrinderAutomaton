@@ -8,7 +8,7 @@ void ZMoveBothEnds::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM)
 	Axis *axis = aZAxis;
 	int32_t minStop = axis->GetMinStop();
 	int32_t maxStop = axis->GetMaxStop();
-	AxisDirection direction = axis->GetPreviousDirection();
+	AxisDirection direction = axis->GetDirection();
 	AxisStop zStop = axis->IsAtStop();
 
 	if (zStop == AxisStop::MIN && direction == AxisDirection::NEG)

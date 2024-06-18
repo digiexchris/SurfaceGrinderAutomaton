@@ -1,12 +1,16 @@
 #pragma once
+#include "FreeRTOS.h"
 #include <cstdint>
+#include <pico/printf.h>
+#include <task.h>
 
 #define STEPPER_DIRECTION_CHANGE_DELAY_MS 5
 
 #define PRINTF_AXIS_POSITIONS 1
 #define PRINTF_AXIS_DEBUG 0
 #define PRINTF_MOTION_DEBUG 0
-#define PRINTF_STEPPER_DEBUG 1
+#define PRINTF_STEPPER_DEBUG 0
+#define PRINTF_HEAP_STACK_DEBUG 0
 
 #define ENABLE_DISPLAY 1
 
@@ -35,3 +39,25 @@
 #define TFT_RST 12 // Set TFT_RST to -1 if display RESET is connected to ESP32 board RST
 
 #define TOUCH_CS 33
+
+inline void PrintHeapHighWaterMark()
+{
+#if PRINTF_HEAP_STACK_DEBUG
+	// Get the minimum ever free heap size
+	size_t heapHighWaterMark = xPortGetMinimumEverFreeHeapSize();
+
+	// Print the high water mark
+	printf("Minimum ever free heap size: %u bytes\n", (unsigned int)heapHighWaterMark);
+#endif
+}
+
+inline void PrintStackHighWaterMark(TaskHandle_t taskHandle)
+{
+#if PRINTF_HEAP_STACK_DEBUG
+	// Get the minimum ever free stack space
+	UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
+
+	// Print the high water mark
+	printf("Minimum ever free stack size: %u words\n", (unsigned int)stackHighWaterMark);
+#endif
+}

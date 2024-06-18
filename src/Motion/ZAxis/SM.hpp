@@ -1,12 +1,13 @@
 #pragma once
-
-#include "../../Axis.hpp"
 #include "../SM.hpp"
 
+class Axis;
+class Controller;
 class ZAxisSM : public MotionControllerSM
 {
 public:
-	ZAxisSM(Axis *aZAxis);
+	ZAxisSM(Axis *anAxis, Controller *aMotionController);
+
 	virtual void Update() override;
 
 	class IMovementMode
@@ -23,8 +24,8 @@ public:
 
 		/**
 		 * @brief Execute the repeat mode
-		 * @var outMoved true if a move was executed (including 0 step direciton change)
-		 * @return true if it executed normally, false if there was a problem (eg. the wait for the one-shot timed out)
+		 * @var outMoved true if a move was executed (including 0 step direction change)
+		 * @return true if it executed normally, false if there was a problem (e.g., the wait for the one-shot timed out)
 		 */
 		virtual bool Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved) = 0;
 	};

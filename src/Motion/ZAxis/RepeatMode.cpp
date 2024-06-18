@@ -4,10 +4,10 @@
 #include <cmath>
 #include <cstdio>
 
-bool ZRepeatReverse::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
+bool ZRepeatReverse::Execute(Axis *aZAxis, ZAxisSM *anSM, bool &outMoved)
 {
 
-	WAIT_FOR_ONE_SHOT_TRIGGER();
+	BEGIN_TRIGGER_SECTION();
 
 	Axis *axis = aZAxis;
 	int32_t minStop = axis->GetMinStop();
@@ -28,12 +28,14 @@ bool ZRepeatReverse::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
 
 	outMoved = false; // only setting direction, not moving
 
+	END_TRIGGER_SECTION();
+
 	return true;
 }
 
-bool ZNoRepeat::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
+bool ZNoRepeat::Execute(Axis *aZAxis, ZAxisSM *anSM, bool &outMoved)
 {
-	WAIT_FOR_ONE_SHOT_TRIGGER();
+	BEGIN_TRIGGER_SECTION();
 
 	Axis *axis = aZAxis;
 	int32_t minStop = axis->GetMinStop();
@@ -51,26 +53,28 @@ bool ZNoRepeat::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
 	if (zStop == AxisStop::MIN && direction == AxisDirection::NEG)
 	{
 		// stop, we're at the destination
-		aZAxisSM->SetMode(AxisMode::STOPPED);
+		anSM->SetMode(AxisMode::STOPPED);
 	}
 	else if (zStop == AxisStop::MAX && direction == AxisDirection::POS)
 	{
 		// stop, we're at the destination
-		aZAxisSM->SetMode(AxisMode::STOPPED);
+		anSM->SetMode(AxisMode::STOPPED);
 	}
 
-	if (PRINTF_AXIS_POSITIONS && aZAxisSM->GetMode() != AxisMode::STOPPED)
+	if (PRINTF_AXIS_POSITIONS && anSM->GetMode() != AxisMode::STOPPED)
 	{
 		printf("Z: %d\n", axis->GetPosition());
 	}
 
 	outMoved = false; // this type always results in no move
+
+	END_TRIGGER_SECTION();
 	return true;
 }
 
-bool ZRepeatAtStart::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
+bool ZRepeatAtStart::Execute(Axis *aZAxis, ZAxisSM *anSM, bool &outMoved)
 {
-	WAIT_FOR_ONE_SHOT_TRIGGER();
+	BEGIN_TRIGGER_SECTION();
 
 	Axis *axis = aZAxis;
 	int32_t minStop = axis->GetMinStop();
@@ -108,6 +112,8 @@ bool ZRepeatAtStart::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM, bool &outMoved)
 	{
 		printf("Z: %d\n", axis->GetPosition());
 	}
+
+	END_TRIGGER_SECTION();
 
 	return true;
 }
