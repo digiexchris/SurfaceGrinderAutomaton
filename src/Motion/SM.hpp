@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Axis.hpp"
+#include "Axis.hpp"
 // #include "MotionController.hpp"
 #include "Enum.hpp"
 
@@ -11,11 +11,14 @@
  * used to block processing until a synchronization event occurs
  * primarily used in the ZAxisSM::Update() thread
  */
-#define BEGIN_TRIGGER_SECTION()              \
-	BaseType_t res = anSM->WaitForTrigger(); \
-	if (res == pdFALSE)                      \
-	{                                        \
-		return false;                        \
+#define BEGIN_TRIGGER_SECTION()                  \
+	if (anSM->GetMode() == AxisMode::ONE_SHOT)   \
+	{                                            \
+		BaseType_t res = anSM->WaitForTrigger(); \
+		if (res == pdFALSE)                      \
+		{                                        \
+			return false;                        \
+		}                                        \
 	}
 
 #define END_TRIGGER_SECTION()                  \
@@ -32,6 +35,7 @@ protected:
 	AxisMode myAxisMode;
 	AxisStop myIsAtStop;
 	Axis *myAxis;
+	uint16_t mySpeed = 0;
 	uint16_t myAdvanceIncrement;
 	Controller *myMotionController;
 
@@ -94,4 +98,15 @@ public:
 	}
 
 	virtual void Update() = 0;
+
+	bool SetSpeed(uint16_t aSpeed)
+	{
+		mySpeed = aSpeed;
+		return true;
+	}
+
+	uint16_t GetSpeed() const
+	{
+		return mySpeed;
+	}
 };

@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Axis.hpp"
+#include "../Axis.hpp"
 #include "../SM.hpp"
 
 class XAxisSM : public MotionControllerSM

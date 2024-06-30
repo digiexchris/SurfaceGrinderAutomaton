@@ -155,3 +155,61 @@ TaskHandle_t MotionController::GetTaskHandle(AxisLabel anAxisLabel)
 {
 	return *myTaskHandles[anAxisLabel];
 }
+
+bool MotionController::SetStop(AxisLabel anAxisLabel, AxisDirection aDirection, int32_t aPosition)
+{
+	switch (aDirection)
+	{
+	case AxisDirection::POS:
+		myAxes[anAxisLabel]->SetMaxStop(aPosition);
+		break;
+	case AxisDirection::NEG:
+		myAxes[anAxisLabel]->SetMinStop(aPosition);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+int32_t MotionController::GetStop(AxisLabel anAxisLabel, AxisDirection aDirection)
+{
+	switch (aDirection)
+	{
+	case AxisDirection::POS:
+		return myAxes[anAxisLabel]->GetMaxStop();
+	case AxisDirection::NEG:
+		return myAxes[anAxisLabel]->GetMinStop();
+	default:
+		panic("GetStop: Invalid AxisDirection");
+	}
+}
+
+bool MotionController::SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed)
+{
+	switch (anAxisLabel)
+	{
+	case AxisLabel::X:
+		myXAxisSM->SetSpeed(aSpeed);
+		break;
+	case AxisLabel::Z:
+		myZAxisSM->SetSpeed(aSpeed);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+uint16_t MotionController::GetSpeed(AxisLabel anAxisLabel)
+{
+	switch (anAxisLabel)
+	{
+	case AxisLabel::X:
+		return myXAxisSM->GetSpeed();
+	case AxisLabel::Z:
+		return myZAxisSM->GetSpeed();
+	default:
+		return 0;
+	}
+}

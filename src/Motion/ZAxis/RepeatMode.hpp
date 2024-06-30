@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../Axis.hpp"
-#include "RepeatMode.hpp"
+#include "../Axis.hpp"
 #include "SM.hpp"
 
 enum class RepeatMode

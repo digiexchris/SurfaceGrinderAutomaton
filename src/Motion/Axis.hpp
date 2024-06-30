@@ -41,6 +41,22 @@ inline std::string AxisDirectionToString(AxisDirection aDirection)
 	}
 }
 
+inline AxisDirection AxisDirectionFromString(const std::string &aDirection)
+{
+	if (aDirection == "+")
+	{
+		return AxisDirection::POS;
+	}
+	else if (aDirection == "-")
+	{
+		return AxisDirection::NEG;
+	}
+	else
+	{
+		return AxisDirection::ERROR;
+	}
+}
+
 enum class AxisStop
 {
 	MIN = -1,

@@ -1,5 +1,5 @@
 #include "SM.hpp"
-#include "../../Axis.hpp"
+#include "../Axis.hpp"
 #include "../SM.hpp"
 #include "MovementMode.hpp"
 #include "RepeatMode.hpp"
@@ -34,6 +34,8 @@ void ZAxisSM::Update()
 			return;
 		}
 
+		myAxis->IsMovementComplete();
+
 		if (!aMoveOccurred)
 		{
 			// for now assume that if the repeat mode executed a move (such as returned to start) there's no need to also step an increment or other move mode
@@ -50,6 +52,7 @@ void ZAxisSM::Update()
 	case AxisMode::MANUAL:
 	case AxisMode::STOPPED:
 	default:
+		xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::X));
 		break;
 	}
 }

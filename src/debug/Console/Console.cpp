@@ -1,12 +1,14 @@
 
 
 #include "Console.hpp"
-#include "Axis.hpp"
+#include "../../Motion/Axis.hpp"
 #include "Enum.hpp"
 #include "Motion/MotionController.hpp"
 #include "microsh.h"
 #include <algorithm>
+#include <hardware/watchdog.h>
 #include <malloc.h>
+#include <pico/printf.h>
 #include <stdio.h>
 #include <string>
 
@@ -43,7 +45,7 @@ void Console::Init(MotionController *aMotionController)
 	// uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
 
 	// Turn off FIFO's - we want to do this character by character
-	uart_set_fifo_enabled(UART_ID, false);
+	// uart_set_fifo_enabled(UART_ID, false);
 
 	// Set up a RX interrupt
 	// We need to set up the handler first
@@ -69,7 +71,22 @@ void Console::Init(MotionController *aMotionController)
 		panic("Failed microsh init!" MICRORL_CFG_END_LINE);
 	}
 
+	// Register the commands
+	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "h", helpCmdCallback, "Help");
+
+	if (cmdRegisterStatus != microshOK)
+	{
+		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
+	}
+
 	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "s", statusCmdCallback, "Prints the status of the system");
+
+	if (cmdRegisterStatus != microshOK)
+	{
+		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
+	}
+
+	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "r", resetCmdCallback, "Resets the system");
 
 	if (cmdRegisterStatus != microshOK)
 	{
@@ -90,8 +107,21 @@ void Console::Init(MotionController *aMotionController)
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
 	}
 
+	cmdRegisterStatus = microsh_cmd_register(mySh, 4, "st", setStopCallback, "st <axis> <direction> <position> - Sets the stop position\n\r <axis> = X, Z \n\r <direction> = P, N \n\r <position> = int32 steps");
+	if (cmdRegisterStatus != microshOK)
+	{
+		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
+	}
+
+	cmdRegisterStatus = microsh_cmd_register(mySh, 3, "sp", setSpeedCallback, "sp <axis> <speed> - Sets the speed of the axis \n\r <axis> = X, Z \n\r <speed> = 0 - 65535 steps per second");
+
+	if (cmdRegisterStatus != microshOK)
+	{
+		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
+	}
+
 	// Start the console task
-	BaseType_t status = xTaskCreate(consoleTask, "ConsoleTask", 2048, NULL, 1, NULL);
+	BaseType_t status = xTaskCreate(consoleTask, "ConsoleTask", 2048 * 4, NULL, 1, NULL);
 
 	if (status != pdPASS)
 	{
@@ -99,6 +129,49 @@ void Console::Init(MotionController *aMotionController)
 	}
 
 	printf("Console initialized" MICRORL_CFG_END_LINE);
+}
+
+int Console::resetCmdCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	printf("Resetting system" MICRORL_CFG_END_LINE);
+	watchdog_reboot(0, SRAM_END, 0);
+	return microshEXEC_OK;
+}
+
+int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	if (argc != 3)
+	{
+		auto cmd = microsh_cmd_find(msh, "sp");
+		printf(cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	std::string a = argv[1];
+	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
+
+	AxisLabel axis = AxisLabelFromString(a);
+	if (axis == AxisLabel::ERROR)
+	{
+		printf("Invalid axis" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	uint32_t speed = std::stoi(argv[2]);
+
+	ConsoleCommandSetSpeed *command = new ConsoleCommandSetSpeed(axis, speed);
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send set speed command to queue" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+	return microshEXEC_OK;
 }
 
 void Console::consoleTask(void *aCommandQueueHandle)
@@ -132,6 +205,18 @@ void Console::consoleTask(void *aCommandQueueHandle)
 					privSetAdvanceIncrementCommand(*setAdvanceIncrementCommand);
 					break;
 				}
+				case ConsoleCommandName::SET_STOP:
+				{
+					ConsoleCommandSetStop *setStopCommand = static_cast<ConsoleCommandSetStop *>(command);
+					privSetStopCommand(*setStopCommand);
+					break;
+				}
+				case ConsoleCommandName::SET_SPEED:
+				{
+					ConsoleCommandSetSpeed *setSpeedCommand = static_cast<ConsoleCommandSetSpeed *>(command);
+					privSetSpeedCommand(*setSpeedCommand);
+					break;
+				}
 				default:
 					printf("Unknown command" MICRORL_CFG_END_LINE);
 					break;
@@ -143,6 +228,67 @@ void Console::consoleTask(void *aCommandQueueHandle)
 			}
 		}
 	}
+}
+
+int Console::helpCmdCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	printf("Commands:" MICRORL_CFG_END_LINE);
+	printf("s - Status" MICRORL_CFG_END_LINE);
+	printf("r - Reset" MICRORL_CFG_END_LINE);
+	printf("m - Mode" MICRORL_CFG_END_LINE);
+	printf("i - Set Advance Increment" MICRORL_CFG_END_LINE);
+	printf("st - Set Stop" MICRORL_CFG_END_LINE);
+	printf("sp - Set Speed" MICRORL_CFG_END_LINE);
+	return microshEXEC_OK;
+}
+
+int Console::setStopCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	if (argc != 4)
+	{
+		auto cmd = microsh_cmd_find(msh, "st");
+		printf(cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	std::string a = argv[1];
+	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
+
+	AxisLabel axis = AxisLabelFromString(a);
+	if (axis == AxisLabel::ERROR)
+	{
+		printf("Invalid axis" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	std::string d = argv[2];
+	std::transform(d.begin(), d.end(), d.begin(), ::toupper);
+	AxisDirection direction = AxisDirectionFromString(d);
+	if (direction == AxisDirection::ERROR)
+	{
+		printf("Invalid direction" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	int32_t position = std::stoi(argv[3]);
+
+	ConsoleCommandSetStop *command = new ConsoleCommandSetStop();
+	command->axis = axis;
+	command->direction = direction;
+	command->position = position;
+
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send set stop command to queue" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+	return microshEXEC_OK;
 }
 
 int Console::statusCmdCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -164,9 +310,24 @@ void Console::privStatusCommand(ConsoleCommandStatus &aCommand)
 {
 	auto xMode = AxisModeToString(myMotionController->GetMode(AxisLabel::X));
 	auto xDirection = AxisDirectionToString(myMotionController->GetDirection(AxisLabel::X));
+	auto xMinStop = myMotionController->GetStop(AxisLabel::X, AxisDirection::NEG);
+	auto xMaxStop = myMotionController->GetStop(AxisLabel::X, AxisDirection::POS);
+	auto xSpeed = myMotionController->GetSpeed(AxisLabel::X);
 	auto zMode = AxisModeToString(myMotionController->GetMode(AxisLabel::Z));
 	auto zDirection = AxisDirectionToString(myMotionController->GetDirection(AxisLabel::Z));
-	printf("Status: OK, X Mode: %s, Dir: %s \n\r Z Mode: %s, Dir: %s" MICRORL_CFG_END_LINE, xMode.c_str(), xDirection.c_str(), zMode.c_str(), zDirection.c_str());
+	auto zMinStop = myMotionController->GetStop(AxisLabel::Z, AxisDirection::NEG);
+	auto zMaxStop = myMotionController->GetStop(AxisLabel::Z, AxisDirection::POS);
+	auto zSpeed = myMotionController->GetSpeed(AxisLabel::Z);
+	printf("Status" MICRORL_CFG_END_LINE);
+	printf("X Mode: %s", xMode.c_str());
+	printf(", Dir: %s", xDirection.c_str());
+	printf(", Stops: %d:%d", xMinStop, xMaxStop);
+	printf(", Speed: %d" MICRORL_CFG_END_LINE, xSpeed);
+
+	printf("Z Mode: %s", zMode.c_str());
+	printf(", Dir: %s", zDirection.c_str());
+	printf(", Stops: %d:%d", zMinStop, zMaxStop);
+	printf(", Speed: %d" MICRORL_CFG_END_LINE, zSpeed);
 }
 
 int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -174,7 +335,9 @@ int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *a
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	if (argc != 3)
 	{
-		printf("Usage: mode <axis> <mode>" MICRORL_CFG_END_LINE);
+		auto cmd = microsh_cmd_find(msh, "m");
+		printf(cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
 
@@ -222,7 +385,9 @@ int Console::setAdvanceIncrementCallback(struct microsh *msh, int argc, const ch
 {
 	if (argc != 3)
 	{
-		printf("Usage: setAdvanceIncrement <axis> <increment>" MICRORL_CFG_END_LINE);
+		auto cmd = microsh_cmd_find(msh, "i");
+		printf(cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
 
@@ -295,4 +460,22 @@ void Console::uartRxInterruptHandler()
 
 		microrl_processing_input(&mySh->mrl, &ch, 1);
 	}
+}
+
+void Console::privSetStopCommand(ConsoleCommandSetStop &aCommand)
+{
+
+	myMotionController->SetStop(aCommand.axis, aCommand.direction, aCommand.position);
+	vTaskDelay(1);
+	auto al = AxisLabelToString(aCommand.axis);
+	auto ad = AxisDirectionToString(aCommand.direction);
+	printf("Status: OK, %s Stop: %s, Position: %d" MICRORL_CFG_END_LINE, al.c_str(), ad.c_str(), myMotionController->GetStop(aCommand.axis, aCommand.direction));
+}
+
+void Console::privSetSpeedCommand(ConsoleCommandSetSpeed &aCommand)
+{
+	myMotionController->SetSpeed(aCommand.axis, aCommand.speed);
+	vTaskDelay(1);
+	auto al = AxisLabelToString(aCommand.axis);
+	printf("Status: OK, %s Speed: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetSpeed(aCommand.axis));
 }

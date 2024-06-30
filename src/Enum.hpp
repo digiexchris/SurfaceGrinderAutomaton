@@ -101,6 +101,7 @@ inline std::string AxisModeToString(AxisMode aMode)
 		return "UNKNOWN";
 	}
 }
+
 /**
  * @brief Enum class for the type of Z travel moves
  * AT_BOTH_ENDS = move the Z axis when the X axis has stopped at either end of it's travel

@@ -1,6 +1,7 @@
 #include "config.hpp"
 #include "drivers/Motor/Stepper.hpp"
 // #include "hardware/watchdog.h"
+#include "pico/platform.h"
 #include "pico/stdlib.h"
 #include <Motion/MotionController.hpp>
 #include <iostream>
@@ -76,6 +77,7 @@ void PrintStackTrace(uint32_t *stackPointer)
 
 extern "C" void isr_hardfault(void)
 {
+	__breakpoint();
 	__asm volatile(
 		"MOVS R0, #4 \n"
 		"MOV R1, LR \n"

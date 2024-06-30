@@ -1,5 +1,5 @@
 #include "RepeatMode.hpp"
-#include "../../Axis.hpp"
+#include "../Axis.hpp"
 #include "SM.hpp"
 #include <cmath>
 #include <cstdio>

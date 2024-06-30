@@ -6,6 +6,7 @@
 #include "pico/stdlib.h"
 #include "portmacro.h"
 #include <cmath>
+#include <pico/printf.h>
 #include <semphr.h>
 #include <stdio.h>
 
@@ -16,7 +17,7 @@ Axis::Axis(Stepper *aStepper, AxisLabel anAxisLabel)
 
 	myCommandQueue = xQueueCreate(10, sizeof(AxisCommand *));
 	myStateMutex = xSemaphoreCreateMutex();
-	myQueueIsProcessing = xSemaphoreCreateBinary();
+	myQueueIsProcessing = xSemaphoreCreateRecursiveMutex();
 	myDirectionMutex = xSemaphoreCreateMutex();
 	configASSERT(myStateMutex);
 	configASSERT(myDirectionMutex);
@@ -144,15 +145,17 @@ uint8_t Axis::GetQueueSize()
 
 bool Axis::IsMovementComplete(TickType_t aTimeout)
 {
-	if (uxQueueMessagesWaiting(myCommandQueue) == 0)
+
+	if (myCommandQueue != 0)
 	{
-		return true;
+		return false;
 	}
 
 	BaseType_t status = xQueueSemaphoreTake(myQueueIsProcessing, aTimeout);
 
 	if (status == pdTRUE)
 	{
+		xSemaphoreGive(myQueueIsProcessing);
 		return true;
 	}
 	else
@@ -170,6 +173,7 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 		AxisCommand *command;
 		if (xQueueReceive(axis->myCommandQueue, &command, portMAX_DELAY) == pdTRUE)
 		{
+			xSemaphoreTake(axis->myQueueIsProcessing, portMAX_DELAY);
 			switch (command->cmd)
 			{
 			case AxisCommandName::MOVE:

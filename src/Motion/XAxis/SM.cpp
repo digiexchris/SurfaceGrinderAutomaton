@@ -76,6 +76,8 @@ void XAxisSM::Update()
 	case AxisMode::MANUAL:
 	case AxisMode::STOPPED:
 	default:
+		xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::Z));
+		vTaskDelay(10 * portTICK_PERIOD_MS);
 		break;
 	}
 }

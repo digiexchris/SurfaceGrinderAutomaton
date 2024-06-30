@@ -25,6 +25,10 @@ public:
 	uint32_t GetAdvanceIncrement(AxisLabel anAxisLabel);
 	AxisDirection GetDirection(AxisLabel anAxisLabel);
 	TaskHandle_t GetTaskHandle(AxisLabel anAxisLabel);
+	bool SetStop(AxisLabel anAxisLabel, AxisDirection aDirection, int32_t aPosition);
+	int32_t GetStop(AxisLabel anAxisLabel, AxisDirection aDirection);
+	bool SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed);
+	uint16_t GetSpeed(AxisLabel anAxisLabel);
 
 private:
 	std::unordered_map<AxisLabel, Axis *> myAxes;
