@@ -17,7 +17,7 @@ Axis::Axis(Stepper *aStepper, AxisLabel anAxisLabel)
 
 	myCommandQueue = xQueueCreate(10, sizeof(AxisCommand *));
 	myStateMutex = xSemaphoreCreateMutex();
-	myQueueIsProcessing = xSemaphoreCreateRecursiveMutex();
+	myQueueIsProcessing = xSemaphoreCreateBinary();
 	myDirectionMutex = xSemaphoreCreateMutex();
 	configASSERT(myStateMutex);
 	configASSERT(myDirectionMutex);
@@ -112,8 +112,8 @@ AxisDirection Axis::GetPreviousDirection()
 
 void Axis::Move(uint32_t aDistance, uint16_t aSpeed)
 {
+	xQueueSemaphoreTake(myQueueIsProcessing, 0);
 	AxisMoveCommand *cmd = new AxisMoveCommand(aDistance, aSpeed);
-
 	if (xQueueSend(myCommandQueue, &cmd, portMAX_DELAY) != pdPASS)
 	{
 		printf("Failed to send move command to queue\n");
@@ -127,6 +127,7 @@ void Axis::Move(uint32_t aDistance, uint16_t aSpeed)
 
 void Axis::SetDirection(AxisDirection aDirection)
 {
+	xQueueSemaphoreTake(myQueueIsProcessing, 0);
 	AxisSetDirectionCommand *cmd = new AxisSetDirectionCommand(aDirection);
 	if (xQueueSend(myCommandQueue, &cmd, portMAX_DELAY) != pdPASS)
 	{
@@ -146,10 +147,10 @@ uint8_t Axis::GetQueueSize()
 bool Axis::IsMovementComplete(TickType_t aTimeout)
 {
 
-	if (myCommandQueue != 0)
-	{
-		return false;
-	}
+	// if (GetQueueSize() != 0)
+	// {
+	// 	return false;
+	// }
 
 	BaseType_t status = xQueueSemaphoreTake(myQueueIsProcessing, aTimeout);
 
@@ -173,7 +174,6 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 		AxisCommand *command;
 		if (xQueueReceive(axis->myCommandQueue, &command, portMAX_DELAY) == pdTRUE)
 		{
-			xSemaphoreTake(axis->myQueueIsProcessing, portMAX_DELAY);
 			switch (command->cmd)
 			{
 			case AxisCommandName::MOVE:
@@ -213,14 +213,14 @@ void Axis::privProcessCommandQueue(void *pvParameters)
 			}
 
 			delete command; // Free the command after processing
+
+			// queue is empty, inform whoever cares
 		}
 
-		// queue is empty, inform whoever cares
-		if (uxQueueMessagesWaiting(axis->myCommandQueue) == 0)
+		if (axis->GetQueueSize() == 0)
 		{
 			xSemaphoreGive(axis->myQueueIsProcessing);
 		}
-
 		PrintStackHighWaterMark(axis->myCommandQueueTask);
 	}
 }

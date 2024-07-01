@@ -53,6 +53,11 @@ void Stepper::Move(int totalSteps, uint16_t aSpeed)
 	float stepDelay = 0;
 	float targetSpeed = aSpeed;
 
+	if (targetSpeed > maxSpeed)
+	{
+		panic("Speed is greater than the stepper's max speed");
+	}
+
 	// Calculate the maximum steps for acceleration and deceleration
 	int maxStepsToAccelerate = (targetSpeed * targetSpeed) / (2 * acceleration);
 	int stepsToAccelerate = std::min(totalSteps / 2, maxStepsToAccelerate);

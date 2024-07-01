@@ -10,6 +10,7 @@
 #include <Enum.hpp>
 #include <FreeRTOS.h>
 #include <cmath>
+#include <cstdint>
 #include <pico/printf.h>
 #include <pico/stdio.h>
 #include <semphr.h>

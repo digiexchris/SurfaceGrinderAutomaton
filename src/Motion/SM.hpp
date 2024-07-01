@@ -38,6 +38,7 @@ protected:
 	uint16_t mySpeed = 0;
 	uint16_t myAdvanceIncrement;
 	Controller *myMotionController;
+	int32_t myTargetPosition = 0;
 
 public:
 	MotionControllerSM(Axis *anAxis, Controller *aMotionController)

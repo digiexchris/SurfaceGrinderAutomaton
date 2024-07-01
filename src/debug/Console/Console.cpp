@@ -107,7 +107,7 @@ void Console::Init(MotionController *aMotionController)
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
 	}
 
-	cmdRegisterStatus = microsh_cmd_register(mySh, 4, "st", setStopCallback, "st <axis> <direction> <position> - Sets the stop position\n\r <axis> = X, Z \n\r <direction> = P, N \n\r <position> = int32 steps");
+	cmdRegisterStatus = microsh_cmd_register(mySh, 4, "st", setStopCallback, "st <axis> <direction> <position> - Sets the stop position\n\r <axis> = X, Z \n\r <direction> = +, - \n\r <position> = int32 steps");
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);

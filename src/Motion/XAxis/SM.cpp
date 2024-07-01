@@ -16,68 +16,70 @@ void XAxisSM::Update()
 			int32_t minStop = myAxis->GetMinStop();
 			int32_t maxStop = myAxis->GetMaxStop();
 
-			/* Check and execute a Z move if necessary */
 			if (myAxis->GetPosition() <= minStop)
 			{
-				myAxis->SetDirection(AxisDirection::POS);
+				myTargetPosition = maxStop;
 			}
 			else if (myAxis->GetPosition() >= maxStop)
 			{
-				myAxis->SetDirection(AxisDirection::NEG);
-			}
-
-			AxisDirection direction = myAxis->GetPreviousDirection();
-
-			bool moveOccurred = false;
-
-			/* Traverse to the opposite stop
-			side effect: if you stop it mid-pass it will reverse immediately. fine for now, fix it later*/
-			if (direction == AxisDirection::POS)
-			{
-				int32_t distance = minStop - myAxis->GetPosition();
-				if (distance != 0)
-				{
-					myAxis->Move(std::abs(distance), XAXIS_MAX_SPEED);
-					moveOccurred = true;
-				}
+				myTargetPosition = minStop;
 			}
 			else
 			{
-				int32_t distance = maxStop - myAxis->GetPosition();
-				if (distance != 0)
+				AxisDirection direction = myAxis->GetDirection();
+
+				if (direction == AxisDirection::POS)
 				{
-					myAxis->Move(std::abs(distance), XAXIS_MAX_SPEED);
-					moveOccurred = true;
+					myTargetPosition = maxStop;
+				}
+				else
+				{
+					myTargetPosition = minStop;
 				}
 			}
+		}
+	}
+
+		// both auto and manual move to the target the same way so it's not breaking here
+
+	case AxisMode::MANUAL:
+	{
+		auto pos = myAxis->GetPosition();
+		if (pos != myTargetPosition)
+		{
+			if (pos > myTargetPosition)
+			{
+				myAxis->SetDirection(AxisDirection::NEG);
+			}
+			else
+			{
+				myAxis->SetDirection(AxisDirection::POS);
+			}
+
+			myAxis->Move(std::abs(myTargetPosition - pos), mySpeed);
 
 			/* tiny bit of time for everything to settle, but considering
-			we're pausing to wait for the Z traverse, this could probably
-			be very short or even zero*/
+				we're pausing to wait for the Z traverse, this could probably
+				be very short or even zero*/
 			myAxis->Wait(100);
-
-			taskYIELD(); // if this thread is the same priority as the axis, let it move
-
+			taskYIELD();
 			myAxis->IsMovementComplete();
 
-			if (PRINTF_AXIS_POSITIONS && moveOccurred)
+			if (PRINTF_AXIS_POSITIONS)
 			{
 				printf("X: %d\n", myAxis->GetPosition());
 			}
-
-			/* Notify the Z axis to advance */
-			xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::Z));
-			/* Wait for the Z axis to finish */
-			xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
 		}
 	}
 	break;
 
-	case AxisMode::MANUAL:
+	// stopped doesn't move at all
 	case AxisMode::STOPPED:
 	default:
-		xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::Z));
-		vTaskDelay(10 * portTICK_PERIOD_MS);
 		break;
 	}
+
+	xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::Z));
+	xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+	vTaskDelay(1 * portTICK_PERIOD_MS);
 }

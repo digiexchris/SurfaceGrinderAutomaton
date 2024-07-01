@@ -43,16 +43,15 @@ void ZAxisSM::Update()
 		}
 
 		myAxis->IsMovementComplete();
-
-		/* Notify the X axis to do the next pass */
-		xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::X));
 	}
 	break;
 
 	case AxisMode::MANUAL:
 	case AxisMode::STOPPED:
 	default:
-		xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::X));
+
 		break;
 	}
+
+	xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::X));
 }
