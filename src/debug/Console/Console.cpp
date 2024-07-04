@@ -65,7 +65,6 @@ void Console::Init(MotionController *aMotionController)
 	mySh = (microsh_t *)malloc(sizeof(microsh_t));
 	microshr_t cmdRegisterStatus = microshOK;
 	cmdRegisterStatus = microsh_init(mySh, privPrintFn);
-
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("Failed microsh init!" MICRORL_CFG_END_LINE);
@@ -73,35 +72,30 @@ void Console::Init(MotionController *aMotionController)
 
 	// Register the commands
 	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "h", helpCmdCallback, "Help");
-
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
 	}
 
 	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "s", statusCmdCallback, "Prints the status of the system");
-
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
 	}
 
 	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "r", resetCmdCallback, "Resets the system");
-
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
 	}
 
 	cmdRegisterStatus = microsh_cmd_register(mySh, 3, "m", modeCmdCallback, "m <axis> <mode> - Sets the mode of the axis \n\r <axis> = X, Y, Z \n\r <mode> = S, A, O, M (Stopped, Automatic, One Shot, Manual)");
-
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
 	}
 
 	cmdRegisterStatus = microsh_cmd_register(mySh, 3, "i", setAdvanceIncrementCallback, "i <axis> <increment> - Sets the advance increment of the axis in steps \n\r <axis> = X, Y, Z \n\r <increment> = 0 - 4294967295");
-
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
@@ -114,7 +108,12 @@ void Console::Init(MotionController *aMotionController)
 	}
 
 	cmdRegisterStatus = microsh_cmd_register(mySh, 3, "sp", setSpeedCallback, "sp <axis> <speed> - Sets the speed of the axis \n\r <axis> = X, Z \n\r <speed> = 0 - 65535 steps per second");
+	if (cmdRegisterStatus != microshOK)
+	{
+		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
+	}
 
+	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "mv", microsh_cmd_quit, "mv <axis> <distance> - Moves the axis a distance in steps \n\r <axis> = X, Z \n\r <distance> = int32 steps");
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
@@ -122,7 +121,6 @@ void Console::Init(MotionController *aMotionController)
 
 	// Start the console task
 	BaseType_t status = xTaskCreate(consoleTask, "ConsoleTask", 2048 * 4, NULL, 1, NULL);
-
 	if (status != pdPASS)
 	{
 		panic("Failed to create ConsoleTask\n");
@@ -228,6 +226,51 @@ void Console::consoleTask(void *aCommandQueueHandle)
 			}
 		}
 	}
+}
+
+int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	if (argc != 3)
+	{
+		auto cmd = microsh_cmd_find(msh, "mv");
+		printf(cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	std::string a = argv[1];
+	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
+
+	AxisLabel axis = AxisLabelFromString(a);
+	if (axis == AxisLabel::ERROR)
+	{
+		printf("Invalid axis" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	int32_t distance = std::stoi(argv[2]);
+
+	ConsoleCommandMoveRelative *command = new ConsoleCommandMoveRelative(axis, distance);
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send move relative command to queue" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+	return microshEXEC_OK;
+}
+
+void Console::privMoveRelativeCommand(ConsoleCommandMoveRelative &aCommand)
+{
+	myMotionController->MoveRelative(aCommand.axis, aCommand.distance);
+	vTaskDelay(1);
+	auto al = AxisLabelToString(aCommand.axis);
+	auto pos = myMotionController->GetPosition(aCommand.axis);
+	printf("Status: OK, %s Position: %d" MICRORL_CFG_END_LINE, al.c_str(), pos);
 }
 
 int Console::helpCmdCallback(struct microsh *msh, int argc, const char *const *argv)

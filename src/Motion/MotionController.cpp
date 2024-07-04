@@ -57,6 +57,27 @@ MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Step
 	printf("MotionController done\n");
 }
 
+bool MotionController::MoveRelative(AxisLabel anAxisLabel, int32_t aDistance)
+{
+	// simply updates the target position. The next update loop will move the axis if the manual mode is set
+	// note: this is not blocking, and will override the target position of any automatic move.
+	// this behaviour might be useful, but might be unwanted. TODO: figure that out, and block it if it's not in the manual mode specifically maybe.
+	// it could be useful for the x axis to back it away from a collision while you're panicing, or for the Z axis to advance until the cut starts,
+	// or for Y to bump the head down until it contacts the workpiece while automode is running...
+	switch (anAxisLabel)
+	{
+	case AxisLabel::X:
+		myXAxisSM->MoveRelative(aDistance);
+		break;
+	case AxisLabel::Z:
+		myZAxisSM->MoveRelative(aDistance);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
 AxisDirection MotionController::GetDirection(AxisLabel anAxisLabel)
 {
 	switch (anAxisLabel)

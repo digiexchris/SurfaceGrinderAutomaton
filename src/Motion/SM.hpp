@@ -110,4 +110,10 @@ public:
 	{
 		return mySpeed;
 	}
+
+	bool MoveRelative(int32_t aDistance)
+	{
+		myTargetPosition = myAxis->GetPosition() + aDistance;
+		return true;
+	}
 };

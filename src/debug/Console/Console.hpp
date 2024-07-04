@@ -64,6 +64,13 @@ struct ConsoleCommandSetSpeed : ConsoleCommand
 	AxisLabel axis;
 };
 
+struct ConsoleCommandMoveRelative : ConsoleCommand
+{
+	ConsoleCommandMoveRelative(AxisLabel anAxis, int32_t aDistance) : ConsoleCommand(ConsoleCommandName::NONE), axis(anAxis), distance(aDistance) {}
+	int32_t distance;
+	AxisLabel axis;
+};
+
 class Console
 {
 public:
@@ -82,6 +89,7 @@ private:
 	static int setStopCallback(struct microsh *msh, int argc, const char *const *argv);
 	static int setSpeedCallback(struct microsh *msh, int argc, const char *const *argv);
 	static int helpCmdCallback(struct microsh *msh, int argc, const char *const *argv);
+	static int moveRelativeCommandCallback(struct microsh *msh, int argc, const char *const *argv);
 
 	static void consoleTask(void *pvParameters);
 
@@ -90,4 +98,5 @@ private:
 	static void privSetAdvanceIncrementCommand(ConsoleCommandSetAdvanceIncrement &aCommand);
 	static void privSetStopCommand(ConsoleCommandSetStop &aCommand);
 	static void privSetSpeedCommand(ConsoleCommandSetSpeed &aCommand);
+	static void privMoveRelativeCommand(ConsoleCommandMoveRelative &aCommand);
 };
