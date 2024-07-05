@@ -64,46 +64,6 @@ enum class AxisStop
 	NEITHER = 0
 };
 
-enum class AxisCommandName
-{
-	MOVE,
-	SET_DIRECTION,
-	WAIT
-};
-
-struct AxisCommand
-{
-	AxisCommandName cmd;
-};
-
-struct AxisMoveCommand : public AxisCommand
-{
-	AxisMoveCommand(int32_t aDistance, uint16_t aSpeed) : distance(aDistance), speed(aSpeed)
-	{
-		cmd = AxisCommandName::MOVE;
-	}
-	int32_t distance;
-	uint16_t speed;
-};
-
-struct AxisWaitCommand : AxisCommand
-{
-	AxisWaitCommand(int32_t aDurationMs = 1) : durationMs(aDurationMs)
-	{
-		cmd = AxisCommandName::WAIT;
-	}
-	int32_t durationMs;
-};
-
-struct AxisSetDirectionCommand : AxisCommand
-{
-	AxisSetDirectionCommand(AxisDirection aDirection) : direction(aDirection)
-	{
-		cmd = AxisCommandName::SET_DIRECTION;
-	}
-	AxisDirection direction;
-};
-
 enum class AxisState
 {
 	STOPPED,
@@ -122,9 +82,11 @@ public:
 	int32_t GetMinStop();
 	void SetMaxStop(int32_t aMaxStop);
 	int32_t GetMaxStop();
-	void Move(uint32_t aDistance, uint16_t aSpeed);
-	void SetDirection(AxisDirection aDirection);
-	void Wait(int32_t aDurationMs);
+	void SetTargetPosition(int32_t aPosition);
+	void SetSpeed(uint16_t aSpeed);
+	int16_t GetSpeed();
+	//void SetDirection(AxisDirection aDirection);
+	// void Wait(int32_t aDurationMs);
 	AxisState GetState();
 	AxisDirection GetDirection();
 	AxisStop IsAtStop();
@@ -132,7 +94,7 @@ public:
 
 	bool IsMovementComplete(TickType_t aTimeout = portMAX_DELAY);
 
-	uint8_t GetQueueSize();
+	// uint8_t GetQueueSize();
 
 	/**
 	* @brief Stop the axis from moving
@@ -150,21 +112,24 @@ public:
 	void EStop();
 
 private:
-	TaskHandle_t myCommandQueueTask;
+	// TaskHandle_t myCommandQueueTask;
 	SemaphoreHandle_t myStateMutex;
 	SemaphoreHandle_t myDirectionMutex;
-	SemaphoreHandle_t myQueueIsProcessing;
+	SemaphoreHandle_t myMoveInProgress;
+	SemaphoreHandle_t myReadyForNextMove;
 	AxisDirection myPreviousDirection = AxisDirection::POS;
 	AxisDirection myDirection = AxisDirection::POS;
 	AxisState myState = AxisState::STOPPED;
 	Stepper *myStepper;
 	int32_t myPosition = 0;
+	int32_t myTargetPosition = 0;
+	int32_t myMaxSpeed = 0;
 	int32_t myMinStop = 0;
 	int32_t myMaxStop = 0;
-	QueueHandle_t myCommandQueue;
+	// QueueHandle_t myCommandQueue;
 	AxisLabel myAxisLabel;
 
-	static void privProcessCommandQueue(void *pvParameters);
-	void privMove(uint32_t aDistance, uint16_t aSpeed);
-	void privSetDirection(AxisDirection aDirection);
+	static void MoveThread(void *pvParameters);
+	//void privMove(uint32_t aDistance, uint16_t aSpeed);
+	//void privSetDirection(AxisDirection aDirection);
 };

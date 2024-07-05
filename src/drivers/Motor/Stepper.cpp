@@ -1,4 +1,5 @@
 #include "Stepper.hpp"
+#include "Enum.hpp"
 #include "config.hpp"
 #include "stepper.pio.h"
 #include <cmath>
@@ -41,7 +42,12 @@ void Stepper::SetDirection(bool direction)
 	}
 }
 
-void Stepper::Move(int totalSteps, uint16_t aSpeed)
+void Stepper::DirectionChangedWait()
+{
+	vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
+}
+
+void Stepper::Move(uint32_t totalSteps, uint16_t aSpeed)
 {
 	// Ensure the FIFO is empty before sending new commands
 	while (!pio_sm_is_tx_fifo_empty(pio, sm))
@@ -60,7 +66,7 @@ void Stepper::Move(int totalSteps, uint16_t aSpeed)
 
 	// Calculate the maximum steps for acceleration and deceleration
 	int maxStepsToAccelerate = (targetSpeed * targetSpeed) / (2 * acceleration);
-	int stepsToAccelerate = std::min(totalSteps / 2, maxStepsToAccelerate);
+	int stepsToAccelerate = std::min(static_cast<int>(totalSteps / 2), maxStepsToAccelerate);
 	int stepsToDecelerate = stepsToAccelerate;
 	int stepsToCruise = totalSteps - stepsToAccelerate - stepsToDecelerate;
 

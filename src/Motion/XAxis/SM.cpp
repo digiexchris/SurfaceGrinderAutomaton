@@ -1,4 +1,5 @@
 #include "SM.hpp"
+#include "Enum.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -18,70 +19,49 @@ void XAxisSM::Update()
 
 			if (myAxis->GetPosition() <= minStop)
 			{
-				myTargetPosition = maxStop;
+				myAxis->SetTargetPosition(maxStop);
 			}
 			else if (myAxis->GetPosition() >= maxStop)
 			{
-				myTargetPosition = minStop;
+				myAxis->SetTargetPosition(minStop);
 			}
 			else
 			{
+				//it's somewhere in between
 				AxisDirection direction = myAxis->GetDirection();
 
 				if (direction == AxisDirection::POS)
 				{
-					myTargetPosition = maxStop;
+					myAxis->SetTargetPosition(maxStop);
 				}
 				else
 				{
-					myTargetPosition = minStop;
+					myAxis->SetTargetPosition(minStop);
 				}
 			}
-		}
-	}
-
-		// both auto and manual move to the target the same way so it's not breaking here
-
-	case AxisMode::MANUAL:
-	{
-		auto pos = myAxis->GetPosition();
-		if (pos != myTargetPosition)
-		{
-			if (pos > myTargetPosition)
-			{
-				myAxis->SetDirection(AxisDirection::NEG);
-			}
-			else
-			{
-				myAxis->SetDirection(AxisDirection::POS);
-			}
-
-			myAxis->Move(std::abs(myTargetPosition - pos), mySpeed);
-
-			/* tiny bit of time for everything to settle, but considering
-				we're pausing to wait for the Z traverse, this could probably
-				be very short or even zero*/
-			myAxis->Wait(100);
-			taskYIELD();
 			myAxis->IsMovementComplete();
 
 			if (PRINTF_AXIS_POSITIONS)
 			{
-				printf("X: %d\n", myAxis->GetPosition());
+				printf("X Update: X: %d\n", myAxis->GetPosition());
 			}
+
+			// This is only correct if Z is in auto mode. If Z is in manual mode or a continuous advance type, it should not wait on X.
+			// maybe we need another enum to indicate this axis and another axis are sychronized or not.
+			xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::Z));
+			xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+			vTaskDelay(1 * portTICK_PERIOD_MS);
 		}
 	}
 	break;
 
 	// stopped doesn't move at all
+	// manual will be handled via an encoder callback or console command
+	case AxisMode::MANUAL:
 	case AxisMode::STOPPED:
 	default:
 		break;
 	}
 
-	// TODO this is only correct if Z is in auto mode. If Z is in manual mode or a continuous advance type, it should not wait on X.
-	// maybe we need another enum to indicate this axis and another axis are sychronized or not.
-	xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::Z));
-	xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
-	vTaskDelay(1 * portTICK_PERIOD_MS);
+
 }

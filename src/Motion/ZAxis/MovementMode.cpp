@@ -4,25 +4,28 @@
 void ZMoveBothEnds::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM)
 {
 
-	// todo strip the repeat out of this
+	/* wait for X axis to stop moving and tell Z to advance (manual mode to do the same)*/
+	BaseType_t res = xTaskNotifyWait(0, 0, NULL, 20 * portTICK_PERIOD_MS);
+	if (res == pdFALSE)
+	{
+		return;
+	}
+	
 	Axis *axis = aZAxis;
 	int32_t minStop = axis->GetMinStop();
 	int32_t maxStop = axis->GetMaxStop();
 	AxisDirection direction = axis->GetDirection();
 	AxisStop zStop = axis->IsAtStop();
 
-	if (zStop == AxisStop::MIN && direction == AxisDirection::NEG)
+	if (zStop == AxisStop::MIN || axis->GetDirection() == AxisDirection::POS)
 	{
-		// up against a stop, gotta wait for the next cycle for the Reverse mode to switch direction
-		return;
+		axis->SetTargetPosition(axis->GetPosition() + aZAxisSM->GetAdvanceIncrement());
 	}
-	else if (zStop == AxisStop::MAX && direction == AxisDirection::POS)
+	else if (zStop == AxisStop::MAX || axis->GetDirection() == AxisDirection::NEG)
 	{
-		// up against a stop, gotta wait for the next cycle for the Reverse mode to switch direction
-		return;
+		axis->SetTargetPosition(axis->GetPosition() - aZAxisSM->GetAdvanceIncrement());
 	}
-	axis->Move(aZAxisSM->GetAdvanceIncrement(), ZAXIS_MAX_SPEED);
-
+	
 	axis->IsMovementComplete();
 
 	if (PRINTF_AXIS_POSITIONS)

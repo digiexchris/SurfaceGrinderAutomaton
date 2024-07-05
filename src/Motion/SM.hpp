@@ -35,10 +35,8 @@ protected:
 	AxisMode myAxisMode;
 	AxisStop myIsAtStop;
 	Axis *myAxis;
-	uint16_t mySpeed = 0;
 	uint16_t myAdvanceIncrement;
 	Controller *myMotionController;
-	int32_t myTargetPosition = 0;
 
 public:
 	MotionControllerSM(Axis *anAxis, Controller *aMotionController)
@@ -83,14 +81,9 @@ public:
 		return mode;
 	}
 
-	void SetIsAtStop(AxisStop aStop)
-	{
-		myIsAtStop = aStop;
-	}
-
 	AxisStop GetIsAtStop() const
 	{
-		return myIsAtStop;
+		return myAxis->IsAtStop();
 	}
 
 	void Trigger()
@@ -102,18 +95,18 @@ public:
 
 	bool SetSpeed(uint16_t aSpeed)
 	{
-		mySpeed = aSpeed;
+		myAxis->SetSpeed(aSpeed);
 		return true;
 	}
 
 	uint16_t GetSpeed() const
 	{
-		return mySpeed;
+		return myAxis->GetSpeed();
 	}
 
 	bool MoveRelative(int32_t aDistance)
 	{
-		myTargetPosition = myAxis->GetPosition() + aDistance;
+		myAxis->SetTargetPosition(myAxis->GetPosition() + aDistance);
 		return true;
 	}
 };

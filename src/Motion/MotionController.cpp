@@ -207,6 +207,11 @@ int32_t MotionController::GetStop(AxisLabel anAxisLabel, AxisDirection aDirectio
 	}
 }
 
+int32_t MotionController::GetPosition(AxisLabel anAxisLabel)
+{
+	return myAxes[anAxisLabel]->GetPosition();
+}
+
 bool MotionController::SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed)
 {
 	switch (anAxisLabel)

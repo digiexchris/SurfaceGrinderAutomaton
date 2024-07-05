@@ -113,7 +113,7 @@ void Console::Init(MotionController *aMotionController)
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
 	}
 
-	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "mv", microsh_cmd_quit, "mv <axis> <distance> - Moves the axis a distance in steps \n\r <axis> = X, Z \n\r <distance> = int32 steps");
+	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "mv", moveRelativeCommandCallback, "mv <axis> <distance> - Moves the axis a distance in steps \n\r <axis> = X, Z \n\r <distance> = int32 steps");
 	if (cmdRegisterStatus != microshOK)
 	{
 		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
@@ -352,22 +352,26 @@ int Console::statusCmdCallback(struct microsh *msh, int argc, const char *const 
 void Console::privStatusCommand(ConsoleCommandStatus &aCommand)
 {
 	auto xMode = AxisModeToString(myMotionController->GetMode(AxisLabel::X));
+	auto xPos = myMotionController->GetPosition(AxisLabel::X);
 	auto xDirection = AxisDirectionToString(myMotionController->GetDirection(AxisLabel::X));
 	auto xMinStop = myMotionController->GetStop(AxisLabel::X, AxisDirection::NEG);
 	auto xMaxStop = myMotionController->GetStop(AxisLabel::X, AxisDirection::POS);
 	auto xSpeed = myMotionController->GetSpeed(AxisLabel::X);
 	auto zMode = AxisModeToString(myMotionController->GetMode(AxisLabel::Z));
+	auto zPos = myMotionController->GetPosition(AxisLabel::Z);
 	auto zDirection = AxisDirectionToString(myMotionController->GetDirection(AxisLabel::Z));
 	auto zMinStop = myMotionController->GetStop(AxisLabel::Z, AxisDirection::NEG);
 	auto zMaxStop = myMotionController->GetStop(AxisLabel::Z, AxisDirection::POS);
 	auto zSpeed = myMotionController->GetSpeed(AxisLabel::Z);
 	printf("Status" MICRORL_CFG_END_LINE);
 	printf("X Mode: %s", xMode.c_str());
+	printf(", Pos: %d", xPos);
 	printf(", Dir: %s", xDirection.c_str());
 	printf(", Stops: %d:%d", xMinStop, xMaxStop);
 	printf(", Speed: %d" MICRORL_CFG_END_LINE, xSpeed);
 
 	printf("Z Mode: %s", zMode.c_str());
+	printf(", Pos: %d", zPos);
 	printf(", Dir: %s", zDirection.c_str());
 	printf(", Stops: %d:%d", zMinStop, zMaxStop);
 	printf(", Speed: %d" MICRORL_CFG_END_LINE, zSpeed);

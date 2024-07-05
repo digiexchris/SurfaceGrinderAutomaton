@@ -30,6 +30,7 @@ public:
 	bool SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed);
 	uint16_t GetSpeed(AxisLabel anAxisLabel);
 	bool MoveRelative(AxisLabel anAxisLabel, int32_t aDistance);
+	int32_t GetPosition(AxisLabel anAxisLabel);
 
 private:
 	std::unordered_map<AxisLabel, Axis *> myAxes;
