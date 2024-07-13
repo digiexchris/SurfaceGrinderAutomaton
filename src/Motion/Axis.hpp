@@ -26,18 +26,16 @@ enum class AxisDirection
 	ERROR = -1 // locked by mutex
 };
 
-inline std::string AxisDirectionToString(AxisDirection aDirection)
+inline char AxisDirectionToChar(AxisDirection aDirection)
 {
 	switch (aDirection)
 	{
 	case AxisDirection::POS:
-		return "+";
+		return '+';
 	case AxisDirection::NEG:
-		return "-";
-	case AxisDirection::ERROR:
-		return "E";
+		return '-';
 	default:
-		return "UNKNOWN";
+		return 'E';
 	}
 }
 
@@ -72,64 +70,58 @@ enum class AxisState
 	LOCKED // locked by mutex
 };
 
-class Axis
+class Axis : public Stepper
+// TODO extend from an interface that abstracts Stepper, Axis just adds in the concept of stops and current and previous directions now.The movement thread just calls stepper update as fast as possible if it's !Idle or if it is idle, update() should block until something requests a new target position (save them cpu cycles)
 {
 public:
-	Axis(Stepper *aStepper, AxisLabel anAxisLabel);
-	void SetPosition(int32_t aPosition);
-	int32_t GetPosition();
+	Axis(AxisLabel anAxisLabel, uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm);
 	void SetMinStop(int32_t aMinStop);
 	int32_t GetMinStop();
 	void SetMaxStop(int32_t aMaxStop);
 	int32_t GetMaxStop();
-	void SetTargetPosition(int32_t aPosition);
-	void SetSpeed(uint16_t aSpeed);
-	int16_t GetSpeed();
-	//void SetDirection(AxisDirection aDirection);
-	// void Wait(int32_t aDurationMs);
-	AxisState GetState();
-	AxisDirection GetDirection();
+
+	/**
+	@brief Determine if the stepper is resting at a stop. This should only be called if the stepper is idle otherwise the stepper may be in the process of moving off of a stop or arriving at a stop.
+	@return The the current stop the stepper is at, or NEITHER if it is not at a stop
+
+	 */
 	AxisStop IsAtStop();
-	AxisDirection GetPreviousDirection();
 
-	bool IsMovementComplete(TickType_t aTimeout = portMAX_DELAY);
+	/**
+	@brief Move the axis to a specific position, cappped to within the set stops
+	@param aPosition The position to move the axis to
+	@param aSpeed The speed to move the axis to the position. if not passed, the axis's current speed will be used
+	 */
+	void MoveTo(int32_t aPosition, uint16_t aSpeed = 0);
 
-	// uint8_t GetQueueSize();
+	/**
+	@brief Move the set target position a number of steps
+	@param aDistance The number of steps to move the target position
+	@param aSpeed The speed to move the target position. if not passed, the axis's current speed will be used
+
+	Note: if the axis is in motion, this only moves the target position. The current position will continue being managed by the stepper internally.
+	 */
+	void MoveRelative(int32_t aDistance, uint16_t aSpeed = 0);
+
+	/**
+	@brief block until the stepper is idle
+	@param aTimeout The maximum time to wait for the stepper to become idle
+	@return true if the stepper is idle, false if the timeout was reached
+	 */
+	bool WaitUntilMovementComplete(TickType_t aTimeout = portMAX_DELAY);
 
 	/**
 	* @brief Stop the axis from moving
 	todo: implement this in the stepper
 	it needs to stop generating any more steps, calculate how many steps are required to decelerate to a stop, and do it.
 	 */
-	void Stop();
-
-	/**
-	 * @brief Emergency stop the axis from moving
-	 * todo: implement this in the stepper
-	 * it needs to stop generating any more steps,
-	 * and disable the driver. This will likely result in lost stops.
-	 */
-	void EStop();
+	// void Stop();
 
 private:
-	// TaskHandle_t myCommandQueueTask;
-	SemaphoreHandle_t myStateMutex;
-	SemaphoreHandle_t myDirectionMutex;
-	SemaphoreHandle_t myMoveInProgress;
-	SemaphoreHandle_t myReadyForNextMove;
-	AxisDirection myPreviousDirection = AxisDirection::POS;
-	AxisDirection myDirection = AxisDirection::POS;
-	AxisState myState = AxisState::STOPPED;
-	Stepper *myStepper;
-	int32_t myPosition = 0;
-	int32_t myTargetPosition = 0;
-	int32_t myMaxSpeed = 0;
 	int32_t myMinStop = 0;
 	int32_t myMaxStop = 0;
-	// QueueHandle_t myCommandQueue;
 	AxisLabel myAxisLabel;
+	int32_t myPreviousTargetPosition = 0;
 
 	static void MoveThread(void *pvParameters);
-	//void privMove(uint32_t aDistance, uint16_t aSpeed);
-	//void privSetDirection(AxisDirection aDirection);
 };

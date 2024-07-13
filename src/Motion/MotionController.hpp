@@ -18,19 +18,21 @@
 class MotionController : public Controller
 {
 public:
-	MotionController(Stepper *anXStepper, Stepper *aZStepper, Stepper *aYStepper = nullptr);
+	MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYStepper = nullptr);
 	virtual bool SetMode(AxisLabel anAxisLabel, AxisMode aMode) override;
 	virtual AxisMode GetMode(AxisLabel anAxisLabel) override;
 	bool SetAdvanceIncrement(AxisLabel anAxisLabel, uint32_t anIncrement);
 	uint32_t GetAdvanceIncrement(AxisLabel anAxisLabel);
 	AxisDirection GetDirection(AxisLabel anAxisLabel);
-	TaskHandle_t GetTaskHandle(AxisLabel anAxisLabel);
+	TaskHandle_t GetTaskHandle(AxisLabel anAxisLabel) override;
 	bool SetStop(AxisLabel anAxisLabel, AxisDirection aDirection, int32_t aPosition);
 	int32_t GetStop(AxisLabel anAxisLabel, AxisDirection aDirection);
 	bool SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed);
 	uint16_t GetSpeed(AxisLabel anAxisLabel);
 	bool MoveRelative(AxisLabel anAxisLabel, int32_t aDistance);
+	bool MoveTo(AxisLabel anAxisLabel, int32_t aPosition);
 	int32_t GetPosition(AxisLabel anAxisLabel);
+	bool SetPosition(AxisLabel anAxisLabel, int32_t aPosition);
 
 private:
 	std::unordered_map<AxisLabel, Axis *> myAxes;

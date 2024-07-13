@@ -18,8 +18,8 @@
 #include "pico/printf.h"
 
 MotionController *mc;
-Stepper *zStepper;
-Stepper *xStepper;
+Axis *zAxis;
+Axis *xAxis;
 
 extern "C" void vTaskSwitchedIn(void);
 extern "C" void vTaskSwitchedOut(void);
@@ -113,16 +113,16 @@ int main()
 
 	PIO pio = pio0;
 
-	zStepper = new Stepper(ZAXIS_STEP_PIN, ZAXIS_DIR_PIN, ZAXIS_MAX_SPEED, ZAXIS_ACCELERATION, pio, 0);
+	zAxis = new Axis(AxisLabel::Z, ZAXIS_STEP_PIN, ZAXIS_DIR_PIN, ZAXIS_MAX_SPEED, ZAXIS_ACCELERATION, pio, 0);
 
 	// up/down stepper, not implemented Stepper yStepper(YAXIS_STEP_PIN, YAXIS_DIR_PIN, YAXIS_MAX_SPEED, YAXIS_ACCELERATION, pio, 1);
 
-	xStepper = new Stepper(XAXIS_STEP_PIN, XAXIS_DIR_PIN, XAXIS_MAX_SPEED, XAXIS_ACCELERATION, pio, 2);
+	xAxis = new Axis(AxisLabel::X, XAXIS_STEP_PIN, XAXIS_DIR_PIN, XAXIS_MAX_SPEED, XAXIS_ACCELERATION, pio, 2);
 
-	zStepper->InitPIO();
-	xStepper->InitPIO();
+	zAxis->InitPIO();
+	xAxis->InitPIO();
 
-	mc = new MotionController(xStepper, zStepper, nullptr);
+	mc = new MotionController(zAxis, xAxis, nullptr);
 
 	// printf("MotionController created\n");
 

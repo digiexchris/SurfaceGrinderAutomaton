@@ -8,8 +8,13 @@
 ZAxisSM::ZAxisSM(Axis *aZAxis, Controller *aController) : MotionControllerSM(aZAxis, aController)
 {
 	// todo statically pre-allocate all types and just assign it instead
-	myMovementMode = new ZMoveBothEnds();
-	//todo: since the axis is just tracking a position, we don't need repeat mode anymore. myRepeatMode = new ZRepeatReverse();
+	myMovementMode = new ZMoveBothEnds(aZAxis, this);
+	// todo: since the axis is just tracking a position, we don't need repeat mode anymore. myRepeatMode = new ZRepeatReverse();
+}
+
+void ZAxisSM::ResetAutoMode()
+{
+	myMovementMode->Reset();
 }
 
 void ZAxisSM::Update()
@@ -19,9 +24,9 @@ void ZAxisSM::Update()
 	case AxisMode::AUTOMATIC:
 	{
 
-		myMovementMode->Execute(myAxis, this);
+		myMovementMode->Execute();
 
-		myAxis->IsMovementComplete();
+		myAxis->WaitUntilMovementComplete();
 	}
 	break;
 

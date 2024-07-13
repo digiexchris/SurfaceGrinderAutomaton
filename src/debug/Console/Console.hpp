@@ -20,6 +20,9 @@ enum class ConsoleCommandName
 	SET_ADVANCE_INCREMENT = 2,
 	SET_STOP = 3,
 	SET_SPEED = 4,
+	MOVE_RELATIVE = 5,
+	MOVE_ABSOLUTE = 6,
+	SET_POSITION = 7,
 	NONE = -1
 };
 
@@ -66,8 +69,22 @@ struct ConsoleCommandSetSpeed : ConsoleCommand
 
 struct ConsoleCommandMoveRelative : ConsoleCommand
 {
-	ConsoleCommandMoveRelative(AxisLabel anAxis, int32_t aDistance) : ConsoleCommand(ConsoleCommandName::NONE), axis(anAxis), distance(aDistance) {}
+	ConsoleCommandMoveRelative(AxisLabel anAxis, int32_t aDistance) : ConsoleCommand(ConsoleCommandName::MOVE_RELATIVE), axis(anAxis), distance(aDistance) {}
 	int32_t distance;
+	AxisLabel axis;
+};
+
+struct ConsoleCommandMoveAbsolute : ConsoleCommand
+{
+	ConsoleCommandMoveAbsolute(AxisLabel anAxis, int32_t aPosition) : ConsoleCommand(ConsoleCommandName::MOVE_ABSOLUTE), axis(anAxis), position(aPosition) {}
+	int32_t position;
+	AxisLabel axis;
+};
+
+struct ConsoleCommandSetPosition : ConsoleCommand
+{
+	ConsoleCommandSetPosition(AxisLabel anAxis, int32_t aPosition) : ConsoleCommand(ConsoleCommandName::SET_POSITION), axis(anAxis), position(aPosition) {}
+	int32_t position;
 	AxisLabel axis;
 };
 
@@ -76,7 +93,18 @@ class Console
 public:
 	static void Init(MotionController *aMotionController);
 
+	struct Commands
+	{
+		Commands(size_t aArgNum, const char *aCmdName, microsh_cmd_fn aCmdFn, const char *aDesc)
+			: argnum(aArgNum), cmdname(aCmdName), cmdfn(aCmdFn), desc(aDesc) {}
+		size_t argnum;
+		const char *cmdname;
+		microsh_cmd_fn cmdfn;
+		const char *desc;
+	};
+
 private:
+	static Commands myCommands[];
 	static QueueHandle_t myCommandQueue;
 	static microsh_t *mySh;
 	static MotionController *myMotionController;
@@ -90,8 +118,11 @@ private:
 	static int setSpeedCallback(struct microsh *msh, int argc, const char *const *argv);
 	static int helpCmdCallback(struct microsh *msh, int argc, const char *const *argv);
 	static int moveRelativeCommandCallback(struct microsh *msh, int argc, const char *const *argv);
+	static int moveAbsoluteCommandCallback(struct microsh *msh, int argc, const char *const *argv);
+	static int setPositionCommandCallback(struct microsh *msh, int argc, const char *const *argv);
 
 	static void consoleTask(void *pvParameters);
+	static void registerCommands();
 
 	static void privStatusCommand(ConsoleCommandStatus &aCommand);
 	static void privModeCommand(ConsoleCommandMode &aCommand);
@@ -99,4 +130,6 @@ private:
 	static void privSetStopCommand(ConsoleCommandSetStop &aCommand);
 	static void privSetSpeedCommand(ConsoleCommandSetSpeed &aCommand);
 	static void privMoveRelativeCommand(ConsoleCommandMoveRelative &aCommand);
+	static void privMoveAbsoluteCommand(ConsoleCommandMoveAbsolute &aCommand);
+	static void privSetPositionCommand(ConsoleCommandSetPosition &aCommand);
 };

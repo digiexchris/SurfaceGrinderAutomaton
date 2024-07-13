@@ -16,6 +16,18 @@ microsh_t *Console::mySh = nullptr;
 MotionController *Console::myMotionController = nullptr;
 QueueHandle_t Console::myCommandQueue;
 
+Console::Commands Console::myCommands[] = {
+	{1, "h", Console::helpCmdCallback, "Help"},
+	{1, "s", Console::statusCmdCallback, "Prints the status of the system"},
+	{1, "r", Console::resetCmdCallback, "Resets the system"},
+	{3, "mode", Console::modeCmdCallback, "mode <axis> <mode> - Sets the mode of the axis \n\r \t<axis> = X, Y, Z \n\r \t<mode> = S, A, M (Stopped, Automatic, Manual)"},
+	{3, "increment", Console::setAdvanceIncrementCallback, "increment <axis> <increment> - Sets the advance increment of the axis in steps \n\r \t<axis> = X, Y, Z \n\r \t<increment> = 0 - 4294967295"},
+	{4, "setstop", Console::setStopCallback, "setstop <axis> <direction> <position> - Sets the stop position\n\r \t<axis> = X, Z \n\r \t<direction> = +, - \n\r \t<position> = int32 steps"},
+	{3, "speed", Console::setSpeedCallback, "speed <axis> <speed> - Sets the speed of the axis for use in auto mode \n\r \t<axis> = X, Z \n\r \t<speed> = 0 - 65535 steps per second"},
+	{3, "mover", Console::moveRelativeCommandCallback, "mover <axis> <distance> - Moves the axis a relative distance in steps \n\r \t<axis> = X, Z \n\r \t<distance> = int32 steps"},
+	{3, "moveto", Console::moveAbsoluteCommandCallback, "moveto <axis> <position> - Moves the axis to an absolute position in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps"},
+	{3, "setposition", Console::moveAbsoluteCommandCallback, "setposition <axis> <position> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps"}};
+
 void Console::Init(MotionController *aMotionController)
 {
 	myMotionController = aMotionController;
@@ -62,62 +74,8 @@ void Console::Init(MotionController *aMotionController)
 	printf("UART initialized" MICRORL_CFG_END_LINE);
 
 	//--------------------------------------------------------------------------------
-	mySh = (microsh_t *)malloc(sizeof(microsh_t));
-	microshr_t cmdRegisterStatus = microshOK;
-	cmdRegisterStatus = microsh_init(mySh, privPrintFn);
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("Failed microsh init!" MICRORL_CFG_END_LINE);
-	}
 
-	// Register the commands
-	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "h", helpCmdCallback, "Help");
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
-	}
-
-	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "s", statusCmdCallback, "Prints the status of the system");
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
-	}
-
-	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "r", resetCmdCallback, "Resets the system");
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
-	}
-
-	cmdRegisterStatus = microsh_cmd_register(mySh, 3, "m", modeCmdCallback, "m <axis> <mode> - Sets the mode of the axis \n\r <axis> = X, Y, Z \n\r <mode> = S, A, O, M (Stopped, Automatic, One Shot, Manual)");
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
-	}
-
-	cmdRegisterStatus = microsh_cmd_register(mySh, 3, "i", setAdvanceIncrementCallback, "i <axis> <increment> - Sets the advance increment of the axis in steps \n\r <axis> = X, Y, Z \n\r <increment> = 0 - 4294967295");
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
-	}
-
-	cmdRegisterStatus = microsh_cmd_register(mySh, 4, "st", setStopCallback, "st <axis> <direction> <position> - Sets the stop position\n\r <axis> = X, Z \n\r <direction> = +, - \n\r <position> = int32 steps");
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
-	}
-
-	cmdRegisterStatus = microsh_cmd_register(mySh, 3, "sp", setSpeedCallback, "sp <axis> <speed> - Sets the speed of the axis \n\r <axis> = X, Z \n\r <speed> = 0 - 65535 steps per second");
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
-	}
-
-	cmdRegisterStatus = microsh_cmd_register(mySh, 1, "mv", moveRelativeCommandCallback, "mv <axis> <distance> - Moves the axis a distance in steps \n\r <axis> = X, Z \n\r <distance> = int32 steps");
-	if (cmdRegisterStatus != microshOK)
-	{
-		panic("No memory to register all commands!" MICRORL_CFG_END_LINE);
-	}
+	registerCommands();
 
 	// Start the console task
 	BaseType_t status = xTaskCreate(consoleTask, "ConsoleTask", 2048 * 4, NULL, 1, NULL);
@@ -127,6 +85,48 @@ void Console::Init(MotionController *aMotionController)
 	}
 
 	printf("Console initialized" MICRORL_CFG_END_LINE);
+}
+
+void Console::registerCommands()
+{
+	mySh = new microsh_t; // Allocate memory using new
+
+	// Check if allocation was successful
+	if (mySh == nullptr)
+	{
+		panic("Failed to allocate memory for microsh_t" MICRORL_CFG_END_LINE);
+	}
+
+	// Initialize microsh_t
+	auto initStatus = microsh_init(mySh, privPrintFn);
+	if (initStatus != microshOK)
+	{
+		panic("Failed microsh init!" MICRORL_CFG_END_LINE);
+	}
+
+	for (size_t i = 0; i < sizeof(myCommands) / sizeof(myCommands[0]); i++)
+	{
+		auto cmd = myCommands[i];
+		auto status = microsh_cmd_register(mySh, cmd.argnum, cmd.cmdname, cmd.cmdfn, cmd.desc);
+
+		switch (status)
+		{
+		case microshOK:
+			break;
+		case microshERR:
+			panic("Failed to register command" MICRORL_CFG_END_LINE);
+			break;
+		case microshERRPAR:
+			panic("Parameter Error" MICRORL_CFG_END_LINE);
+			break;
+		case microshERRMEM:
+			panic("No memory to register command" MICRORL_CFG_END_LINE);
+			break;
+		default:
+			panic("Unknown error" MICRORL_CFG_END_LINE);
+			break;
+		}
+	}
 }
 
 int Console::resetCmdCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -140,7 +140,7 @@ int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *
 {
 	if (argc != 3)
 	{
-		auto cmd = microsh_cmd_find(msh, "sp");
+		auto cmd = microsh_cmd_find(msh, "speed");
 		printf(cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
@@ -215,8 +215,26 @@ void Console::consoleTask(void *aCommandQueueHandle)
 					privSetSpeedCommand(*setSpeedCommand);
 					break;
 				}
+				case ConsoleCommandName::SET_POSITION:
+				{
+					ConsoleCommandSetPosition *setPositionCommand = static_cast<ConsoleCommandSetPosition *>(command);
+					privSetPositionCommand(*setPositionCommand);
+					break;
+				}
+				case ConsoleCommandName::MOVE_ABSOLUTE:
+				{
+					ConsoleCommandMoveAbsolute *moveAbsoluteCommand = static_cast<ConsoleCommandMoveAbsolute *>(command);
+					privMoveAbsoluteCommand(*moveAbsoluteCommand);
+					break;
+				}
+				case ConsoleCommandName::MOVE_RELATIVE:
+				{
+					ConsoleCommandMoveRelative *moveRelativeCommand = static_cast<ConsoleCommandMoveRelative *>(command);
+					privMoveRelativeCommand(*moveRelativeCommand);
+					break;
+				}
 				default:
-					printf("Unknown command" MICRORL_CFG_END_LINE);
+					panic("Console Task: Unknown command" MICRORL_CFG_END_LINE);
 					break;
 				}
 			}
@@ -232,7 +250,7 @@ int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const ch
 {
 	if (argc != 3)
 	{
-		auto cmd = microsh_cmd_find(msh, "mv");
+		auto cmd = microsh_cmd_find(msh, "mover");
 		printf(cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
@@ -275,13 +293,37 @@ void Console::privMoveRelativeCommand(ConsoleCommandMoveRelative &aCommand)
 
 int Console::helpCmdCallback(struct microsh *msh, int argc, const char *const *argv)
 {
-	printf("Commands:" MICRORL_CFG_END_LINE);
-	printf("s - Status" MICRORL_CFG_END_LINE);
-	printf("r - Reset" MICRORL_CFG_END_LINE);
-	printf("m - Mode" MICRORL_CFG_END_LINE);
-	printf("i - Set Advance Increment" MICRORL_CFG_END_LINE);
-	printf("st - Set Stop" MICRORL_CFG_END_LINE);
-	printf("sp - Set Speed" MICRORL_CFG_END_LINE);
+	printf("Help" MICRORL_CFG_END_LINE);
+	auto cmd = microsh_cmd_find(msh, "h");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "s");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "r");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "mode");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "increment");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "setstop");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "speed");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "mover");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "moveto");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
+	cmd = microsh_cmd_find(msh, "setposition");
+	printf(cmd->desc);
+	printf(MICRORL_CFG_END_LINE);
 	return microshEXEC_OK;
 }
 
@@ -289,7 +331,7 @@ int Console::setStopCallback(struct microsh *msh, int argc, const char *const *a
 {
 	if (argc != 4)
 	{
-		auto cmd = microsh_cmd_find(msh, "st");
+		auto cmd = microsh_cmd_find(msh, "setstop");
 		printf(cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
@@ -353,28 +395,26 @@ void Console::privStatusCommand(ConsoleCommandStatus &aCommand)
 {
 	auto xMode = AxisModeToString(myMotionController->GetMode(AxisLabel::X));
 	auto xPos = myMotionController->GetPosition(AxisLabel::X);
-	auto xDirection = AxisDirectionToString(myMotionController->GetDirection(AxisLabel::X));
 	auto xMinStop = myMotionController->GetStop(AxisLabel::X, AxisDirection::NEG);
 	auto xMaxStop = myMotionController->GetStop(AxisLabel::X, AxisDirection::POS);
 	auto xSpeed = myMotionController->GetSpeed(AxisLabel::X);
 	auto zMode = AxisModeToString(myMotionController->GetMode(AxisLabel::Z));
 	auto zPos = myMotionController->GetPosition(AxisLabel::Z);
-	auto zDirection = AxisDirectionToString(myMotionController->GetDirection(AxisLabel::Z));
 	auto zMinStop = myMotionController->GetStop(AxisLabel::Z, AxisDirection::NEG);
 	auto zMaxStop = myMotionController->GetStop(AxisLabel::Z, AxisDirection::POS);
 	auto zSpeed = myMotionController->GetSpeed(AxisLabel::Z);
+	auto zAdvanceIncrement = myMotionController->GetAdvanceIncrement(AxisLabel::Z);
 	printf("Status" MICRORL_CFG_END_LINE);
 	printf("X Mode: %s", xMode.c_str());
 	printf(", Pos: %d", xPos);
-	printf(", Dir: %s", xDirection.c_str());
 	printf(", Stops: %d:%d", xMinStop, xMaxStop);
 	printf(", Speed: %d" MICRORL_CFG_END_LINE, xSpeed);
 
 	printf("Z Mode: %s", zMode.c_str());
 	printf(", Pos: %d", zPos);
-	printf(", Dir: %s", zDirection.c_str());
 	printf(", Stops: %d:%d", zMinStop, zMaxStop);
-	printf(", Speed: %d" MICRORL_CFG_END_LINE, zSpeed);
+	printf(", Speed: %d", zSpeed);
+	printf(", Z Advance Increment: %d" MICRORL_CFG_END_LINE, zAdvanceIncrement);
 }
 
 int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -382,7 +422,7 @@ int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *a
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	if (argc != 3)
 	{
-		auto cmd = microsh_cmd_find(msh, "m");
+		auto cmd = microsh_cmd_find(msh, "mode");
 		printf(cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
@@ -432,7 +472,7 @@ int Console::setAdvanceIncrementCallback(struct microsh *msh, int argc, const ch
 {
 	if (argc != 3)
 	{
-		auto cmd = microsh_cmd_find(msh, "i");
+		auto cmd = microsh_cmd_find(msh, "increment");
 		printf(cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
@@ -515,8 +555,7 @@ void Console::privSetStopCommand(ConsoleCommandSetStop &aCommand)
 	myMotionController->SetStop(aCommand.axis, aCommand.direction, aCommand.position);
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
-	auto ad = AxisDirectionToString(aCommand.direction);
-	printf("Status: OK, %s Stop: %s, Position: %d" MICRORL_CFG_END_LINE, al.c_str(), ad.c_str(), myMotionController->GetStop(aCommand.axis, aCommand.direction));
+	printf("Status: OK, %s Stop: %s, Position: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetStop(aCommand.axis, aCommand.direction));
 }
 
 void Console::privSetSpeedCommand(ConsoleCommandSetSpeed &aCommand)
@@ -525,4 +564,57 @@ void Console::privSetSpeedCommand(ConsoleCommandSetSpeed &aCommand)
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
 	printf("Status: OK, %s Speed: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetSpeed(aCommand.axis));
+}
+
+int Console::moveAbsoluteCommandCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	if (argc != 3)
+	{
+		auto cmd = microsh_cmd_find(msh, "moveto");
+		printf(cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	std::string a = argv[1];
+	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
+
+	AxisLabel axis = AxisLabelFromString(a);
+	if (axis == AxisLabel::ERROR)
+	{
+		printf("Invalid axis" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	int32_t position = std::stoi(argv[2]);
+
+	ConsoleCommandMoveAbsolute *command = new ConsoleCommandMoveAbsolute(axis, position);
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send move absolute command to queue" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+	return microshEXEC_OK;
+}
+
+void Console::privMoveAbsoluteCommand(ConsoleCommandMoveAbsolute &aCommand)
+{
+	myMotionController->MoveTo(aCommand.axis, aCommand.position);
+	vTaskDelay(1);
+	auto al = AxisLabelToString(aCommand.axis);
+	auto pos = myMotionController->MoveTo(aCommand.axis, aCommand.position);
+	printf("Status: OK, %s Position: %d" MICRORL_CFG_END_LINE, myMotionController->GetPosition(aCommand.axis), pos);
+}
+
+void Console::privSetPositionCommand(ConsoleCommandSetPosition &aCommand)
+{
+	myMotionController->SetPosition(aCommand.axis, aCommand.position);
+	vTaskDelay(1);
+	auto al = AxisLabelToString(aCommand.axis);
+	printf("Status: OK, %s Position: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetPosition(aCommand.axis));
 }

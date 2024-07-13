@@ -1,41 +1,21 @@
 #include "Axis.hpp"
 #include "Enum.hpp"
-#include "FreeRTOS.h"
 #include "config.hpp"
-#include "pico/mutex.h"
 #include "pico/stdlib.h"
 #include "portmacro.h"
 #include <cmath>
 #include <pico/printf.h>
 #include <semphr.h>
 #include <stdio.h>
+#include <task.h>
 
-Axis::Axis(Stepper *aStepper, AxisLabel anAxisLabel)
+Axis::Axis(AxisLabel anAxisLabel, uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm)
+	: myAxisLabel(anAxisLabel), Stepper(stepPin, dirPin, maxSpeed, acceleration, pio, sm)
+
 {
-	myStepper = aStepper;
-	myAxisLabel = anAxisLabel;
-
-	// myCommandQueue = xQueueCreate(10, sizeof(AxisCommand *));
-	myStateMutex = xSemaphoreCreateMutex();
-	myMoveInProgress = xSemaphoreCreateBinary();
-	myReadyForNextMove = xSemaphoreCreateBinary();
-	myDirectionMutex = xSemaphoreCreateMutex();
-	configASSERT(myStateMutex);
-	configASSERT(myDirectionMutex);
-	configASSERT(myMoveInProgress);
-
-	BaseType_t status = xTaskCreate(MoveThread, "AxisMove", 2048, this, 1, NULL);
-
+	auto axisThreadName = "AxisMove" + std::to_string(static_cast<int>(anAxisLabel));
+	BaseType_t status = xTaskCreate(MoveThread, axisThreadName.c_str(), 2048, this, 1, NULL);
 	configASSERT(status == pdPASS);
-
-	xSemaphoreGive(myMoveInProgress); // let the first consumer add something to the empty queue
-	xSemaphoreGive(myStateMutex);
-	// xSemaphoreGive(myDirectionMutex);
-}
-
-int32_t Axis::GetPosition()
-{
-	return myPosition;
 }
 
 void Axis::SetMinStop(int32_t aMinStop)
@@ -58,42 +38,33 @@ int32_t Axis::GetMaxStop()
 	return myMaxStop;
 }
 
-void Axis::SetPosition(int32_t aPosition)
+void Axis::MoveTo(int32_t aPosition, uint16_t aSpeed)
 {
-	// myStepper->SetPosition(aPosition);
-}
-
-//TODO bump this up to the SM, the axis just tracks target positions
-AxisDirection Axis::GetDirection()
-{
-	AxisDirection direction;
-	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
-
-	direction = myDirection;
-	xSemaphoreGive(myDirectionMutex);
-	return direction;
-}
-
-AxisState Axis::GetState()
-{
-	uint32_t timeout = 10 * portTICK_PERIOD_MS;
-	AxisState state;
-	if (xSemaphoreTake(myStateMutex, timeout) != pdPASS)
+	if (aPosition > myMaxStop)
 	{
-		return AxisState::LOCKED;
+		aPosition = myMaxStop;
 	}
-	state = myState;
-	xSemaphoreGive(myStateMutex);
-	return myState;
+	else if (aPosition < myMinStop)
+	{
+		aPosition = myMinStop;
+	}
+
+	SetTargetPosition(aPosition, aSpeed);
+}
+
+void Axis::MoveRelative(int32_t aDistance, uint16_t aSpeed)
+{
+	int32_t targetPosition = GetTargetPosition() + aDistance;
+	MoveTo(targetPosition, aSpeed);
 }
 
 AxisStop Axis::IsAtStop()
 {
-	if (myPosition <= myMinStop)
+	if (GetCurrentPosition() <= myMinStop)
 	{
 		return AxisStop::MIN;
 	}
-	else if (myPosition >= myMaxStop)
+	else if (GetCurrentPosition() >= myMaxStop)
 	{
 		return AxisStop::MAX;
 	}
@@ -103,137 +74,28 @@ AxisStop Axis::IsAtStop()
 	}
 }
 
-AxisDirection Axis::GetPreviousDirection()
+bool Axis::WaitUntilMovementComplete(TickType_t aTimeout)
 {
-	AxisDirection direction;
-	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
-	direction = myPreviousDirection;
-	xSemaphoreGive(myDirectionMutex);
-	return direction;
-}
-
-void Axis::SetTargetPosition(int32_t aPosition)
-{
-	//TODO I don't know what to do here. Maybe uneccessary. xQueueSemaphoreTake(myQueueIsProcessing, 0);
-	xSemaphoreTake(myMoveInProgress, portMAX_DELAY);
-	myTargetPosition = aPosition;
-	if(myTargetPosition >= myMaxStop)
+	TickType_t currentTime = xTaskGetTickCount();
+	while (GetMoveState() != Stepper::MoveState::IDLE)
 	{
-		myTargetPosition = myMaxStop;
+		if ((xTaskGetTickCount() - currentTime) > aTimeout)
+		{
+			return false;
+		}
+		// wait the shortest step width before checking again
+		vTaskDelay(1 / GetTargetSpeed() * portTICK_PERIOD_MS);
 	}
-	else if(myTargetPosition <= myMinStop)
-	{
-		myTargetPosition = myMinStop;
-	}
-	xSemaphoreGive(myReadyForNextMove);
-	xSemaphoreGive(myMoveInProgress);
-}
 
-//takes affect on new moves only, not currently in progress ones
-void Axis::SetSpeed(uint16_t aSpeed)
-{
-	myMaxSpeed = aSpeed;
-}
-
-int16_t Axis::GetSpeed()
-{
-	return myMaxSpeed;
-}
-
-bool Axis::IsMovementComplete(TickType_t aTimeout)
-{
-	BaseType_t status = xQueueSemaphoreTake(myMoveInProgress, aTimeout);
-
-	if (status == pdTRUE)
-	{
-		xSemaphoreGive(myMoveInProgress);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return true;
 }
 
 void Axis::MoveThread(void *pvParameters)
 {
 	Axis *axis = static_cast<Axis *>(pvParameters);
-	while(true)
+	while (true)
 	{
-		//block the thread until something updates the target position, but fail through incase we've e-stopped or something.
-		auto status = xSemaphoreTake(axis->myReadyForNextMove, 100);
-		if (status != pdTRUE)
-		{
-			continue;
-		}
-
-		xSemaphoreTake(axis->myMoveInProgress, portMAX_DELAY);
-		if(axis->myTargetPosition != axis->myPosition)
-		{
-
-			xSemaphoreTake(axis->myStateMutex, portMAX_DELAY);
-			axis->myState = AxisState::MOVING;
-			xSemaphoreGive(axis->myStateMutex);
-
-			xSemaphoreTake(axis->myDirectionMutex, portMAX_DELAY);
-			AxisDirection aDirection = axis->myDirection;
-			bool directionChanged = false;
-			if(axis->myTargetPosition > axis->myPosition)
-			{
-				axis->myPreviousDirection = axis->myDirection;
-				aDirection = AxisDirection::POS;
-				axis->myStepper->SetDirection((bool)aDirection);
-				directionChanged = true;
-			}
-			else
-			{
-				axis->myPreviousDirection = axis->myDirection;
-				aDirection = AxisDirection::NEG;
-				axis->myStepper->SetDirection((bool)aDirection);
-				directionChanged = true;
-			}
-			xSemaphoreGive(axis->myDirectionMutex);
-
-			if(directionChanged) {
-				//wait for the stepper driver to finish changing direction
-				axis->myStepper->DirectionChangedWait();
-			}
-
-			int32_t aDistance = axis->myTargetPosition - axis->myPosition;
-			if(aDistance != 0) {
-				axis->myStepper->Move(std::abs(aDistance), axis->myMaxSpeed);
-				axis->myPosition += aDistance;
-			}
-
-			xSemaphoreTake(axis->myStateMutex, portMAX_DELAY);
-			axis->myState = AxisState::STOPPED;
-			xSemaphoreGive(axis->myStateMutex);
-		}
-		xSemaphoreGive(axis->myMoveInProgress);
+		axis->Update();
+		portYIELD();
 	}
 }
-
-//nah the SM can do this.
-// void Axis::Wait(int32_t aDurationMs)
-// {
-// 	AxisWaitCommand *cmd = new AxisWaitCommand(aDurationMs);
-// 	xQueueSend(myCommandQueue, &cmd, portMAX_DELAY);
-// 	if (PRINTF_AXIS_DEBUG)
-// 	{
-// 		printf("Axis %d: Wait %d queued\n", myAxisLabel, aDurationMs);
-// 	}
-// }
-
-//no the move thread can do this
-// void Axis::privSetDirection(AxisDirection aDirection)
-// {
-// 	xSemaphoreTake(myDirectionMutex, portMAX_DELAY);
-// 	if (myDirection != aDirection)
-// 	{7
-// 		myPreviousDirection = myDirection;
-// 		myDirection = aDirection;
-// 		myStepper->SetDirection((bool)myDirection);
-// 		vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
-// 	}
-// 	xSemaphoreGive(myDirectionMutex);
-// }

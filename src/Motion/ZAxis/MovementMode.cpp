@@ -1,7 +1,7 @@
 #include "MovementMode.hpp"
 #include <cstdio>
 
-void ZMoveBothEnds::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM)
+void ZMoveBothEnds::Execute()
 {
 
 	/* wait for X axis to stop moving and tell Z to advance (manual mode to do the same)*/
@@ -10,26 +10,39 @@ void ZMoveBothEnds::Execute(Axis *aZAxis, ZAxisSM *aZAxisSM)
 	{
 		return;
 	}
-	
-	Axis *axis = aZAxis;
-	int32_t minStop = axis->GetMinStop();
-	int32_t maxStop = axis->GetMaxStop();
-	AxisDirection direction = axis->GetDirection();
-	AxisStop zStop = axis->IsAtStop();
 
-	if (zStop == AxisStop::MIN || axis->GetDirection() == AxisDirection::POS)
+	int32_t minStop = myAxis->GetMinStop();
+	int32_t maxStop = myAxis->GetMaxStop();
+	AxisStop zStop = myAxis->IsAtStop();
+
+	if (zStop == AxisStop::MIN)
 	{
-		axis->SetTargetPosition(axis->GetPosition() + aZAxisSM->GetAdvanceIncrement());
+		myAxis->SetTargetPosition(myAxis->GetCurrentPosition() + myZAxisSM->GetAdvanceIncrement());
+		myPreviousAxisStopTarget = AxisStop::MAX;
 	}
-	else if (zStop == AxisStop::MAX || axis->GetDirection() == AxisDirection::NEG)
+	else if (zStop == AxisStop::MAX)
 	{
-		axis->SetTargetPosition(axis->GetPosition() - aZAxisSM->GetAdvanceIncrement());
+		myAxis->SetTargetPosition(myAxis->GetCurrentPosition() - myZAxisSM->GetAdvanceIncrement());
+		myPreviousAxisStopTarget = AxisStop::MIN;
 	}
-	
-	axis->IsMovementComplete();
+	else
+	{
+		if (direction == AxisDirection::POS)
+		{
+			myAxis->SetTargetPosition(myAxis->GetCurrentPosition() + myZAxisSM->GetAdvanceIncrement());
+			myPreviousAxisStopTarget = AxisStop::MAX;
+		}
+		else
+		{
+			myAxis->SetTargetPosition(myAxis->GetCurrentPosition() - myZAxisSM->GetAdvanceIncrement());
+			myPreviousAxisStopTarget = AxisStop::MIN;
+		}
+	}
+
+	myAxis->WaitUntilMovementComplete();
 
 	if (PRINTF_AXIS_POSITIONS)
 	{
-		printf("Z: %d\n", axis->GetPosition());
+		printf("Z: %d\n", myAxis->GetCurrentPosition());
 	}
 }

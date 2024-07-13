@@ -3,8 +3,6 @@
 #include "Motion/XAxis/SM.hpp"
 #include "Motion/ZAxis/SM.hpp"
 #include "config.hpp"
-#include "mpu_wrappers.h"
-#include "pico/mutex.h"
 #include "pico/stdlib.h"
 #include "portmacro.h"
 #include <Enum.hpp>
@@ -16,21 +14,24 @@
 #include <semphr.h>
 #include <task.h>
 
-MotionController::MotionController(Stepper *anXStepper, Stepper *aZStepper, Stepper *aYStepper)
+MotionController::MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYStepper)
 {
 	printf("MotionController\n");
-	myAxes[AxisLabel::X] = new Axis(anXStepper, AxisLabel::X);
-	myAxes[AxisLabel::Z] = new Axis(aZStepper, AxisLabel::X);
+	myAxes[AxisLabel::X] = anXStepper;
+	myAxes[AxisLabel::Z] = aZStepper;
 
 	myAxes[AxisLabel::X]->SetMaxStop(1000);
 	myAxes[AxisLabel::X]->SetMinStop(-1000);
+	myAxes[AxisLabel::X]->SetTargetSpeed(1000);
 	myAxes[AxisLabel::Z]->SetMaxStop(250);
 	myAxes[AxisLabel::Z]->SetMinStop(-250);
+	myAxes[AxisLabel::Z]->SetTargetSpeed(100);
 
 	myZTriggerSemaphore = xSemaphoreCreateBinary();
 
 	myZAxisSM = new ZAxisSM(myAxes[AxisLabel::Z], this);
 	myXAxisSM = new XAxisSM(myAxes[AxisLabel::X], this);
+	myZAxisSM->SetAdvanceIncrement(100);
 
 	// for future expansion
 	if (aYStepper != nullptr)
@@ -78,18 +79,34 @@ bool MotionController::MoveRelative(AxisLabel anAxisLabel, int32_t aDistance)
 	return true;
 }
 
-AxisDirection MotionController::GetDirection(AxisLabel anAxisLabel)
+bool MotionController::MoveTo(AxisLabel anAxisLabel, int32_t aPosition)
 {
 	switch (anAxisLabel)
 	{
 	case AxisLabel::X:
-		return myXAxisSM->GetDirection();
+		myXAxisSM->MoveTo(aPosition);
+		break;
 	case AxisLabel::Z:
-		return myZAxisSM->GetDirection();
+		myZAxisSM->MoveTo(aPosition);
+		break;
 	default:
-		return AxisDirection::ERROR;
+		return false;
 	}
+	return true;
 }
+
+// AxisDirection MotionController::GetDirection(AxisLabel anAxisLabel)
+// {
+// 	switch (anAxisLabel)
+// 	{
+// 	case AxisLabel::X:
+// 		return myXAxisSM->GetDirection();
+// 	case AxisLabel::Z:
+// 		return myZAxisSM->GetDirection();
+// 	default:
+// 		return AxisDirection::ERROR;
+// 	}
+// }
 
 void MotionController::MotionXThread(void *pvParameters)
 {
@@ -209,7 +226,13 @@ int32_t MotionController::GetStop(AxisLabel anAxisLabel, AxisDirection aDirectio
 
 int32_t MotionController::GetPosition(AxisLabel anAxisLabel)
 {
-	return myAxes[anAxisLabel]->GetPosition();
+	return myAxes[anAxisLabel]->GetCurrentPosition();
+}
+
+bool MotionController::SetPosition(AxisLabel anAxisLabel, int32_t aPosition)
+{
+	myAxes[anAxisLabel]->SetTargetPosition(aPosition);
+	return true;
 }
 
 bool MotionController::SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed)

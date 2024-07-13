@@ -1,31 +1,30 @@
 #pragma once
 
 #include "Axis.hpp"
-// #include "MotionController.hpp"
 #include "Enum.hpp"
 
 #include <semphr.h>
 
-/**
- * @brief Base class for all repeat modes
- * used to block processing until a synchronization event occurs
- * primarily used in the ZAxisSM::Update() thread
- */
-#define BEGIN_TRIGGER_SECTION()                  \
-	if (anSM->GetMode() == AxisMode::ONE_SHOT)   \
-	{                                            \
-		BaseType_t res = anSM->WaitForTrigger(); \
-		if (res == pdFALSE)                      \
-		{                                        \
-			return false;                        \
-		}                                        \
-	}
+// /**
+//  * @brief Base class for all repeat modes
+//  * used to block processing until a synchronization event occurs
+//  * primarily used in the ZAxisSM::Update() thread
+//  */
+// #define BEGIN_TRIGGER_SECTION()                  \
+// 	if (anSM->GetMode() == AxisMode::ONE_SHOT)   \
+// 	{                                            \
+// 		BaseType_t res = anSM->WaitForTrigger(); \
+// 		if (res == pdFALSE)                      \
+// 		{                                        \
+// 			return false;                        \
+// 		}                                        \
+// 	}
 
-#define END_TRIGGER_SECTION()                  \
-	if (anSM->GetMode() == AxisMode::ONE_SHOT) \
-	{                                          \
-		anSM->SetMode(AxisMode::MANUAL);       \
-	}
+// #define END_TRIGGER_SECTION()                  \
+// 	if (anSM->GetMode() == AxisMode::ONE_SHOT) \
+// 	{                                          \
+// 		anSM->SetMode(AxisMode::MANUAL);       \
+// 	}
 
 class MotionControllerSM
 {
@@ -56,20 +55,21 @@ public:
 		return myAdvanceIncrement;
 	}
 
-	AxisDirection GetDirection() const
-	{
-		return myAxis->GetDirection();
-	}
-
 	BaseType_t WaitForTrigger()
 	{
 		return xSemaphoreTake(myTriggerSemaphore, 100 * portTICK_PERIOD_MS);
 	}
 
+	virtual void ResetAutoMode() = 0;
+
 	void SetMode(AxisMode aState)
 	{
 		xSemaphoreTake(myModeMutex, portMAX_DELAY);
 		myAxisMode = aState;
+		if (myAxisMode == AxisMode::AUTOMATIC)
+		{
+			ResetAutoMode();
+		}
 		xSemaphoreGive(myModeMutex);
 	}
 
@@ -95,18 +95,24 @@ public:
 
 	bool SetSpeed(uint16_t aSpeed)
 	{
-		myAxis->SetSpeed(aSpeed);
+		myAxis->SetTargetSpeed(aSpeed);
 		return true;
 	}
 
 	uint16_t GetSpeed() const
 	{
-		return myAxis->GetSpeed();
+		return myAxis->GetCurrentSpeed();
 	}
 
 	bool MoveRelative(int32_t aDistance)
 	{
-		myAxis->SetTargetPosition(myAxis->GetPosition() + aDistance);
+		myAxis->MoveRelative(aDistance);
+		return true;
+	}
+
+	bool MoveTo(int32_t aPosition)
+	{
+		myAxis->SetTargetPosition(aPosition);
 		return true;
 	}
 };
