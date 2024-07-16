@@ -26,6 +26,12 @@ enum class ConsoleCommandName
 	NONE = -1
 };
 
+enum class ConsolePositionType
+{
+	TARGET,
+	CURRENT
+};
+
 struct ConsoleCommand
 {
 	explicit ConsoleCommand() : name(ConsoleCommandName::NONE) {}
@@ -83,9 +89,10 @@ struct ConsoleCommandMoveAbsolute : ConsoleCommand
 
 struct ConsoleCommandSetPosition : ConsoleCommand
 {
-	ConsoleCommandSetPosition(AxisLabel anAxis, int32_t aPosition) : ConsoleCommand(ConsoleCommandName::SET_POSITION), axis(anAxis), position(aPosition) {}
+	ConsoleCommandSetPosition(AxisLabel anAxis, int32_t aPosition, ConsolePositionType aPositionType) : ConsoleCommand(ConsoleCommandName::SET_POSITION), axis(anAxis), position(aPosition), positionType(aPositionType) {}
 	int32_t position;
 	AxisLabel axis;
+	ConsolePositionType positionType;
 };
 
 class Console

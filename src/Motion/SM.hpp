@@ -3,6 +3,7 @@
 #include "Axis.hpp"
 #include "Enum.hpp"
 
+#include <cstdint>
 #include <semphr.h>
 
 // /**
@@ -25,7 +26,11 @@
 // 	{                                          \
 // 		anSM->SetMode(AxisMode::MANUAL);       \
 // 	}
-
+enum class SMError
+{
+	NO_ERROR = 0,
+	WRONG_MODE = 1
+};
 class MotionControllerSM
 {
 protected:
@@ -60,6 +65,11 @@ public:
 		return xSemaphoreTake(myTriggerSemaphore, 100 * portTICK_PERIOD_MS);
 	}
 
+	Stepper::MoveState GetMoveState() const
+	{
+		return myAxis->GetMoveState();
+	}
+
 	virtual void ResetAutoMode() = 0;
 
 	void SetMode(AxisMode aState)
@@ -71,6 +81,29 @@ public:
 			ResetAutoMode();
 		}
 		xSemaphoreGive(myModeMutex);
+	}
+
+	SMError SetTargetPosition(int32_t aPosition)
+	{
+		switch (GetMode())
+		{
+
+		case AxisMode::MANUAL:
+			myAxis->SetTargetPosition(aPosition);
+			return SMError::NO_ERROR;
+			break;
+		case AxisMode::AUTOMATIC:
+		case AxisMode::ONE_SHOT:
+		case AxisMode::STOPPED:
+		default:
+			return SMError::WRONG_MODE;
+			break;
+		}
+	}
+
+	int32_t GetCurrentPosition() const
+	{
+		return myAxis->GetCurrentPosition();
 	}
 
 	AxisMode GetMode() const
@@ -93,26 +126,57 @@ public:
 
 	virtual void Update() = 0;
 
-	bool SetSpeed(uint16_t aSpeed)
+	SMError SetTargetSpeed(uint16_t aSpeed)
 	{
 		myAxis->SetTargetSpeed(aSpeed);
-		return true;
+		return SMError::NO_ERROR;
 	}
 
-	uint16_t GetSpeed() const
+	uint16_t GetCurrentSpeed() const
 	{
 		return myAxis->GetCurrentSpeed();
 	}
 
-	bool MoveRelative(int32_t aDistance)
+	uint16_t GetTargetSpeed() const
 	{
-		myAxis->MoveRelative(aDistance);
-		return true;
+		return myAxis->GetTargetSpeed();
 	}
 
-	bool MoveTo(int32_t aPosition)
+	SMError MoveRelative(int32_t aDistance)
 	{
-		myAxis->SetTargetPosition(aPosition);
-		return true;
+
+		switch (GetMode())
+		{
+		case AxisMode::AUTOMATIC:
+		case AxisMode::MANUAL:
+			myAxis->MoveRelative(aDistance);
+			return SMError::NO_ERROR;
+			break;
+
+		case AxisMode::ONE_SHOT:
+		case AxisMode::STOPPED:
+		default:
+			return SMError::WRONG_MODE;
+			break;
+		}
+	}
+
+	SMError MoveTo(int32_t aPosition)
+	{
+
+		switch (GetMode())
+		{
+		case AxisMode::AUTOMATIC:
+		case AxisMode::MANUAL:
+			myAxis->SetTargetPosition(aPosition);
+			return SMError::NO_ERROR;
+			break;
+
+		case AxisMode::ONE_SHOT:
+		case AxisMode::STOPPED:
+		default:
+			return SMError::WRONG_MODE;
+			break;
+		}
 	}
 };

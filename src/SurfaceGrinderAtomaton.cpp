@@ -1,5 +1,4 @@
 #include "config.hpp"
-#include "drivers/Motor/Stepper.hpp"
 // #include "hardware/watchdog.h"
 #include "pico/platform.h"
 #include "pico/stdlib.h"
@@ -139,17 +138,5 @@ int main()
 
 	while (true)
 	{
-
-		// watchdog_update();
-		// printf("Moving stepper left\n");
-		// stepper1.SetDirection(true);
-		// stepper1.Move(1000);
-		// sleep_ms(1000);
-
-		// printf("Moving stepper right\n");
-		// watchdog_update();
-		// stepper1.SetDirection(false);
-		// stepper1.Move(1000);
-		// sleep_ms(1000);
 	}
 }

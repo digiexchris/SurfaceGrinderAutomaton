@@ -1,4 +1,4 @@
-#include "Axis.hpp"
+#include "Motion/Axis.hpp"
 #include "Enum.hpp"
 #include "config.hpp"
 #include "pico/stdlib.h"
@@ -10,9 +10,10 @@
 #include <task.h>
 
 Axis::Axis(AxisLabel anAxisLabel, uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm)
-	: myAxisLabel(anAxisLabel), Stepper(stepPin, dirPin, maxSpeed, acceleration, pio, sm)
+	: myAxisLabel(anAxisLabel), Stepper(stepPin, dirPin, 0, acceleration, pio, sm)
 
 {
+	myMaxSpeed = maxSpeed;
 	auto axisThreadName = "AxisMove" + std::to_string(static_cast<int>(anAxisLabel));
 	BaseType_t status = xTaskCreate(MoveThread, axisThreadName.c_str(), 2048, this, 1, NULL);
 	configASSERT(status == pdPASS);
@@ -49,7 +50,12 @@ void Axis::MoveTo(int32_t aPosition, uint16_t aSpeed)
 		aPosition = myMinStop;
 	}
 
-	SetTargetPosition(aPosition, aSpeed);
+	SetTargetPosition(aPosition);
+
+	if (GetTargetSpeed() != aSpeed)
+	{
+		SetTargetSpeed(aSpeed);
+	}
 }
 
 void Axis::MoveRelative(int32_t aDistance, uint16_t aSpeed)
@@ -88,6 +94,15 @@ bool Axis::WaitUntilMovementComplete(TickType_t aTimeout)
 	}
 
 	return true;
+}
+
+StepperError Axis::SetTargetSpeed(uint16_t aSpeed)
+{
+	if (aSpeed > myMaxSpeed)
+	{
+		aSpeed = myMaxSpeed;
+	}
+	return Stepper::SetTargetSpeed(aSpeed);
 }
 
 void Axis::MoveThread(void *pvParameters)

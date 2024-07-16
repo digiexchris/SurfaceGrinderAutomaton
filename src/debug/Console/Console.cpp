@@ -1,9 +1,10 @@
 
 
 #include "Console.hpp"
-#include "../../Motion/Axis.hpp"
 #include "Enum.hpp"
+#include "Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
+#include "drivers/Motor/Stepper.hpp"
 #include "microsh.h"
 #include <algorithm>
 #include <hardware/watchdog.h>
@@ -26,7 +27,7 @@ Console::Commands Console::myCommands[] = {
 	{3, "speed", Console::setSpeedCallback, "speed <axis> <speed> - Sets the speed of the axis for use in auto mode \n\r \t<axis> = X, Z \n\r \t<speed> = 0 - 65535 steps per second"},
 	{3, "mover", Console::moveRelativeCommandCallback, "mover <axis> <distance> - Moves the axis a relative distance in steps \n\r \t<axis> = X, Z \n\r \t<distance> = int32 steps"},
 	{3, "moveto", Console::moveAbsoluteCommandCallback, "moveto <axis> <position> - Moves the axis to an absolute position in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps"},
-	{3, "setposition", Console::moveAbsoluteCommandCallback, "setposition <axis> <position> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps"}};
+	{3, "setposition", Console::setPositionCommandCallback, "setposition <axis> <position> <type> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps\n\r\t<type> = CURRENT, TARGET, default is TARGET"}};
 
 void Console::Init(MotionController *aMotionController)
 {
@@ -287,7 +288,7 @@ void Console::privMoveRelativeCommand(ConsoleCommandMoveRelative &aCommand)
 	myMotionController->MoveRelative(aCommand.axis, aCommand.distance);
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
-	auto pos = myMotionController->GetPosition(aCommand.axis);
+	auto pos = myMotionController->GetTargetPosition(aCommand.axis);
 	printf("Status: OK, %s Position: %d" MICRORL_CFG_END_LINE, al.c_str(), pos);
 }
 
@@ -394,25 +395,39 @@ int Console::statusCmdCallback(struct microsh *msh, int argc, const char *const 
 void Console::privStatusCommand(ConsoleCommandStatus &aCommand)
 {
 	auto xMode = AxisModeToString(myMotionController->GetMode(AxisLabel::X));
-	auto xPos = myMotionController->GetPosition(AxisLabel::X);
+	auto xPos = myMotionController->GetTargetPosition(AxisLabel::X);
+	auto xCurrentPos = myMotionController->GetCurrentPosition(AxisLabel::X);
 	auto xMinStop = myMotionController->GetStop(AxisLabel::X, AxisDirection::NEG);
 	auto xMaxStop = myMotionController->GetStop(AxisLabel::X, AxisDirection::POS);
-	auto xSpeed = myMotionController->GetSpeed(AxisLabel::X);
+	auto xSpeed = myMotionController->GetCurrentSpeed(AxisLabel::X);
+	auto xTargetSpeed = myMotionController->GetTargetSpeed(AxisLabel::X);
+	std::string xMoveState = Stepper::MoveStateToString(myMotionController->GetMoveState(AxisLabel::X));
+
 	auto zMode = AxisModeToString(myMotionController->GetMode(AxisLabel::Z));
-	auto zPos = myMotionController->GetPosition(AxisLabel::Z);
+	auto zPos = myMotionController->GetTargetPosition(AxisLabel::Z);
+	auto zCurrentPos = myMotionController->GetCurrentPosition(AxisLabel::Z);
 	auto zMinStop = myMotionController->GetStop(AxisLabel::Z, AxisDirection::NEG);
 	auto zMaxStop = myMotionController->GetStop(AxisLabel::Z, AxisDirection::POS);
-	auto zSpeed = myMotionController->GetSpeed(AxisLabel::Z);
+	auto zSpeed = myMotionController->GetCurrentSpeed(AxisLabel::Z);
+	auto zTargetSpeed = myMotionController->GetTargetSpeed(AxisLabel::Z);
 	auto zAdvanceIncrement = myMotionController->GetAdvanceIncrement(AxisLabel::Z);
+	std::string zMoveState = Stepper::MoveStateToString(myMotionController->GetMoveState(AxisLabel::Z));
+
 	printf("Status" MICRORL_CFG_END_LINE);
 	printf("X Mode: %s", xMode.c_str());
-	printf(", Pos: %d", xPos);
+	printf(", Stepper State: %s", xMoveState);
+	printf(", Target Pos: %d", xPos);
+	printf(", Current Pos: %d", xCurrentPos);
 	printf(", Stops: %d:%d", xMinStop, xMaxStop);
+	printf(", Target Speed: %d", xTargetSpeed);
 	printf(", Speed: %d" MICRORL_CFG_END_LINE, xSpeed);
 
 	printf("Z Mode: %s", zMode.c_str());
-	printf(", Pos: %d", zPos);
+	printf(", Stepper State: %s", zMoveState);
+	printf(", Target Pos: %d", zPos);
+	printf(", Current Pos: %d", zCurrentPos);
 	printf(", Stops: %d:%d", zMinStop, zMaxStop);
+	printf(", Target Speed: %d", zTargetSpeed);
 	printf(", Speed: %d", zSpeed);
 	printf(", Z Advance Increment: %d" MICRORL_CFG_END_LINE, zAdvanceIncrement);
 }
@@ -560,10 +575,10 @@ void Console::privSetStopCommand(ConsoleCommandSetStop &aCommand)
 
 void Console::privSetSpeedCommand(ConsoleCommandSetSpeed &aCommand)
 {
-	myMotionController->SetSpeed(aCommand.axis, aCommand.speed);
+	myMotionController->SetTargetSpeed(aCommand.axis, aCommand.speed);
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
-	printf("Status: OK, %s Speed: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetSpeed(aCommand.axis));
+	printf("Status: OK, %s Speed: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetTargetSpeed(aCommand.axis));
 }
 
 int Console::moveAbsoluteCommandCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -608,13 +623,91 @@ void Console::privMoveAbsoluteCommand(ConsoleCommandMoveAbsolute &aCommand)
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
 	auto pos = myMotionController->MoveTo(aCommand.axis, aCommand.position);
-	printf("Status: OK, %s Position: %d" MICRORL_CFG_END_LINE, myMotionController->GetPosition(aCommand.axis), pos);
+	printf("Status: OK, %s Target Position: %d" MICRORL_CFG_END_LINE, myMotionController->GetTargetPosition(aCommand.axis), pos);
+}
+
+int Console::setPositionCommandCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	if (argc < 3)
+	{
+		auto cmd = microsh_cmd_find(msh, "setposition");
+		printf(cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	std::string a = argv[1];
+	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
+
+	AxisLabel axis = AxisLabelFromString(a);
+	if (axis == AxisLabel::ERROR)
+	{
+		printf("Invalid axis" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	int32_t position = std::stoi(argv[2]);
+
+	ConsolePositionType positionType;
+
+	if (argc == 3)
+	{
+		positionType = ConsolePositionType::TARGET;
+	}
+	else
+	{
+		std::string type = argv[3];
+		std::transform(type.begin(), type.end(), type.begin(), ::toupper);
+
+		if (type == "TARGET")
+		{
+			positionType = ConsolePositionType::TARGET;
+		}
+		else if (type == "CURRENT")
+		{
+			positionType = ConsolePositionType::CURRENT;
+		}
+		else
+		{
+			printf("Invalid position type" MICRORL_CFG_END_LINE);
+			return microshEXEC_ERROR;
+		}
+	}
+
+	ConsoleCommandSetPosition *command = new ConsoleCommandSetPosition(axis, position, positionType);
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send set position command to queue" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+	return microshEXEC_OK;
 }
 
 void Console::privSetPositionCommand(ConsoleCommandSetPosition &aCommand)
 {
-	myMotionController->SetPosition(aCommand.axis, aCommand.position);
+	bool result;
+	switch (aCommand.positionType)
+	{
+	case ConsolePositionType::TARGET:
+		result = myMotionController->SetTargetPosition(aCommand.axis, aCommand.position);
+		break;
+	case ConsolePositionType::CURRENT:
+		result = myMotionController->SetCurrentPosition(aCommand.axis, aCommand.position);
+		break;
+	}
+
+	if (!result)
+	{
+		printf("Failed to set position (is the mode set correctly on this axis?)" MICRORL_CFG_END_LINE);
+		return;
+	}
+
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
-	printf("Status: OK, %s Position: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetPosition(aCommand.axis));
+	printf("Status: OK, %s %s Position: %d" MICRORL_CFG_END_LINE, al.c_str(), aCommand.positionType == ConsolePositionType::TARGET ? "Target" : "Current", myMotionController->GetTargetPosition(aCommand.axis));
 }

@@ -5,6 +5,7 @@
 #include <task.h>
 
 #define STEPPER_DIRECTION_CHANGE_DELAY_MS 5
+#define STEPPER_COMMAND_TIMEOUT 250
 
 #define PRINTF_AXIS_POSITIONS 1
 #define PRINTF_AXIS_DEBUG 0
@@ -17,14 +18,14 @@
 #define STEPPER1_ENABLE_POLARITY 0
 
 #define XAXIS_STEPS_PER_MM 400
-#define XAXIS_MAX_SPEED 1000.0f	  // steps per second
+#define XAXIS_MAX_SPEED 10000.0f  // steps per second
 #define XAXIS_ACCELERATION 250.0f // steps per second squared
 #define XAXIS_STEP_PIN 10
 #define XAXIS_DIR_PIN 9
 #define XAXIS_ENABLE_PIN 8
 
 #define ZAXIS_STEPS_PER_MM 400
-#define ZAXIS_MAX_SPEED 1000.0f	  // steps per second
+#define ZAXIS_MAX_SPEED 10000.0f  // steps per second
 #define ZAXIS_ACCELERATION 250.0f // steps per second squared
 #define ZAXIS_STEP_PIN 7		  // PICO_DEFAULT_LED_PIN // 7
 #define ZAXIS_DIR_PIN 6

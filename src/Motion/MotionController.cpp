@@ -1,5 +1,6 @@
 #include "MotionController.hpp"
 #include "Axis.hpp"
+#include "Motion/SM.hpp"
 #include "Motion/XAxis/SM.hpp"
 #include "Motion/ZAxis/SM.hpp"
 #include "config.hpp"
@@ -22,10 +23,10 @@ MotionController::MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYSt
 
 	myAxes[AxisLabel::X]->SetMaxStop(1000);
 	myAxes[AxisLabel::X]->SetMinStop(-1000);
-	myAxes[AxisLabel::X]->SetTargetSpeed(1000);
+	// myAxes[AxisLabel::X]->SetTargetSpeed(1000);
 	myAxes[AxisLabel::Z]->SetMaxStop(250);
 	myAxes[AxisLabel::Z]->SetMinStop(-250);
-	myAxes[AxisLabel::Z]->SetTargetSpeed(100);
+	// myAxes[AxisLabel::Z]->SetTargetSpeed(100);
 
 	myZTriggerSemaphore = xSemaphoreCreateBinary();
 
@@ -95,19 +96,6 @@ bool MotionController::MoveTo(AxisLabel anAxisLabel, int32_t aPosition)
 	return true;
 }
 
-// AxisDirection MotionController::GetDirection(AxisLabel anAxisLabel)
-// {
-// 	switch (anAxisLabel)
-// 	{
-// 	case AxisLabel::X:
-// 		return myXAxisSM->GetDirection();
-// 	case AxisLabel::Z:
-// 		return myZAxisSM->GetDirection();
-// 	default:
-// 		return AxisDirection::ERROR;
-// 	}
-// }
-
 void MotionController::MotionXThread(void *pvParameters)
 {
 	printf("MotionXThread Started\n");
@@ -116,7 +104,7 @@ void MotionController::MotionXThread(void *pvParameters)
 	while (true)
 	{
 		mc->myXAxisSM->Update();
-		vTaskDelay(1); // yeild to another task of the same priority
+		vTaskDelay(100); // yeild to another task of the same priority
 	}
 }
 
@@ -224,26 +212,57 @@ int32_t MotionController::GetStop(AxisLabel anAxisLabel, AxisDirection aDirectio
 	}
 }
 
-int32_t MotionController::GetPosition(AxisLabel anAxisLabel)
+int32_t MotionController::GetCurrentPosition(AxisLabel anAxisLabel)
 {
 	return myAxes[anAxisLabel]->GetCurrentPosition();
 }
 
-bool MotionController::SetPosition(AxisLabel anAxisLabel, int32_t aPosition)
+int32_t MotionController::GetTargetPosition(AxisLabel anAxisLabel)
 {
-	myAxes[anAxisLabel]->SetTargetPosition(aPosition);
+	return myAxes[anAxisLabel]->GetTargetPosition();
+}
+
+bool MotionController::SetTargetPosition(AxisLabel anAxisLabel, int32_t aPosition)
+{
+	if (anAxisLabel == AxisLabel::Z)
+	{
+		auto err = myZAxisSM->SetTargetPosition(aPosition);
+		if (err == SMError::NO_ERROR)
+		{
+			return true;
+		}
+	}
+	else if (anAxisLabel == AxisLabel::X)
+	{
+		auto err = myXAxisSM->SetTargetPosition(aPosition);
+		if (err == SMError::NO_ERROR)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+	return false;
+}
+
+bool MotionController::SetCurrentPosition(AxisLabel anAxisLabel, int32_t aPosition)
+{
+	myAxes[anAxisLabel]->SetCurrentPosition(aPosition);
 	return true;
 }
 
-bool MotionController::SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed)
+bool MotionController::SetTargetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed)
 {
 	switch (anAxisLabel)
 	{
 	case AxisLabel::X:
-		myXAxisSM->SetSpeed(aSpeed);
+		myXAxisSM->SetTargetSpeed(aSpeed);
 		break;
 	case AxisLabel::Z:
-		myZAxisSM->SetSpeed(aSpeed);
+		myZAxisSM->SetTargetSpeed(aSpeed);
 		break;
 	default:
 		return false;
@@ -251,14 +270,40 @@ bool MotionController::SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed)
 	return true;
 }
 
-uint16_t MotionController::GetSpeed(AxisLabel anAxisLabel)
+uint16_t MotionController::GetCurrentSpeed(AxisLabel anAxisLabel)
 {
 	switch (anAxisLabel)
 	{
 	case AxisLabel::X:
-		return myXAxisSM->GetSpeed();
+		return myXAxisSM->GetCurrentSpeed();
 	case AxisLabel::Z:
-		return myZAxisSM->GetSpeed();
+		return myZAxisSM->GetCurrentSpeed();
+	default:
+		return 0;
+	}
+}
+
+Stepper::MoveState MotionController::GetMoveState(AxisLabel anAxisLabel)
+{
+	switch (anAxisLabel)
+	{
+	case AxisLabel::X:
+		return myXAxisSM->GetMoveState();
+	case AxisLabel::Z:
+		return myZAxisSM->GetMoveState();
+	default:
+		return Stepper::MoveState::IDLE;
+	}
+}
+
+uint16_t MotionController::GetTargetSpeed(AxisLabel anAxisLabel)
+{
+	switch (anAxisLabel)
+	{
+	case AxisLabel::X:
+		return myXAxisSM->GetTargetSpeed();
+	case AxisLabel::Z:
+		return myZAxisSM->GetTargetSpeed();
 	default:
 		return 0;
 	}

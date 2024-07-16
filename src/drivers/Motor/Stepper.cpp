@@ -11,12 +11,9 @@ Stepper::Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, 
 {
 	gpio_init(dirPin);
 	gpio_set_dir(dirPin, GPIO_OUT);
+	myCommandQueue = xQueueCreate(2, sizeof(StepperCommand *));
 	SetTargetSpeed(maxSpeed);
 	SetAcceleration(acceleration);
-	myTargetPositionMutex = xSemaphoreCreateMutex();
-	myMoveStateMutex = xSemaphoreCreateMutex();
-	myCurrentPositionMutex = xSemaphoreCreateMutex();
-	myTargetSpeedMutex = xSemaphoreCreateMutex();
 }
 
 void Stepper::InitPIO() // todo optimize this PIO to only send a single delay per step so up to 4 steps can be sent instead of 2. It's currently sending 2, one for the high phase and one for the low phase. the downside of that would be it's hard coding to a 50% duty cycle, some drivers can go faster at a 30% duty cycle, but this is a surface grinder not a machining center, and lost steps due to draining the fifo before we've come to a stop is more important for the Z and Y axis.
@@ -62,10 +59,50 @@ void Stepper::DirectionChangedWait()
 
 void Stepper::Update() // todo investigate the pi sdk and see if Critical sections are more suited than mutexes here
 {
-	xSemaphoreTake(myTargetPositionMutex, portMAX_DELAY);
-	xSemaphoreTake(myMoveStateMutex, portMAX_DELAY);
-	xSemaphoreTake(myCurrentPositionMutex, portMAX_DELAY);
-	xSemaphoreTake(myTargetSpeedMutex, portMAX_DELAY);
+
+	StepperCommand *command = nullptr;
+
+	// process up to queueSize of commands per update loop
+	while (xQueueReceive(myCommandQueue, &command, 0) != errQUEUE_EMPTY)
+	{
+		if (command != nullptr)
+		{
+			switch (command->command)
+			{
+			case StepperCommand::CommandName::SET_TARGET_POSITION:
+			{
+				auto c = static_cast<StepperCommandSetTargetPosition *>(command);
+				privSetTargetPosition(c->targetPosition);
+			}
+
+			break;
+			case StepperCommand::CommandName::SET_TARGET_SPEED:
+			{
+				auto c = static_cast<StepperCommandSetTargetSpeed *>(command);
+				privSetTargetSpeed(c->speed);
+			}
+			break;
+			case StepperCommand::CommandName::SET_ACCELERATION:
+			{
+				auto c = static_cast<StepperCommandSetAcceleration *>(command);
+				privSetAcceleration(c->acceleration);
+			}
+			break;
+			case StepperCommand::CommandName::SET_CURRENT_POSITION:
+			{
+				auto c = static_cast<StepperCommandSetCurrentPosition *>(command);
+				privSetCurrentPosition(c->position);
+			}
+			break;
+			default:
+				break;
+			}
+		}
+		if (command != nullptr)
+		{
+			delete (command);
+		}
+	}
 
 	int32_t remainingSteps;
 	bool newDirection;
@@ -74,20 +111,20 @@ void Stepper::Update() // todo investigate the pi sdk and see if Critical sectio
 
 	switch (myMoveState)
 	{
-	case IDLE:
+	case MoveState::IDLE:
 		if (remainingSteps > 0)
 		{
-			myMoveState = ACCELERATING;
+			myMoveState = MoveState::ACCELERATING;
 		}
 		break;
-	case ACCELERATING:
+	case MoveState::ACCELERATING:
 		if (newDirection != myDirection)
 		{
-			myMoveState = DECELERATING;
+			myMoveState = MoveState::DECELERATING;
 		}
 		else if (remainingSteps <= (myCurrentSpeed * myCurrentSpeed) / (2 * myAcceleration))
 		{
-			myMoveState = DECELERATING;
+			myMoveState = MoveState::DECELERATING;
 		}
 		else if (myCurrentSpeed < myTargetSpeed)
 		{
@@ -97,23 +134,23 @@ void Stepper::Update() // todo investigate the pi sdk and see if Critical sectio
 		// TODO this does not handle the case where the new target speed is lower than the current speed
 		else
 		{
-			myMoveState = CONSTANT_SPEED;
+			myMoveState = MoveState::CONSTANT_SPEED;
 		}
 		break;
 
-	case CONSTANT_SPEED:
+	case MoveState::CONSTANT_SPEED:
 		if (newDirection != myDirection)
 		{
-			myMoveState = DECELERATING;
+			myMoveState = MoveState::DECELERATING;
 		}
 		else if (remainingSteps <= (myCurrentSpeed * myCurrentSpeed) / (2 * myAcceleration))
 		{
-			myMoveState = DECELERATING;
+			myMoveState = MoveState::DECELERATING;
 		}
 		stepDelay = 1e6 / myTargetSpeed / 2;
 		break;
 
-	case DECELERATING:
+	case MoveState::DECELERATING:
 		if (myCurrentSpeed > 0) // this does not correctly handle decelerating to a lower constant speed. rewrite this to compare against a target speed (not the one requested by the user (mymyTargetSpeed), since that gets reused for future moves), and when decelerating to a stop, set that target speed to 0.
 		{
 			myCurrentSpeed -= myAcceleration;
@@ -123,25 +160,25 @@ void Stepper::Update() // todo investigate the pi sdk and see if Critical sectio
 		{
 			if (newDirection != myDirection)
 			{
-				myMoveState = CHANGING_DIRECTION;
+				myMoveState = MoveState::CHANGING_DIRECTION;
 			}
 			else
 			{
-				myMoveState = IDLE;
+				myMoveState = MoveState::IDLE;
 			}
 		}
 		break;
 
-	case CHANGING_DIRECTION:
+	case MoveState::CHANGING_DIRECTION:
 		SetDirection(newDirection);
 		{
-			myMoveState = ACCELERATING;
+			myMoveState = MoveState::ACCELERATING;
 		}
 
 		break;
 	}
 
-	if (myMoveState != IDLE)
+	if (myMoveState != MoveState::IDLE)
 	{
 		// Refill FIFO as needed, but limit the number of steps added in one go in order to allow new target positions to be set
 		// and reacted to if the fifo is draining faster than we can fill it, otherwise this loop would never end until all of the
@@ -165,83 +202,110 @@ void Stepper::Update() // todo investigate the pi sdk and see if Critical sectio
 		}
 	}
 
-	xSemaphoreGive(myTargetPositionMutex);
-	xSemaphoreGive(myMoveStateMutex);
-	xSemaphoreGive(myCurrentPositionMutex);
-	xSemaphoreGive(myTargetSpeedMutex);
+	if (myTargetSpeed == 0)
+	{
+		// clearly we're not doing anything if the speed is zero, so without a delay,
+		// update will just relock the mutexes before another thread runs.
+		// delay 10 cycles to allow another thread to modify things critical to this thread
+		// there should be no timing critical things occurring if we have no speed set so increasing this is probably ok too
+		vTaskDelay(100 * portTICK_PERIOD_MS);
+	}
 }
 
 Stepper::MoveState Stepper::GetMoveState()
 {
-	xSemaphoreTake(myMoveStateMutex, portMAX_DELAY);
 	MoveState moveState = myMoveState;
-	xSemaphoreGive(myMoveStateMutex);
 	return moveState;
 }
 
-void Stepper::SetTargetPosition(int32_t targetPosition, uint16_t speed)
+StepperError Stepper::SetCurrentPosition(int32_t aPosition)
 {
-	xSemaphoreTake(myTargetPositionMutex, portMAX_DELAY);
-	if (targetPosition != myTargetPosition && myMoveState == IDLE)
+	StepperCommandSetCurrentPosition *command = new StepperCommandSetCurrentPosition(aPosition);
+	return privQueueCommand(command);
+}
+
+void Stepper::privSetCurrentPosition(int32_t aPosition)
+{
+	myCurrentPosition = aPosition;
+}
+
+StepperError Stepper::privQueueCommand(StepperCommand *aCommand)
+{
+	switch (xQueueSend(myCommandQueue, &aCommand, STEPPER_COMMAND_TIMEOUT * portTICK_PERIOD_MS))
 	{
-		xSemaphoreTake(myMoveStateMutex, portMAX_DELAY);
+	case pdPASS:
+		return StepperError::OK;
+	case errQUEUE_FULL:
+		return StepperError::QUEUE_FULL;
+	default:
+		return StepperError::UNKNOWN;
+	}
+}
+
+StepperError Stepper::SetTargetPosition(int32_t targetPosition)
+{
+	StepperCommandSetTargetPosition *command = new StepperCommandSetTargetPosition(targetPosition);
+	return privQueueCommand(command);
+}
+
+void Stepper::privSetTargetPosition(int32_t targetPosition)
+{
+	if (targetPosition != myTargetPosition && myMoveState == MoveState::IDLE)
+	{
 		// this is important because some state machines block until the stepper returns to the IDLE state
 		// so this prevents the race condition where the stepper update() loop does not set the state before
 		// the calling state machine checks to see if the move is complete
-		myMoveState = ACCELERATING;
-		xSemaphoreGive(myMoveStateMutex);
+		myMoveState = MoveState::ACCELERATING;
 	}
 
 	myTargetPosition = targetPosition;
-	if (speed != 0)
-	{
-		this->SetTargetSpeed(speed);
-	}
-	xSemaphoreGive(myTargetPositionMutex);
 }
+
 int32_t Stepper::GetCurrentPosition()
 {
-	xSemaphoreTake(myCurrentPositionMutex, portMAX_DELAY);
 	int32_t currentPosition = myCurrentPosition;
-	xSemaphoreGive(myCurrentPositionMutex);
 	return currentPosition;
 }
 
 int32_t Stepper::GetTargetPosition()
 {
-	xSemaphoreTake(myTargetPositionMutex, portMAX_DELAY);
 	int32_t targetPosition = myTargetPosition;
-	xSemaphoreGive(myTargetPositionMutex);
 	return targetPosition;
 }
 
-// can set speed here (mid move or any time) or via set target speed
-void Stepper::SetTargetSpeed(uint16_t aSpeed)
+StepperError Stepper::SetTargetSpeed(uint16_t aSpeed)
 {
-	xSemaphoreTake(myTargetSpeedMutex, portMAX_DELAY);
-	myTargetSpeed = aSpeed;
-	xSemaphoreGive(myTargetSpeedMutex);
+	StepperCommandSetTargetSpeed *command = new StepperCommandSetTargetSpeed(aSpeed);
+	return privQueueCommand(command);
 }
+
+void Stepper::privSetTargetSpeed(uint16_t aSpeed)
+{
+	myTargetSpeed = aSpeed;
+}
+
 uint16_t Stepper::GetTargetSpeed()
 {
-	xSemaphoreTake(myTargetSpeedMutex, portMAX_DELAY);
 	uint16_t targetSpeed = myTargetSpeed;
-	xSemaphoreGive(myTargetSpeedMutex);
 	return targetSpeed;
 }
 
-void Stepper::SetAcceleration(float aAcceleration)
+StepperError Stepper::SetAcceleration(float aAcceleration)
+{
+	StepperCommandSetAcceleration *command = new StepperCommandSetAcceleration(aAcceleration);
+	return privQueueCommand(command);
+}
+
+void Stepper::privSetAcceleration(float aAcceleration)
 {
 	myAcceleration = aAcceleration;
 }
 
-// todo check that float is atomic on rp2040 or mutex this
 float Stepper::GetAcceleration()
 {
 	return myAcceleration;
 }
 
-// todo check that uint16_t is atomic on rp2040
 uint16_t Stepper::GetCurrentSpeed()
 {
 	return myCurrentSpeed;

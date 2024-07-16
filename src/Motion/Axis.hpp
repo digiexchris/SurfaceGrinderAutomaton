@@ -110,6 +110,8 @@ public:
 	 */
 	bool WaitUntilMovementComplete(TickType_t aTimeout = portMAX_DELAY);
 
+	virtual StepperError SetTargetSpeed(uint16_t aSpeed) override;
+
 	/**
 	* @brief Stop the axis from moving
 	todo: implement this in the stepper
@@ -122,6 +124,7 @@ private:
 	int32_t myMaxStop = 0;
 	AxisLabel myAxisLabel;
 	int32_t myPreviousTargetPosition = 0;
+	uint16_t myMaxSpeed = 0;
 
 	static void MoveThread(void *pvParameters);
 };

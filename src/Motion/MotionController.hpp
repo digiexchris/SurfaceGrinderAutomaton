@@ -2,6 +2,7 @@
 #include "Axis.hpp"
 #include "Enum.hpp"
 #include "drivers/Motor/Stepper.hpp"
+#include <cstdint>
 #include <unordered_map>
 
 #include "Enum.hpp"
@@ -27,12 +28,16 @@ public:
 	TaskHandle_t GetTaskHandle(AxisLabel anAxisLabel) override;
 	bool SetStop(AxisLabel anAxisLabel, AxisDirection aDirection, int32_t aPosition);
 	int32_t GetStop(AxisLabel anAxisLabel, AxisDirection aDirection);
-	bool SetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed);
-	uint16_t GetSpeed(AxisLabel anAxisLabel);
+	bool SetTargetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed);
+	uint16_t GetCurrentSpeed(AxisLabel anAxisLabel);
+	uint16_t GetTargetSpeed(AxisLabel anAxisLabel);
+	Stepper::MoveState GetMoveState(AxisLabel anAxisLabel);
 	bool MoveRelative(AxisLabel anAxisLabel, int32_t aDistance);
 	bool MoveTo(AxisLabel anAxisLabel, int32_t aPosition);
-	int32_t GetPosition(AxisLabel anAxisLabel);
-	bool SetPosition(AxisLabel anAxisLabel, int32_t aPosition);
+	bool SetCurrentPosition(AxisLabel anAxisLabel, int32_t aPosition);
+	int32_t GetCurrentPosition(AxisLabel anAxisLabel);
+	int32_t GetTargetPosition(AxisLabel anAxisLabel);
+	bool SetTargetPosition(AxisLabel anAxisLabel, int32_t aPosition);
 
 private:
 	std::unordered_map<AxisLabel, Axis *> myAxes;
