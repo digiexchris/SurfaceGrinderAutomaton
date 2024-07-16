@@ -29,7 +29,7 @@ public:
 	bool SetStop(AxisLabel anAxisLabel, AxisDirection aDirection, int32_t aPosition);
 	int32_t GetStop(AxisLabel anAxisLabel, AxisDirection aDirection);
 	bool SetTargetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed);
-	uint16_t GetCurrentSpeed(AxisLabel anAxisLabel);
+	float GetCurrentSpeed(AxisLabel anAxisLabel);
 	uint16_t GetTargetSpeed(AxisLabel anAxisLabel);
 	Stepper::MoveState GetMoveState(AxisLabel anAxisLabel);
 	bool MoveRelative(AxisLabel anAxisLabel, int32_t aDistance);

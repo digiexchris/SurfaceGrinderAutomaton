@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string>
 
+#include "bsp/board.h"
+
 microsh_t *Console::mySh = nullptr;
 MotionController *Console::myMotionController = nullptr;
 QueueHandle_t Console::myCommandQueue;
@@ -43,8 +45,8 @@ void Console::Init(MotionController *aMotionController)
 
 	// Set the TX and RX pins by using the function select on the GPIO
 	// Set datasheet for more information on function select
-	// gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-	// gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+	gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+	gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
 
 	// Actually, we want a different speed
 	// The call will return the actual baud rate selected, which will be as close as
@@ -415,20 +417,20 @@ void Console::privStatusCommand(ConsoleCommandStatus &aCommand)
 
 	printf("Status" MICRORL_CFG_END_LINE);
 	printf("X Mode: %s", xMode.c_str());
-	printf(", Stepper State: %s", xMoveState);
+	printf(", Stepper State: %s", xMoveState.c_str());
 	printf(", Target Pos: %d", xPos);
 	printf(", Current Pos: %d", xCurrentPos);
 	printf(", Stops: %d:%d", xMinStop, xMaxStop);
 	printf(", Target Speed: %d", xTargetSpeed);
-	printf(", Speed: %d" MICRORL_CFG_END_LINE, xSpeed);
+	printf(", Speed: %.1f" MICRORL_CFG_END_LINE, xSpeed);
 
 	printf("Z Mode: %s", zMode.c_str());
-	printf(", Stepper State: %s", zMoveState);
+	printf(", Stepper State: %s", zMoveState.c_str());
 	printf(", Target Pos: %d", zPos);
 	printf(", Current Pos: %d", zCurrentPos);
 	printf(", Stops: %d:%d", zMinStop, zMaxStop);
 	printf(", Target Speed: %d", zTargetSpeed);
-	printf(", Speed: %d", zSpeed);
+	printf(", Speed: %.1f", zSpeed);
 	printf(", Z Advance Increment: %d" MICRORL_CFG_END_LINE, zAdvanceIncrement);
 }
 
@@ -535,6 +537,9 @@ int Console::privPrintFn(microrl_t *mrl, const char *str)
 	{
 		if (uart_is_writable(UART_ID))
 		{
+#include <stdlib.h>
+#include <stdio.h>
+			board_uart_write(str, strlen(str));
 			uart_puts(UART_ID, str);
 			sent = true;
 		}

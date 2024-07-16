@@ -140,12 +140,12 @@ private:
 	float stepDelay;
 
 	MoveState myMoveState = MoveState::IDLE;
-	int32_t myCurrentPosition = 0; // in steps
-	int32_t myTargetPosition = 0;  // in steps
-	uint16_t myTargetSpeed = 0;	   // in steps per second
-	float myCurrentSpeed = 0.0;	   // in steps per second
-	float myAcceleration = 0.0f;   // in steps per second squared
-
+	int32_t myCurrentPosition = 0;	// in steps
+	int32_t myTargetPosition = 0;	// in steps
+	uint16_t myTargetSpeed = 0;		// in steps per second
+	float myCurrentSpeed = 0.0;		// in steps per second
+	float myAcceleration = 0.0f;	// in steps per second squared
+	absolute_time_t lastUpdateTime; // to calculate the time step in the update() loop
 	QueueHandle_t myCommandQueue;
 };
 
