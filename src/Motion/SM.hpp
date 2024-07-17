@@ -132,7 +132,7 @@ public:
 		return SMError::NO_ERROR;
 	}
 
-	uint16_t GetCurrentSpeed() const
+	float GetCurrentSpeed() const
 	{
 		return myAxis->GetCurrentSpeed();
 	}

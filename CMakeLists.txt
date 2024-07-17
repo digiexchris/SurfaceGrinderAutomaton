@@ -59,11 +59,6 @@ FILE(GLOB_RECURSE app_sources
 
 pico_sdk_init()
 
-
-# Use USB uart
-# pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
-# pico_enable_stdio_uart(SurfaceGrinderAtomaton 1)
-
 add_executable(SurfaceGrinderAtomaton
 ${app_sources}
         )
@@ -109,6 +104,13 @@ target_include_directories(SurfaceGrinderAtomaton PRIVATE
         ${header_dir_list}
         ${CMAKE_CURRENT_LIST_DIR}/src)
 
+
+# file(TO_NATIVE_PATH "${TOP}/hw/bsp/${FAMILY}/boards/${BOARD}/board.cmake" board_cmake)
+
+# if(EXISTS ${board_cmake})
+#     include(${board_cmake})
+# endif()
+
 pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/blink.pio)
 pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_CURRENT_LIST_DIR}/pio/stepper.pio)
 
@@ -125,5 +127,5 @@ target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs FreeRTOS-K
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
 # Use USB uart
-# pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
-# pico_enable_stdio_uart(SurfaceGrinderAtomaton 1)
+pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
+pico_enable_stdio_uart(SurfaceGrinderAtomaton 1)

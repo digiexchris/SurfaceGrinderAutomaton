@@ -1,6 +1,7 @@
 #include "Stepper.hpp"
 #include "Helpers.hpp"
 #include "config.hpp"
+#include "pico/time.h"
 #include "stepper.pio.h"
 #include <pico/printf.h>
 #include <semphr.h>
@@ -57,9 +58,12 @@ void Stepper::DirectionChangedWait()
 	vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
 }
 
-void Stepper::Update() // todo investigate the pi sdk and see if Critical sections are more suited than mutexes here
+void Stepper::Update()
 {
-
+	absolute_time_t now = get_absolute_time();
+	int64_t deltaTimeUs = absolute_time_diff_us(lastUpdateTime, now);
+	float deltaTime = deltaTimeUs / 1e6f; // Convert microseconds to seconds
+	lastUpdateTime = now;
 	StepperCommand *command = nullptr;
 
 	// process up to queueSize of commands per update loop
@@ -109,16 +113,23 @@ void Stepper::Update() // todo investigate the pi sdk and see if Critical sectio
 	remainingSteps = abs(myTargetPosition - myCurrentPosition);
 	newDirection = (myTargetPosition > myCurrentPosition);
 
+	if (myCurrentSpeed == 0 && myDirection != newDirection)
+	{
+		myMoveState = MoveState::CHANGING_DIRECTION;
+	}
+
 	switch (myMoveState)
 	{
 	case MoveState::IDLE:
 		if (remainingSteps > 0)
 		{
 			myMoveState = MoveState::ACCELERATING;
+			return;
 		}
+		vTaskDelay(100 * portTICK_PERIOD_MS);
 		break;
 	case MoveState::ACCELERATING:
-		if (newDirection != myDirection)
+		if (newDirection != myDirection && myCurrentSpeed > 0)
 		{
 			myMoveState = MoveState::DECELERATING;
 		}
@@ -128,7 +139,7 @@ void Stepper::Update() // todo investigate the pi sdk and see if Critical sectio
 		}
 		else if (myCurrentSpeed < myTargetSpeed)
 		{
-			myCurrentSpeed += myAcceleration;
+			myCurrentSpeed += myAcceleration * deltaTime;
 			stepDelay = 1e6 / myCurrentSpeed / 2;
 		}
 		// TODO this does not handle the case where the new target speed is lower than the current speed
@@ -151,9 +162,28 @@ void Stepper::Update() // todo investigate the pi sdk and see if Critical sectio
 		break;
 
 	case MoveState::DECELERATING:
-		if (myCurrentSpeed > 0) // this does not correctly handle decelerating to a lower constant speed. rewrite this to compare against a target speed (not the one requested by the user (mymyTargetSpeed), since that gets reused for future moves), and when decelerating to a stop, set that target speed to 0.
+		if (myCurrentSpeed == myTargetSpeed)
 		{
-			myCurrentSpeed -= myAcceleration;
+			if (remainingSteps == 0)
+			{
+				myMoveState = MoveState::IDLE;
+			}
+			else
+			{
+				myMoveState = MoveState::CONSTANT_SPEED;
+			}
+			break;
+		}
+
+		// if we haven't stopped yet and we don't have steps left (ie. we moved the target position), add steps until we've stopped.
+		if (remainingSteps == 0)
+		{
+			remainingSteps++;
+		}
+
+		if (myCurrentSpeed > 0)
+		{
+			myCurrentSpeed -= myAcceleration * deltaTime;
 			stepDelay = 1e6 / myCurrentSpeed / 2;
 		}
 		else
@@ -174,6 +204,7 @@ void Stepper::Update() // todo investigate the pi sdk and see if Critical sectio
 		{
 			myMoveState = MoveState::ACCELERATING;
 		}
+		return;
 
 		break;
 	}

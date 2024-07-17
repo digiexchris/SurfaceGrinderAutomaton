@@ -17,9 +17,9 @@ The basic control is provided by an rp2040 (raspberry pi pico) with the followin
 | 1          | UART0_TX  | Modbus TX |
 | 2          | UART0_RX  | Modbus RX    |
 | 3          | GND  |     |
-| 4          | GP2  |  |
-| 5          | GP3  | |
-| 6          | GP4  | ESTOP (reset) |
+| 4          | GP2  | MPG ENCA |
+| 5          | GP3  | MPG ENCB |
+| 6          | GP4  | FEED HOLD |
 | 7          | GP5  | Steppers Enable |
 | 8          | GND  |  |
 | 9          | GP6  | Z Axis Direction |
@@ -32,20 +32,22 @@ The basic control is provided by an rp2040 (raspberry pi pico) with the followin
 | 16         | GP12  | Y Axis Direction    |
 | 17         | GP13  | Y Axis Step    |
 | 18         | GND  |     |
-| 19         | GP14  | Start Spindle    |
-| 20         | GP15  | Stop Spindle   |
-| 21         | GP16  |     |
-| 22         | GP17  |     |
+| NC         | NC  | MPG Select OFF/Menu Value    |
+| 19         | GP14  | MPG Select X |
+| 20         | GP15  | MPG Select Y   |
+| 21         | GP16  | MPG Select Z    |
+| 22         | GP17  | MPG Select Spindle RPM    |
 | 23         | GND  |    |
-| 24         | GP18  |     |
-| 25         | GP19  |     |
-| 26         | GP20  |    |
-| 27         | GP21  |    |
+| 24         | GP18  | MCP23017 IntB    |
+| 25         | GP19  | MCP23017 IntA    |
+| 26         | GP20 / I2C0-SDA | Waveshare MCP23017 IO expander  & SH1122 Display |
+| 27         | GP21 / I2C0-SCL  | Waveshare MCP23017 IO expander  & SH1122 Display |
 | 28         | GND  |     |
 | 29         | GP22  |     |
-| 30         | RUN  |     |
-| 31         | GP26  |     |
-| 32         | GP27  |     |
+| 30         | RUN  | RESET (AKA estop)    |
+| NC         | NC  | MPG Select 0.0001"/.01mm    |
+| 31         | GP26  | MPG SELECT 0.001"/.1mm  |
+| 32         | GP27  | MPG SELECT 0.05"/1mm |
 | 33         | GND  |     |
 | 34         | GP28  |     |
 | 35         | ADC_VREF  |     |
@@ -56,48 +58,46 @@ The basic control is provided by an rp2040 (raspberry pi pico) with the followin
 | 40         | VBUS  |     |
 
 
-The human interface is on the second RP2040:
+IO Expander:
 
-| Pin Number | PINMUX | Use |
-|------------|---|-----|
-| USB        | Serial | Debug Console |
-| 1          | UART0_TX  | Modbus TX |
-| 2          | UART0_RX  | Modbus RX |
-| 3          | GND  |     |
-| 4          | GP2  | X Auto Mode |
-| 5          | GP3  | Y Auto Mode |
-| 6          | GP4  | ESTOP (reset) |
-| 7          | GP5  | Z Auto Mode |
-| 8          | GND  |  |
-| 9          | GP6  | LEFT |
-| 10         | GP7  | RIGHT |
-| 11         | GP8  | UP    |
-| 12         | GP9  | DOWN  |
-| 13         | GND  |    |
-| 14         | GP10  | IN     |
-| 15         | GP11  | OUT    |
-| 16         | GP12  | MENU    |
-| 17         | GP13  | SELECT   |
-| 18         | GND  |     |
-| 19         | GP14  | BACK    |
-| 20         | GP15  | MPG Select OFF/Menu Value    |
-| 21         | GP16  | MPG Select X   |
-| 22         | GP17  | MPG Select Y    |
-| 23         | GND  | MPG Select Z    |
-| 24         | GP18  | MPG Select Spindle RPM   |
-| 25         | GP19  | MPG Select 0.0001"/.01mm    |
-| 26         | GP20  | MPG SELECT 0.001"/.1mm    |
-| 27         | GP21  | MPG SELECT 0.05"/1mm   |
-| 28         | GND  |     |
-| 29         | GP22  | Stop Spindle    |
-| 30         | RUN  |     |
-| 31         | GP26/I2C1_SDA  | SH1122 Display |
-| 32         | GP27/I2C1_SCL  | SH1122 Display  |
-| 33         | GND  |     |
-| 34         | GP28  | Start Spindle    |
-| 35         | ADC_VREF  |     |
-| 36         | 3v3 (out)  |     |
-| 37         | 3v3_en  |     |
-| 38         | GND  |     |
-| 39         | VSYS  |     |
-| 40         | VBUS  |     |
+| Pin Number | Use |
+|------------|---|
+| PA0         | X Auto Mode  |
+| PA1         | Y Auto Mode  |
+| PA2         | Z Auto Mode  |
+| PA3        | LEFT  |
+| PA4          | RIGHT  |
+| PA5          | UP  |
+| PA6         | DOWN  |
+| PA7          | IN  |
+| PB0          | OUT  |
+| PB1         | MENU  |
+| PB2         | SELECT  |
+| PB3         | BACK  |
+| PB4         | Start Spindle  |
+| PB5         | Stop Spindle  |
+| PB6         | NC  |
+| PB7         | NC  |
+
+# Building
+## Prerequisites
+- Required
+-- SEE NOTE BELOW. Raspberry Pi Pico SDK with the environment variables set for PICO_SDK_PATH. The install script should install a reasonable gcc compiler as well. You may also have some success with the rpi pico plugin for vscode.
+--- NOTE: pico_sdk_import.cmake is setup to auto download the pi pico sdk so you don't have to. If you do not want this, edit CMakePresets.json and turn that off, and ensure PICO_SDK_PATH is set.
+-- arm gcc
+-- cmake
+-- ninja-build
+-- if linux, apt install build-essential
+- optional
+-- clangd for formatting/linting/static analysis along with the vscode clangd extension
+-- any of the recommended extensions in this repo
+-- customize cmakepresets.json if your paths are different
+## Building
+If you have a cmsis-dap debug probe such as the picoprobe attached with a pi pico plugged into it, and the vscode cmake extension from microsoft, either open a compileable file (such as SurfaceGrinderAtomaton.cpp) and hit f7 to compile and upload, or f5 to debug.
+
+## Running
+The debug console is available on UART0 (see pins above). You will need some kind of usb serial dongle. In the future it will be moved to tinyusb for the built in usb port.
+
+Once booted, type h to see the available commands (which may or may not be up to date, see src/debug/Console.cpp)
+
+TODO: list the idosynchracies of the debug console, like an axis must be in manual mode to manually set the target position

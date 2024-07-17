@@ -270,7 +270,7 @@ bool MotionController::SetTargetSpeed(AxisLabel anAxisLabel, uint16_t aSpeed)
 	return true;
 }
 
-uint16_t MotionController::GetCurrentSpeed(AxisLabel anAxisLabel)
+float MotionController::GetCurrentSpeed(AxisLabel anAxisLabel)
 {
 	switch (anAxisLabel)
 	{
