@@ -28,6 +28,9 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
+/*#pragma GCC diagnostic ignored "-Wmissing-parameter-type"
+#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"*/
+
 /*-----------------------------------------------------------
  * Application specific definitions.
  *

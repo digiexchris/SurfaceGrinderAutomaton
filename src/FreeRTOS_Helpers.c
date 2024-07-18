@@ -28,7 +28,7 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 
 void vApplicationGetPassiveIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 										  StackType_t **ppxIdleTaskStackBuffer,
-										  uint32_t *pulIdleTaskStackSize, BaseType_t)
+										  uint32_t *pulIdleTaskStackSize, BaseType_t anUnused)
 {
 	/* If the buffers to be provided to the Idle task are declared inside this
 	function then they must be declared static ? otherwise they will be allocated on

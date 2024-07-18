@@ -1,47 +1,86 @@
-
-
-  {
-    "version": 3,
-    "cmakeMinimumRequired": {
-      "major": 3,
-      "minor": 19,
-      "patch": 0
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "generator": "Ninja",
+      "description": "Default configuration for Raspberry Pi Pico",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "PICO_PLATFORM": "rp2040",
+        "CMAKE_CXX_STANDARD": "20"
+      },
+      "hidden": true
     },
-    "configurePresets": [
-      {
-        "name": "default",
-        "generator": "Ninja",
-        "description": "Default configuration for Raspberry Pi Pico",
-        "binaryDir": "${sourceDir}/build",
-        "cacheVariables": {
-          "CMAKE_EXPORT_COMPILE_COMMANDS": "YES",
-          "CMAKE_BUILD_TYPE": "Debug",
-          "CMAKE_C_COMPILER": "/usr/bin/arm-none-eabi-gcc",
-          "CMAKE_CXX_COMPILER": "/usr/bin/arm-none-eabi-g++",
-          "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja",
-          "PICO_PLATFORM": "rp2040",
-          "CMAKE_CXX_STANDARD": "20",
-          "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
-          "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
-          "PICO_SDK_FETCH_FROM_GIT": "ON"
-          
-        }
+    {
+      "name": "default-debug",
+      "description": "Debug",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
+        "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g"
+      },
+      "hidden": true
+    },
+    {
+      "name": "x64-debug",
+      "generator": "Ninja",
+      "description": "Debug Windows",
+      "inherits": "default-debug",
+      "cacheVariables": {
+        "PICO_SDK_PATH": "$env{PICO_INSTALL_PATH}/pico-sdk",
+        "PICO_TOOLCHAIN_PATH": "$env{PICO_INSTALL_PATH}/gcc-arm-none-eabi/bin",
+        "CMAKE_MAKE_PROGRAM": "$env{PICO_INSTALL_PATH}/ninja/ninja.exe",
+        "WIN32":  "ON"
       }
-    ],
-    "buildPresets": [
-      {
-        "name": "default",
-        "configurePreset": "default",
-        "description": "Build using the default configuration",
-        "targets": ["all"]
+    },
+    {
+      "name": "linux-debug",
+      "generator": "Ninja",
+      "description": "Debug Linux",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/bin/arm-none-eabi-gcc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/arm-none-eabi-g++",
+        "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja",
+        "PICO_SDK_FETCH_FROM_GIT": "ON",
+        "PICO_SDK_FETCH_FROM_GIT_PATH": "${sourceDir}/pico_sdk"
       }
-    ],
-    "testPresets": [
-      {
-        "name": "default",
-        "configurePreset": "default",
-        "description": "Test using the default configuration"
-      }
-    ]
-  }
-  
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "description": "Build using the default configuration",
+      "configurePreset": "default",
+      "targets": [ "SurfaceGrinderAtomaton.elf" ],
+      "hidden": true
+    },
+    {
+      "name": "Windows Debug",
+      "configurePreset": "x64-debug",
+      "description": "Build using the x86-debug configuration",
+      "inherits": "default"
+    },
+    {
+      "name": "Linux Debug",
+      "configurePreset": "linux-debug",
+      "description": "Build using the linux-debug configuration",
+      "targets": [ "SurfaceGrinderAtomaton.elf" ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "description": "Test using the default configuration"
+    }
+  ]
+}
