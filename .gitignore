@@ -10,3 +10,6 @@ twister*/
 cmake-build-debug/
 qemu.pid
 .cache/
+pico_sdk/
+out/
+.vs/

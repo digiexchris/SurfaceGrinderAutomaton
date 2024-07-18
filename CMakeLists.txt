@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
 
+#if(WIN32)
+#add_custom_target(RunEnvScript
+#    COMMAND ${CMAKE_COMMAND} -E env call ${PICO_INSTALL_DIR}/pico-env.cmd
+##    WORKING_DIRECTORY ${PICO_INSTALL_DIR}
+ #   COMMENT "Setting environment variables"
+#)
+#endif()
 
 
 # Pull in SDK (must be before project)
@@ -78,6 +85,8 @@ add_compile_options(
     $<$<COMPILE_LANG_AND_ID:C,Clang>:-Weverything>
     $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wno-unused-variable>
     $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wno-unused-parameter>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wno-unused-function>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wno-implicit-function-declaration>
     $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wno-type-limits>
 )
 
@@ -94,10 +103,18 @@ add_compile_options(
 #     # Remove the -Wno-unused-variable flag for this target
 # )
 
-add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded!"
-    COMMAND /bin/bash ${CMAKE_CURRENT_LIST_DIR}/flash.sh
-)
+ if (WIN32)
+        add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded! Skipping auto flash"
+		)
+    else()
+
+    add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded!"
+       COMMAND /bin/bash ${CMAKE_CURRENT_LIST_DIR}/flash.sh
+   
+   )
+endif()
 
 target_include_directories(SurfaceGrinderAtomaton PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}

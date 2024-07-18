@@ -1,0 +1,47 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "cppdbg",
+      "name": "GDB Debug",
+      "project": "${workspaceRoot}/CMakeLists.txt",
+      "projectTarget": "MyExecutable",
+      "currentDir": "${workspaceRoot}",
+      "args": [],
+      "stopAtEntry": true,
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/arm/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "text": "target remote localhost:3333"
+        },
+        {
+          "text": "monitor reset halt"
+        },
+        {
+          "text": "monitor reset init"
+        },
+        {
+          "text": "load"
+        }
+      ],
+      "logging": {
+        "moduleLoad": true,
+        "trace": true
+      },
+      "debugServerPath": "C:/arm/openocd/bin/openocd.exe",
+      "debugServerArgs": "-f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" ",
+      "serverStarted": "Info : Listening on port .* for gdb connections",
+      "filterStderr": false,
+      "filterStdout": false,
+      "cwd": "${workspaceRoot}",
+      "program": "${workspaceRoot}/build/SurfaceGrinderAtomaton.elf"
+    }
+  ]
+}

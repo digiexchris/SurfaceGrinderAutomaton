@@ -5,12 +5,6 @@ Simple automation for a manual surface grinder
 ### MCU
 The basic control is provided by an rp2040 (raspberry pi pico) with the following pin usage
 
-Simple automation for a manual surface grinder
-
-## Hardware
-### MCU
-The basic control is provided by an rp2040 (raspberry pi pico) with the following pin usage
-
 | Pin Number | PINMUX | Use |
 |------------|---|-----|
 | USB        | Serial | Debug Console |
@@ -82,16 +76,24 @@ IO Expander:
 # Building
 ## Prerequisites
 - Required
--- SEE NOTE BELOW. Raspberry Pi Pico SDK with the environment variables set for PICO_SDK_PATH. The install script should install a reasonable gcc compiler as well. You may also have some success with the rpi pico plugin for vscode.
---- NOTE: pico_sdk_import.cmake is setup to auto download the pi pico sdk so you don't have to. If you do not want this, edit CMakePresets.json and turn that off, and ensure PICO_SDK_PATH is set.
--- arm gcc
--- cmake
--- ninja-build
--- if linux, apt install build-essential
+	- git submodule update --init --recursive
+	- SEE NOTE BELOW. Raspberry Pi Pico SDK with the environment variables set for PICO_SDK_PATH. The install script should install a reasonable gcc compiler as well. You may also have some success with the rpi pico plugin for vscode.
+		- NOTE: pico_sdk_import.cmake is setup to auto download the pi pico sdk so you don't have to. If you do not want this, edit CMakePresets.json and turn that off, and ensure PICO_SDK_PATH is set.
+	- arm gcc
+	- cmake
+	- if linux, apt install build-essential
+	- if Windows
+		- https://www.raspberrypi.com/news/raspberry-pi-pico-windows-installer/
+		- Ensure the env variable PICO_INSTALL_PATH is set to where you installed the pico sdk (from the installer above) such as C:\Program Files\Raspberry Pi\Pico SDK v1.5.1
+		- open the cmakelists.txt file in visual studio
+		- have openocd installed (c:\arm\openocd recommended, see .vs/launch.json) https://github.com/openocd-org/openocd/releases/tag/v0.12.0
+		- if the cmake generation succeeded, select SurfaceGrinderAtomaton.elf from the run button dropdown and hit run!
+		- TODO: make the debug target work to debug using gdb, see launch.vs.json in .vs/
 - optional
--- clangd for formatting/linting/static analysis along with the vscode clangd extension
--- any of the recommended extensions in this repo
--- customize cmakepresets.json if your paths are different
+	- clangd for formatting/linting/static analysis along with the vscode clangd extension
+	- any of the recommended extensions in this repo
+	- customize cmakepresets.json if your paths are different
+	
 ## Building
 If you have a cmsis-dap debug probe such as the picoprobe attached with a pi pico plugged into it, and the vscode cmake extension from microsoft, either open a compileable file (such as SurfaceGrinderAtomaton.cpp) and hit f7 to compile and upload, or f5 to debug.
 
