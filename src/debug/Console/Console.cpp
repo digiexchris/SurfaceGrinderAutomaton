@@ -13,8 +13,6 @@
 #include <stdio.h>
 #include <string>
 
-#include "bsp/board.h"
-
 microsh_t *Console::mySh = nullptr;
 MotionController *Console::myMotionController = nullptr;
 QueueHandle_t Console::myCommandQueue;
@@ -537,9 +535,6 @@ int Console::privPrintFn(microrl_t *mrl, const char *str)
 	{
 		if (uart_is_writable(UART_ID))
 		{
-#include <stdlib.h>
-#include <stdio.h>
-			board_uart_write(str, strlen(str));
 			uart_puts(UART_ID, str);
 			sent = true;
 		}
