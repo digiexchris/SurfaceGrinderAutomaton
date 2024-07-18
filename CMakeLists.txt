@@ -127,5 +127,5 @@ target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs FreeRTOS-K
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
 # Use USB uart
-pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
+pico_enable_stdio_usb(SurfaceGrinderAtomaton 0)
 pico_enable_stdio_uart(SurfaceGrinderAtomaton 1)
