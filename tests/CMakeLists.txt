@@ -1,7 +1,9 @@
 # Include Unity framework
 #include_directories(${CMAKE_CURRENT_SOURCE_DIR}/unity)
 
-add_subdirectory(unity)
+# add_subdirectory(unity)
+
+enable_testing()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 
@@ -23,10 +25,20 @@ FILE(GLOB_RECURSE app_sources
 ./src/*.c*
 )
 
+include(FetchContent)
+
+# Fetch CppUTest
+FetchContent_Declare(
+  cpputest
+  GIT_REPOSITORY https://github.com/cpputest/cpputest.git
+  GIT_TAG        master
+)
+FetchContent_MakeAvailable(cpputest)
+
 add_executable(SurfaceGrinderAtomaton_tests ${app_sources})
 
 # Link with pico_stdlib and other required libraries
-target_link_libraries(SurfaceGrinderAtomaton_tests pico_stdlib unity)
+target_link_libraries(SurfaceGrinderAtomaton_tests pico_stdlib CppUTest)
 
 # Enable USB output, disable UART output
 pico_enable_stdio_usb(SurfaceGrinderAtomaton_tests 0)
