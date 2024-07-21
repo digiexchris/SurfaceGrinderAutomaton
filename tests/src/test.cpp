@@ -1,23 +1,16 @@
-#include "unity_config.h"
+// #include "unity_config.h"
 #include <hardware/gpio.h>
 #include <hardware/uart.h>
 #include <pico/platform.h>
 #include <pico/stdio.h>
-#include <unity.h>
+// #include <unity.h>
+#include "CppUTest/CommandLineTestRunner.h"
 
-void setUp(void)
-{
-	// Set up code here
-}
+TEST_GROUP(FirstTestGroup){};
 
-void tearDown(void)
+TEST(FirstTestGroup, FirstTest)
 {
-	// Tear down code here
-}
-
-void test_example(void)
-{
-	TEST_ASSERT_EQUAL(1, 1);
+	FAIL("Fail me!");
 }
 
 #define UART_ID uart0
@@ -28,10 +21,18 @@ void test_example(void)
 int main(void)
 {
 	stdio_init_all();
+	gpio_init(PICO_DEFAULT_LED_PIN);
+	gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+	gpio_put(PICO_DEFAULT_LED_PIN, 1);
 
-	UNITY_BEGIN();
-	RUN_TEST(test_example);
-	UNITY_END();
+	// UNITY_BEGIN();
+	// RUN_TEST(test_example);
+
+	// UNITY_END();
+
+	const char *const *av = (const char *const *)malloc(1 * sizeof(char *));
+
+	CommandLineTestRunner::RunAllTests(0, av);
 
 	while (true)
 	{
