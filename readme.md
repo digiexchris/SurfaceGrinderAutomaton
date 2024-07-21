@@ -93,6 +93,7 @@ IO Expander:
 	- clangd for formatting/linting/static analysis along with the vscode clangd extension
 	- any of the recommended extensions in this repo
 	- customize cmakepresets.json if your paths are different
+	- https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads may work better for debugging, configure paths in launch.json (AArch32 bare-metal target (arm-none-eabi))
 	
 ## Building
 If you have a cmsis-dap debug probe such as the picoprobe attached with a pi pico plugged into it, and the vscode cmake extension from microsoft, either open a compileable file (such as SurfaceGrinderAtomaton.cpp) and hit f7 to compile and upload, or f5 to debug.

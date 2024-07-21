@@ -243,6 +243,7 @@ void Console::consoleTask(void *aCommandQueueHandle)
 			{
 				delete (command);
 			}
+			vTaskDelay(10 * portTICK_PERIOD_MS);
 		}
 	}
 }
