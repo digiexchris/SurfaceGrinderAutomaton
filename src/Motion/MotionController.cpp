@@ -104,7 +104,8 @@ void MotionController::MotionXThread(void *pvParameters)
 	while (true)
 	{
 		mc->myXAxisSM->Update();
-		vTaskDelay(100); // yeild to another task of the same priority
+		// vTaskDelay(100); // yeild to another task of the same priority
+		vPortYield();
 	}
 }
 
@@ -116,7 +117,8 @@ void MotionController::MotionZThread(void *pvParameters)
 	while (true)
 	{
 		mc->myZAxisSM->Update();
-		vTaskDelay(100); // yeild to another task of the same priority
+		// vTaskDelay(100); // yeild to another task of the same priority
+		vPortYield();
 	}
 }
 

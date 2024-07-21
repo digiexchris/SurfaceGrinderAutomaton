@@ -14,7 +14,11 @@
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "PICO_PLATFORM": "rp2040",
-        "CMAKE_CXX_STANDARD": "20"
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_C_STANDARD": "11",
+        "PICO_CXX_ENABLE_EXCEPTIONS": "ON",
+        "PICO_CXX_ENABLE_RTTI": "ON",
+        "FREERTOS_KERNEL_PATH": "${sourceDir}/FreeRTOS-Kernel",
       },
       "hidden": true
     },
@@ -25,7 +29,9 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
-        "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g"
+        "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
+        "PICO_DEOPTIMIZED_DEBUG": "ON"
+        
       },
       "hidden": true
     },
@@ -45,10 +51,10 @@
       "name": "linux-debug",
       "generator": "Ninja",
       "description": "Debug Linux",
-      "inherits": "default",
+      "inherits": "default-debug",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "/usr/bin/arm-none-eabi-gcc",
-        "CMAKE_CXX_COMPILER": "/usr/bin/arm-none-eabi-g++",
+        "CMAKE_C_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc",
+        "CMAKE_CXX_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++",
         "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja",
         "PICO_SDK_FETCH_FROM_GIT": "ON",
         "PICO_SDK_FETCH_FROM_GIT_PATH": "${sourceDir}/pico_sdk"
@@ -74,6 +80,12 @@
       "configurePreset": "linux-debug",
       "description": "Build using the linux-debug configuration",
       "targets": [ "SurfaceGrinderAtomaton.elf" ]
+    },
+    {
+      "name": "Linux Debug with Tests",
+      "configurePreset": "linux-debug",
+      "description": "Build Tests",
+      "targets": [ "all" ]
     }
   ],
   "testPresets": [
