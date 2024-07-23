@@ -92,6 +92,7 @@ extern "C" void isr_hardfault(void)
 int main()
 {
 	stdio_init_all();
+	set_sys_clock_khz(120000, true);
 
 	// sleep_ms(1000); // time for UART to connect for debugging, comment out later
 
