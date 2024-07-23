@@ -5,11 +5,11 @@
 		},
 		{
 			"name": "PICO_SDK",
-			"path": "../pico/pico-sdk"
+			"path": "pico/pico-sdk"
 		},
 		{
 			"name": "PICO_EXTRA",
-			"path": "../pico"
+			"path": "pico"
 		}
 	],
 	"cmake.generator": "Ninja",

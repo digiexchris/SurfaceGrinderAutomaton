@@ -24,13 +24,13 @@ RUN tar xf $TOOLCHAINARCHIVE
 RUN mv $TOOLCHAINDIR gcc-arm-none && \
     rm $TOOLCHAINARCHIVE
 ENV PATH=$PATH:/workspaces/gcc-arm-none/bin
-RUN mkdir -p /workspaces/pico
-WORKDIR /workspaces/pico
-RUN git clone -b master https://github.com/raspberrypi/pico-sdk.git --depth=1 && git -C pico-sdk submodule update --init
-ENV PICO_SDK_PATH=/workspaces/pico/pico-sdk
-RUN git clone -b master https://github.com/raspberrypi/pico-examples.git --depth=1
-RUN git clone -b master https://github.com/raspberrypi/pico-extras.git --depth=1
-RUN git clone -b master https://github.com/raspberrypi/debugprobe.git --depth=1
+# RUN mkdir -p /workspaces/pico
+# WORKDIR /workspaces/pico
+# RUN git clone -b master https://github.com/raspberrypi/pico-sdk.git --depth=1 && git -C pico-sdk submodule update --init
+# ENV PICO_SDK_PATH=/workspaces/pico/pico-sdk
+# RUN git clone -b master https://github.com/raspberrypi/pico-examples.git --depth=1
+# RUN git clone -b master https://github.com/raspberrypi/pico-extras.git --depth=1
+# RUN git clone -b master https://github.com/raspberrypi/debugprobe.git --depth=1
 
 
 RUN git clone https://github.com/openocd-org/openocd.git --depth=1 --recurse-submodules \
