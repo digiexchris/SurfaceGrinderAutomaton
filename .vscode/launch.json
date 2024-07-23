@@ -20,19 +20,19 @@
         "-s",
         "${env:PICO_SDK_PATH}/../openocd/tcl",
         "-c",
-        "adapter speed 5000",
+        "adapter speed 1000",
       ],
       "device": "RP2040",
       "configFiles": [
         "interface/cmsis-dap.cfg",
         "target/rp2040.cfg"
-        ],
+      ],
       "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
       //"runToEntryPoint": "main",
       // Give restart the same functionality as runToEntryPoint - main
       "postRestartCommands": [
-          "break main",
-          "continue"
+        //"break main",
+        "continue"
       ]
     },
     {
@@ -46,8 +46,8 @@
       "device": "RP2040",
       "BMPGDBSerialPort": "/dev/ttyACM0", // Use whatever serial port makes sense for your OS and BMP setup
       "runToEntryPoint": "main",
-  },
-  {
+    },
+    {
       "name": "BMP Debug",
       "type": "cortex-debug",
       "servertype": "bmp",
@@ -66,6 +66,6 @@
       "BMPGDBSerialPort": "/dev/ttyACM0", // Use whatever serial port makes sense for your OS and BMP setup
       //"runToEntryPoint": "main" // runToMain is deprecated.
       "loadFiles": []
-  }
+    }
   ]
 }

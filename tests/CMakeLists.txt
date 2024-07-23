@@ -49,7 +49,7 @@ pico_add_extra_outputs(SurfaceGrinderAtomaton_tests)
 
 add_custom_command(TARGET SurfaceGrinderAtomaton_tests POST_BUILD
 COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded!"
-COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/flash_bmp.sh $<TARGET_FILE:SurfaceGrinderAtomaton_tests>
+COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/flash.sh $<TARGET_FILE:SurfaceGrinderAtomaton_tests>
 )
 
 add_dependencies(SurfaceGrinderAtomaton_tests SurfaceGrinderAtomaton)

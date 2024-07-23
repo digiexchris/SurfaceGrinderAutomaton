@@ -20,7 +20,7 @@
         {
             "label": "Flash",
             "type": "process",
-            "command": "${workspaceFolder}/flash_bmp.sh",
+            "command": "${workspaceFolder}/flash.sh",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -35,7 +35,7 @@
         {
             "label": "Flash (Debug)",
             "type": "process",
-            "command": "${workspaceFolder}/flash_bmp.sh",
+            "command": "${workspaceFolder}/flash.sh",
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -49,7 +49,7 @@
         {
             "label": "Flash (Tests)",
             "type": "process",
-            "command": "${workspaceFolder}/flash_bmp.sh",
+            "command": "${workspaceFolder}/flash.sh",
             "group": "build",
             "presentation": {
                 "reveal": "always",
