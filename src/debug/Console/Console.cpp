@@ -43,8 +43,8 @@ void Console::Init(MotionController *aMotionController)
 
 	// Set the TX and RX pins by using the function select on the GPIO
 	// Set datasheet for more information on function select
-	gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-	gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+	// gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+	// gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
 
 	// Actually, we want a different speed
 	// The call will return the actual baud rate selected, which will be as close as
