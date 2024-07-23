@@ -1,3 +1,18 @@
 [submodule "FreeRTOS-Kernel"]
 	path = FreeRTOS-Kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+[submodule "pico/pico-sdk"]
+	path = pico/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+[submodule "pico/--depth=1"]
+	path = pico/--depth=1
+	url = https://github.com/raspberrypi/pico-examples.git
+[submodule "pico/pico-examples"]
+	path = pico/pico-examples
+	url = https://github.com/raspberrypi/pico-examples.git
+[submodule "pico/pico-extras"]
+	path = pico/pico-extras
+	url = https://github.com/raspberrypi/pico-extras.git
+[submodule "pico/debugprobe"]
+	path = pico/debugprobe
+	url = https://github.com/raspberrypi/debugprobe.git
