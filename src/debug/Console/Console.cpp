@@ -4,18 +4,24 @@
 #include "Enum.hpp"
 #include "Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
+#include "config.hpp"
 #include "drivers/Motor/Stepper.hpp"
 #include "microsh.h"
+#include "usb.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <hardware/watchdog.h>
 #include <malloc.h>
 #include <pico/printf.h>
 #include <stdio.h>
 #include <string>
 
+#include "pico/stdio.h"
+
 microsh_t *Console::mySh = nullptr;
 MotionController *Console::myMotionController = nullptr;
 QueueHandle_t Console::myCommandQueue;
+Usb *Console::myUsb = nullptr;
 
 Console::Commands Console::myCommands[] = {
 	{1, "h", Console::helpCmdCallback, "Help"},
@@ -33,7 +39,6 @@ void Console::Init(MotionController *aMotionController)
 {
 	myMotionController = aMotionController;
 	printf("Initializing console" MICRORL_CFG_END_LINE);
-	uart_init(UART_ID, BAUD_RATE);
 
 	myCommandQueue = xQueueCreate(10, sizeof(ConsoleCommand *));
 	if (myCommandQueue == nullptr)
@@ -41,31 +46,12 @@ void Console::Init(MotionController *aMotionController)
 		panic("Failed to create command queue" MICRORL_CFG_END_LINE);
 	}
 
-	// Set the TX and RX pins by using the function select on the GPIO
-	// Set datasheet for more information on function select
-	// gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-	// gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
-
-	// Actually, we want a different speed
-	// The call will return the actual baud rate selected, which will be as close as
-	// possible to that requested
-	// int __unused actual = uart_set_baudrate(UART_ID, BAUD_RATE);
-
+#if CONSOLE_USES_UART
+	uart_init(UART_ID, BAUD_RATE);
 	// Set UART flow control CTS/RTS, we don't want these, so turn them off
 	uart_set_hw_flow(UART_ID, false, false);
-
-	// // Set our data format
-	// uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
-
-	// Turn off FIFO's - we want to do this character by character
-	// uart_set_fifo_enabled(UART_ID, false);
-
-	// Set up a RX interrupt
-	// We need to set up the handler first
-	// Select correct interrupt for the UART we are using
 	int UART_IRQ = UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
 
-	// And set up and enable the interrupt handlers
 	irq_set_exclusive_handler(UART_IRQ, uartRxInterruptHandler);
 	irq_set_enabled(UART_IRQ, true);
 
@@ -73,6 +59,12 @@ void Console::Init(MotionController *aMotionController)
 	uart_set_irq_enables(UART_ID, true, false);
 
 	printf("UART initialized" MICRORL_CFG_END_LINE);
+#endif
+
+#if CONSOLE_USES_USB
+
+	myUsb = new Usb(processChars);
+#endif
 
 	//--------------------------------------------------------------------------------
 
@@ -531,6 +523,8 @@ void Console::privSetAdvanceIncrementCommand(ConsoleCommandSetAdvanceIncrement &
 
 int Console::privPrintFn(microrl_t *mrl, const char *str)
 {
+
+#if CONSOLE_USES_UART
 	bool sent = false;
 	while (!sent)
 	{
@@ -544,7 +538,19 @@ int Console::privPrintFn(microrl_t *mrl, const char *str)
 			tight_loop_contents();
 		}
 	}
+#endif
+
+#if CONSOLE_USES_USB
+
+	Usb::print(str, strlen(str));
+
+#endif
 	return microshEXEC_OK;
+}
+
+void Console::processChars(const void *data, size_t len)
+{
+	microrl_processing_input(&mySh->mrl, data, len);
 }
 
 void Console::uartRxInterruptHandler()

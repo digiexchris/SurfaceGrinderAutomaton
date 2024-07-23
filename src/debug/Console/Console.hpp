@@ -3,6 +3,7 @@
 #include "../../Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
 #include "microsh.h"
+#include "usb.hpp"
 
 #define UART_ID uart0
 #define BAUD_RATE 115200
@@ -111,6 +112,7 @@ public:
 	};
 
 private:
+	static Usb *myUsb;
 	static Commands myCommands[];
 	static QueueHandle_t myCommandQueue;
 	static microsh_t *mySh;
@@ -130,6 +132,7 @@ private:
 
 	static void consoleTask(void *pvParameters);
 	static void registerCommands();
+	static void processChars(const void *data, size_t len);
 
 	static void privStatusCommand(ConsoleCommandStatus &aCommand);
 	static void privModeCommand(ConsoleCommandMode &aCommand);
