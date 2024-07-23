@@ -1,28 +1,17 @@
 {
-    "folders": [
+	"folders": [
 		{
 			"path": "."
 		},
-        {
+		{
 			"name": "PICO_SDK",
-			"path": "/home/chris/pico/"
+			"path": "../pico/pico-sdk"
+		},
+		{
+			"name": "PICO_EXTRA",
+			"path": "../pico"
 		}
 	],
-	"cmake.configureOnOpen": false,
-	"cmake.statusbar.advanced": {
-	  "debug" : {
-		"visibility": "hidden"
-				},
-	  "launch" : {
-		"visibility": "hidden"
-				 },
-	  "build" : {
-		"visibility": "hidden"
-				 },
-	  "buildTarget" : {
-		"visibility": "hidden"
-				 }
-	},
 	"cmake.generator": "Ninja",
 	"extensions": {
 		"recommendations": [
@@ -30,16 +19,14 @@
 			"ms-vscode.vscode-embedded-tools",
 			"ms-vscode.vscode-serial-monitor",
 			"marus25.cortex-debug",
-            "IBM.output-colorizer",
-            "seaube.clangformat",
-			
+			"seaube.clangformat",
 			"spmeesseman.vscode-taskexplorer",
-		
+			"IBM.output-colorizer",
 			"actboy168.tasks",
-            "raspberry-pi.raspberry-pi-pico",
+			"SanaAjani.taskrunnercode",
+			"raspberry-pi.raspberry-pi-pico",
 			"ms-vscode.cmake-tools",
 			"EditorConfig.EditorConfig",
-			"SanaAjani.taskrunnercode",
 			"GitHub.copilot",
 			"GitHub.copilot-chat",
 			"josetr.cmake-language-support-vscode",
@@ -62,7 +49,36 @@
 		"[cpp]": {
 			"editor.defaultFormatter": "seaube.clangformat"
 		},
+		"cmake.cmakelistFile": "${workspaceFolder}/CMakeLists.txt",
+		"cmake.configureOnOpen": false,
+		"cmake.statusbar.advanced": {
+			"debug": {
+				"visibility": "hidden"
+			},
+			"launch": {
+				"visibility": "hidden"
+			},
+			"build": {
+				"visibility": "hidden"
+			},
+			"buildTarget": {
+				"visibility": "hidden"
+			}
+		},
 		"editor.defaultFoldingRangeProvider": "ms-vscode.cpptools",
-		"editor.folding": false
+		"editor.folding": false,
+		"[jsonc]": {
+			"editor.defaultFormatter": "vscode.json-language-features"
+		},
+		"cmake.allowCommentsInPresetsFile": true,
+		"cmake.allowUnsupportedPresetsVersions": false,
+		"cmake.deleteBuildDirOnCleanConfigure": true,
+		"cmake.enableAutomaticKitScan": false,
+		"cmake.generator": "ninja",
+		"cmake.ignoreKitEnv": true,
+		"cmake.options.statusBarVisibility": "visible",
+		"cmake.showSystemKits": false,
+		"cmake.sourceDirectory": "${workspaceFolder}",
+		"cmake.useCMakePresets": "always"
 	}
 }

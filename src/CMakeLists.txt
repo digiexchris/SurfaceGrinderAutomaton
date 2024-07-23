@@ -57,7 +57,7 @@ else()
 if(NOT BUILD_TESTS)
 add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
 COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded!"
-COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/flash_bmp.sh $<TARGET_FILE:SurfaceGrinderAtomaton>
+COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/flash.sh $<TARGET_FILE:SurfaceGrinderAtomaton>
 )
 endif()
 endif()

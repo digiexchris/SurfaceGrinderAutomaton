@@ -31,7 +31,6 @@
         "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
         "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
         "PICO_DEOPTIMIZED_DEBUG": "ON"
-        
       },
       "hidden": true
     },
@@ -44,20 +43,29 @@
         "PICO_SDK_PATH": "$env{PICO_INSTALL_PATH}/pico-sdk",
         "PICO_TOOLCHAIN_PATH": "$env{PICO_INSTALL_PATH}/gcc-arm-none-eabi/bin",
         "CMAKE_MAKE_PROGRAM": "$env{PICO_INSTALL_PATH}/ninja/ninja.exe",
-        "WIN32":  "ON"
+        "WIN32": "ON"
       }
     },
     {
-      "name": "linux-debug",
+      "name": "devcontainer-linux-debug",
+      "generator": "Ninja",
+      "description": "Debug Linux",
+      "inherits": "default-debug",
+      "cacheVariables": {
+        // "CMAKE_C_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc",
+        // "CMAKE_CXX_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++",
+        "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja"
+      }
+    },
+    {
+      "name": "native-linux-debug",
       "generator": "Ninja",
       "description": "Debug Linux",
       "inherits": "default-debug",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc",
         "CMAKE_CXX_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++",
-        "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja",
-        "PICO_SDK_FETCH_FROM_GIT": "ON",
-        "PICO_SDK_FETCH_FROM_GIT_PATH": "${sourceDir}/pico_sdk"
+        "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja"
       }
     }
   ],
@@ -66,26 +74,58 @@
       "name": "default",
       "description": "Build using the default configuration",
       "configurePreset": "default",
-      "targets": [ "SurfaceGrinderAtomaton.elf" ],
+      "targets": [
+        "SurfaceGrinderAtomaton.elf"
+      ],
       "hidden": true
+    },
+    {
+      "name": "Linux Debug",
+      "configurePreset": "native-linux-debug",
+      "description": "Build using the linux-debug configuration",
+      "targets": [
+        "SurfaceGrinderAtomaton.elf"
+      ]
+    },
+    {
+      "name": "Linux Debug with Tests",
+      "configurePreset": "native-linux-debug",
+      "description": "Build Tests",
+      "targets": [
+        "all"
+      ]
+    },
+    {
+      "name": "Debug",
+      "configurePreset": "devcontainer-linux-debug",
+      "description": "Build using the linux-debug configuration",
+      "targets": [
+        "SurfaceGrinderAtomaton.elf"
+      ]
+    },
+    {
+      "name": "Debug with Tests",
+      "configurePreset": "devcontainer-linux-debug",
+      "description": "Build Tests",
+      "targets": [
+        "all"
+      ]
     },
     {
       "name": "Windows Debug",
       "configurePreset": "x64-debug",
-      "description": "Build using the x86-debug configuration",
-      "inherits": "default"
-    },
-    {
-      "name": "Linux Debug",
-      "configurePreset": "linux-debug",
       "description": "Build using the linux-debug configuration",
-      "targets": [ "SurfaceGrinderAtomaton.elf" ]
+      "targets": [
+        "SurfaceGrinderAtomaton.elf"
+      ]
     },
     {
-      "name": "Linux Debug with Tests",
-      "configurePreset": "linux-debug",
+      "name": "Windows Debug with Tests",
+      "configurePreset": "x64-debug",
       "description": "Build Tests",
-      "targets": [ "all" ]
+      "targets": [
+        "all"
+      ]
     }
   ],
   "testPresets": [
