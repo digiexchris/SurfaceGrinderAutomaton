@@ -38,24 +38,22 @@
 #define _PID_MAP(itf, n) ((CFG_TUD_##itf) << (n))
 #define USB_PID (0x4000 | _PID_MAP(CDC, 0) | _PID_MAP(MSC, 1) | _PID_MAP(HID, 2) | \
 				 _PID_MAP(MIDI, 3) | _PID_MAP(VENDOR, 4))
+// Generic VID/PID for CDC-ACM and WebUSB
+// #define USB_VID 0x1D6B
+// #define USB_PID 0x0104
 
-//--------------------------------------------------------------------+
 // Device Descriptors
-//--------------------------------------------------------------------+
 tusb_desc_device_t const desc_device =
 	{
 		.bLength = sizeof(tusb_desc_device_t),
 		.bDescriptorType = TUSB_DESC_DEVICE,
-		.bcdUSB = 0x0210, // at least 2.1 or 3.x for BOS & webUSB
-
-		// Use Interface Association Descriptor (IAD) for CDC
-		// As required by USB Specs IAD's subclass must be common class (2) and protocol must be IAD (1)
+		.bcdUSB = 0x0210, // USB 2.1
 		.bDeviceClass = TUSB_CLASS_MISC,
 		.bDeviceSubClass = MISC_SUBCLASS_COMMON,
 		.bDeviceProtocol = MISC_PROTOCOL_IAD,
 		.bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
-		.idVendor = 0xCafe,
+		.idVendor = 0xcafe,
 		.idProduct = USB_PID,
 		.bcdDevice = 0x0100,
 
@@ -64,7 +62,6 @@ tusb_desc_device_t const desc_device =
 		.iSerialNumber = 0x03,
 
 		.bNumConfigurations = 0x01};
-
 // Invoked when received GET DEVICE DESCRIPTOR
 // Application return pointer to descriptor
 uint8_t const *tud_descriptor_device_cb(void)
@@ -85,83 +82,43 @@ enum
 
 #define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_VENDOR_DESC_LEN)
 
-#if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X || CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
-// LPC 17xx and 40xx endpoint type (bulk/interrupt/iso) are fixed by its number
-// 0 control, 1 In, 2 Bulk, 3 Iso, 4 In etc ...
-#define EPNUM_CDC_IN 2
-#define EPNUM_CDC_OUT 2
-#define EPNUM_VENDOR_IN 5
-#define EPNUM_VENDOR_OUT 5
-#elif CFG_TUSB_MCU == OPT_MCU_SAMG || CFG_TUSB_MCU == OPT_MCU_SAMX7X
-// SAMG & SAME70 don't support a same endpoint number with different direction IN and OUT
-//    e.g EP1 OUT & EP1 IN cannot exist together
-#define EPNUM_CDC_IN 2
-#define EPNUM_CDC_OUT 3
-#define EPNUM_VENDOR_IN 4
-#define EPNUM_VENDOR_OUT 5
-#elif CFG_TUSB_MCU == OPT_MCU_FT90X || CFG_TUSB_MCU == OPT_MCU_FT93X
-// FT9XX doesn't support a same endpoint number with different direction IN and OUT
-//    e.g EP1 OUT & EP1 IN cannot exist together
-#define EPNUM_CDC_IN 2
-#define EPNUM_CDC_OUT 3
-#define EPNUM_VENDOR_IN 4
-#define EPNUM_VENDOR_OUT 5
-#else
 #define EPNUM_CDC_IN 2
 #define EPNUM_CDC_OUT 2
 #define EPNUM_VENDOR_IN 3
 #define EPNUM_VENDOR_OUT 3
-#endif
+
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_VENDOR_DESC_LEN)
 
 uint8_t const desc_configuration[] =
 	{
 		// Config number, interface count, string index, total length, attribute, power in mA
 		TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 100),
 
-		// Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-		TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, EPNUM_CDC_OUT, 0x80 | EPNUM_CDC_IN, TUD_OPT_HIGH_SPEED ? 512 : 64),
+		// CDC ACM
+		TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, EPNUM_CDC_OUT, 0x80 | EPNUM_CDC_IN, 64),
 
-		// Interface number, string index, EP Out & IN address, EP size
-		TUD_VENDOR_DESCRIPTOR(ITF_NUM_VENDOR, 5, EPNUM_VENDOR_OUT, 0x80 | EPNUM_VENDOR_IN, TUD_OPT_HIGH_SPEED ? 512 : 64)};
+		// WebUSB vendor-specific interface
+		TUD_VENDOR_DESCRIPTOR(ITF_NUM_VENDOR, 5, EPNUM_VENDOR_OUT, 0x80 | EPNUM_VENDOR_IN, 64)};
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
 // Application return pointer to descriptor
-// Descriptor contents must exist long enough for transfer to complete
 uint8_t const *tud_descriptor_configuration_cb(uint8_t index)
 {
 	(void)index; // for multiple configurations
 	return desc_configuration;
 }
 
-//--------------------------------------------------------------------+
 // BOS Descriptor
-//--------------------------------------------------------------------+
-
-/* Microsoft OS 2.0 registry property descriptor
-Per MS requirements https://msdn.microsoft.com/en-us/library/windows/hardware/hh450799(v=vs.85).aspx
-device should create DeviceInterfaceGUIDs. It can be done by driver and
-in case of real PnP solution device should expose MS "Microsoft OS 2.0
-registry property descriptor". Such descriptor can insert any record
-into Windows registry per device/configuration/interface. In our case it
-will insert "DeviceInterfaceGUIDs" multistring property.
-
-GUID is freshly generated and should be OK to use.
-
-https://developers.google.com/web/fundamentals/native-hardware/build-for-webusb/
-(Section Microsoft OS compatibility descriptors)
-*/
-
 #define BOS_TOTAL_LEN (TUD_BOS_DESC_LEN + TUD_BOS_WEBUSB_DESC_LEN + TUD_BOS_MICROSOFT_OS_DESC_LEN)
 
 #define MS_OS_20_DESC_LEN 0xB2
 
-// BOS Descriptor is required for webUSB
 uint8_t const desc_bos[] =
 	{
 		// total length, number of device caps
 		TUD_BOS_DESCRIPTOR(BOS_TOTAL_LEN, 2),
 
-		// Vendor Code, iLandingPage
+		// WebUSB descriptor
 		TUD_BOS_WEBUSB_DESCRIPTOR(VENDOR_REQUEST_WEBUSB, 1),
 
 		// Microsoft OS 2.0 descriptor
@@ -219,8 +176,8 @@ char const *string_desc_arr[] =
 	{
 		(const char[]){0x09, 0x04}, // 0: is supported language is English (0x0409)
 		"SurfaceGrinderAtomaton",	// 1: Manufacturer
-		"Debug Port",				// 2: Product
-		NULL,						// 3: Serials will use unique ID if possible
+		"SGA Debug Port",			// 2: Product
+		"123456",					// 3: Serials will use unique ID if possible
 		"TinyUSB CDC",				// 4: CDC Interface
 		"TinyUSB WebUSB"			// 5: Vendor Interface
 };

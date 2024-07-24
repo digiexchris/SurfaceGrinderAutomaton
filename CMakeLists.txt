@@ -17,7 +17,7 @@ add_library(pico_system_include_dirs INTERFACE)
 target_include_directories(pico_system_include_dirs SYSTEM INTERFACE ${PICO_INCLUDE_DIRS})
 
 # Include directories for other Pico SDK libraries
-target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio pico_printf
+target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio pico_multicore  pico_printf
 )
 
 # Add subdirectories

@@ -3,11 +3,14 @@ FILE(GLOB_RECURSE app_sources
     ./src/*.c*
     )
 
+  set(BOARD "raspberry_pi_pico" CACHE STRING "" FORCE)
+  set(FAMILY "rp2040")
+
 set(FREERTOS_PORT "GCC_RP2040" CACHE STRING "" FORCE)
 add_library(freertos_config INTERFACE)
 target_include_directories(freertos_config SYSTEM
 INTERFACE
-  ${CMAKE_CURRENT_LIST_DIR}/src
+  ${CMAKE_CURRENT_LIST_DIR}
 )
 
 target_compile_definitions(freertos_config
@@ -37,6 +40,10 @@ ${app_sources}
 target_compile_definitions (SurfaceGrinderAtomaton PRIVATE
 	PICO_RP2040_USB_DEVICE_ENUMERATION_FIX=1
 )
+
+target_compile_definitions(SurfaceGrinderAtomaton PUBLIC CFG_TUSB_CONFIG_FILE="debug/Console/tusb_config.h")
+
+
 
 add_compile_options(
     ### Gnu/Clang C Options
@@ -85,13 +92,11 @@ target_include_directories(SurfaceGrinderAtomaton PRIVATE
         ${header_dir_list}
         ${CMAKE_CURRENT_SOURCE_DIR})
 
-        target_compile_definitions(SurfaceGrinderAtomaton PRIVATE CFG_TUSB_CONFIG_FILE="usb/tusb_config.h")
-
 
 target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs tinyusb_device
 tinyusb_board FreeRTOS-Kernel FreeRTOS-Kernel-Heap4)
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
 # Use USB uart
-pico_enable_stdio_usb(SurfaceGrinderAtomaton 0)
-pico_enable_stdio_uart(SurfaceGrinderAtomaton 1)
+# pico_enable_stdio_usb(SurfaceGrinderAtomaton 0)
+# pico_enable_stdio_uart(SurfaceGrinderAtomaton 1)

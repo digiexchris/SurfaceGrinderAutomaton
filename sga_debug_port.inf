@@ -1,0 +1,32 @@
+; WinUSB installation file for WebUSB and CDC-ACM device
+[Version]
+Signature="$WINDOWS NT$"
+Class=USBDevice
+ClassGuid={36FC9E60-C465-11CF-8056-444553540000}
+Provider=%ManufacturerName%
+DriverVer=07/23/2024,1.0.0.0
+
+[Manufacturer]
+%ManufacturerName%=Standard,NTamd64
+
+[Standard.NTamd64]
+%DeviceName%=USB_Install, USB\VID_CAFE&PID_4011&MI_00
+
+[USB_Install]
+Include=winusb.inf
+Needs=WINUSB.NT
+
+[USB_Install.Services]
+AddService=WinUSB,0x00000002,WinUSB_ServiceInstall
+
+[WinUSB_ServiceInstall]
+DisplayName=%WinUSB_ServiceName%
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%12%\WinUSB.sys
+
+[Strings]
+ManufacturerName="SurfaceGrinderAtomaton"
+DeviceName="SGA Debug Port"
+WinUSB_ServiceName="WinUSB Service"
