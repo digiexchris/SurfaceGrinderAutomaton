@@ -3,6 +3,13 @@
 #include <pico/printf.h>
 #include <task.h>
 
+#define DEBUG_CONSOLE 1
+
+#ifdef DEBUG_CONSOLE
+#define CONSOLE_USES_UART 0
+#define CONSOLE_USES_USB 1
+#endif
+
 #define STEPPER_DIRECTION_CHANGE_DELAY_MS 5
 #define STEPPER_COMMAND_TIMEOUT 250
 

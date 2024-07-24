@@ -19,6 +19,7 @@
 MotionController *mc;
 Axis *zAxis;
 Axis *xAxis;
+Usb *usb;
 
 extern "C" void vTaskSwitchedIn(void);
 extern "C" void vTaskSwitchedOut(void);
@@ -94,22 +95,7 @@ int main()
 	stdio_init_all();
 	set_sys_clock_khz(120000, true);
 
-	// sleep_ms(1000); // time for UART to connect for debugging, comment out later
-
 	printf("\n\n--------------\n\n");
-	// Watchdog example code
-	// if (watchdog_caused_reboot())
-	// {
-	// 	printf("Rebooted by Watchdog!\n");
-	// 	// Whatever action you may take if a watchdog caused a reboot
-	// }
-
-	// Enable the watchdog, requiring the watchdog to be updated every 100ms or the chip will reboot
-	// second arg is pause on debug which means the watchdog will pause when stepping through code
-	// watchdog_enable(12000, 1);
-
-	// You need to call this function at least more often than the 100ms in the enable call to prevent a reboot
-	// watchdog_update();
 
 	PIO pio = pio0;
 

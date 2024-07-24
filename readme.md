@@ -77,18 +77,23 @@ IO Expander:
 ## Prerequisites
 - Required
 	- git submodule update --init --recursive
-	- SEE NOTE BELOW. Raspberry Pi Pico SDK with the environment variables set for PICO_SDK_PATH. The install script should install a reasonable gcc compiler as well. You may also have some success with the rpi pico plugin for vscode.
-		- NOTE: pico_sdk_import.cmake is setup to auto download the pi pico sdk so you don't have to. If you do not want this, edit CMakePresets.json and turn that off, and ensure PICO_SDK_PATH is set.
-	- arm gcc
+	- arm gcc https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 	- cmake
-	- if linux, apt install build-essential
+	- if linux
+		- apt install build-essential
+		- Note: if you want to use webusb, you may require udev permission on Linux (and/or macOS) to access usb device. It depends on your OS distro, typically copy 99-tinyusb.rules and reload your udev is good to go
+			- ```$ cp 99-tinyusb.rules /etc/udev/rules.d/
+				$ sudo udevadm control --reload-rules && sudo udevadm trigger```
+
+$ cp examples/device/99-tinyusb.rules /etc/udev/rules.d/
+$ sudo udevadm control --reload-rules && sudo udevadm trigger
 	- if Windows
 		- https://www.raspberrypi.com/news/raspberry-pi-pico-windows-installer/
 		- Ensure the env variable PICO_INSTALL_PATH is set to where you installed the pico sdk (from the installer above) such as C:\Program Files\Raspberry Pi\Pico SDK v1.5.1
 		- open the cmakelists.txt file in visual studio
 		- have openocd installed (c:\arm\openocd recommended, see .vs/launch.json) https://github.com/openocd-org/openocd/releases/tag/v0.12.0
 		- if the cmake generation succeeded, select SurfaceGrinderAtomaton.elf from the run button dropdown and hit run!
-		- TODO: make the debug target work to debug using gdb, see launch.vs.json in .vs/
+		- You may need the webserial driver installed from tinyusb. find the unsupported device in device manager, and update the driver to tinyusb_win_usbser.inf included in the root of this repo 
 - optional
 	- clangd for formatting/linting/static analysis along with the vscode clangd extension
 	- any of the recommended extensions in this repo
