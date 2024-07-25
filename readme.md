@@ -80,31 +80,44 @@ IO Expander:
 	- arm gcc https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 	- cmake
 	- if linux
-		- apt install build-essential
-		- Note: if you want to use webusb, you may require udev permission on Linux (and/or macOS) to access usb device. It depends on your OS distro, typically copy 99-tinyusb.rules and reload your udev is good to go
-			- ```$ cp 99-tinyusb.rules /etc/udev/rules.d/
-				$ sudo udevadm control --reload-rules && sudo udevadm trigger```
-
-$ cp examples/device/99-tinyusb.rules /etc/udev/rules.d/
-$ sudo udevadm control --reload-rules && sudo udevadm trigger
+		- The devcontainer is recommended.
+			- sudo apt install docker.io
+			- install the vscode Devcontainer extension from Microsoft.
+			- open the repo in vscode, ctrl-shift-p-> reopen in container (it will probably prompt you at first load)
+			- once the container is up, file->open workspace from file->sga.code.workspace
+			- that's it, enjoy!
+		- or:
+			- apt install build-essential
+			- there are flash scripts available in tools/linux, and vscode tasks are setup to use them.
+			- Note: if you want to use webusb, you may require udev permission on Linux (and/or macOS) to access usb device. It depends on your OS distro, typically copy 99-tinyusb.rules and reload your udev is good to go. Other than that, the CDC-ACM debug serial port should Just Work (tm), enumerating as a /dev/ttyACM* or with the udev rule, /dev/ttySGA
+				- ```$ cp 99-tinyusb.rules /etc/udev/rules.d/
+					$ sudo udevadm control --reload-rules && sudo udevadm trigger```
 	- if Windows
-		- https://www.raspberrypi.com/news/raspberry-pi-pico-windows-installer/
-		- Ensure the env variable PICO_INSTALL_PATH is set to where you installed the pico sdk (from the installer above) such as C:\Program Files\Raspberry Pi\Pico SDK v1.5.1
-		- open the cmakelists.txt file in visual studio
-		- have openocd installed (c:\arm\openocd recommended, see .vs/launch.json) https://github.com/openocd-org/openocd/releases/tag/v0.12.0
-		- if the cmake generation succeeded, select SurfaceGrinderAtomaton.elf from the run button dropdown and hit run!
-		- You may need the webserial driver installed from tinyusb. find the unsupported device in device manager, and update the driver to tinyusb_win_usbser.inf included in the root of this repo 
+		- The devcontainer is recommended. 
+			- Install a docker host of some kind (docker.io in wsl is fine), and the vscode Devcontainer extension from Microsoft. 
+			- Be sure to run the attach script first for your debug probe before starting the devcontainer.
+			- open the repo in vscode, ctrl-shift-p-> reopen in container (it will probably prompt you at first load)
+			- once the container is up, file->open workspace from file->sga.code.workspace  
+			- if your debug probe is detached (you unplugged it, wsl restarted, vscode had an issue, or who knows), just rerun the attach script and restart the vscode window. You may need to stop vscode and wait for the container to die before starting it again, update this doc if you do.
+		- or windows native (less frequently tested by the team, so pull requests to fix it are appreciated):
+			- https://www.raspberrypi.com/news/raspberry-pi-pico-windows-installer/
+			- Ensure the env variable PICO_INSTALL_PATH is set to where you installed the pico sdk (from the installer above) such as C:\Program Files\Raspberry Pi\Pico SDK v1.5.1
+			- open the cmakelists.txt file in visual studio
+			- have openocd installed (c:\arm\openocd recommended, see .vs/launch.json) https://github.com/openocd-org/openocd/releases/tag/v0.12.0
+			- if the cmake generation succeeded, select SurfaceGrinderAtomaton.elf from the run button dropdown and hit run!
+			- You may need the webserial driver installed from tinyusb. find the unsupported device in device manager, and update the driver to tinyusb_win_usbser.inf included in the tools/win64 folder of this repo, but initial testing seems to indicate that the driver auto-installs in Windows 10/11.
+			- there are flash scripts available in tools/linux, and vscode tasks are setup to use them.
+			- there are usbipd helper scripts (attach-cmsis-dap and attach-bmp) to help give you a one-click attach of your debug probe if you're using WSL or the devcontainer under windows
 - optional
-	- clangd for formatting/linting/static analysis along with the vscode clangd extension
+	- clangd for formatting/linting/static analysis along with the vscode clangd extension (provided by the devcontainer)
 	- any of the recommended extensions in this repo
-	- customize cmakepresets.json if your paths are different
-	- https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads may work better for debugging, configure paths in launch.json (AArch32 bare-metal target (arm-none-eabi))
+	- customize cmakepresets.json if your paths are different (not needed with the devcontainer)
 	
 ## Building
 If you have a cmsis-dap debug probe such as the picoprobe attached with a pi pico plugged into it, and the vscode cmake extension from microsoft, either open a compileable file (such as SurfaceGrinderAtomaton.cpp) and hit f7 to compile and upload, or f5 to debug.
 
 ## Running
-The debug console is available on UART0 (see pins above). You will need some kind of usb serial dongle. In the future it will be moved to tinyusb for the built in usb port.
+The debug console is available on the usb port as a CDC-ACM device as well as a webusb device.
 
 Once booted, type h to see the available commands (which may or may not be up to date, see src/debug/Console.cpp)
 

@@ -20,7 +20,12 @@
         {
             "label": "Flash",
             "type": "process",
-            "command": "${workspaceFolder}/flash.sh",
+            "linux": {
+                "command": "${workspaceFolder}/linux/flash.sh",
+            },
+            "windows": {
+                "command": "${workspaceFolder}/windows/flash.bat",
+            },
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -35,7 +40,12 @@
         {
             "label": "Flash (Debug)",
             "type": "process",
-            "command": "${workspaceFolder}/flash.sh",
+            "linux": {
+                "command": "${workspaceFolder}/linux/flash.sh",
+            },
+            "windows": {
+                "command": "${workspaceFolder}/windows/flash.bat",
+            },
             "group": "build",
             "presentation": {
                 "reveal": "always",

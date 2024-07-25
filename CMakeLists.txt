@@ -3,9 +3,9 @@ include(${CMAKE_HOME_DIRECTORY}/pico_sdk_import.cmake)
 
 
 set(PICO_BOARD pico CACHE STRING "Board type")
-
-pico_sdk_init()
 project(SurfaceGrinderAtomaton C CXX ASM)
+pico_sdk_init()
+
 add_compile_options(
     ### Gnu/Clang C Options
     $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always>

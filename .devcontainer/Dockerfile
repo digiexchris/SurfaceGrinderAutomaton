@@ -36,11 +36,11 @@ ENV PATH=$PATH:/workspaces/gcc-arm-none/bin
 RUN git clone https://github.com/openocd-org/openocd.git --depth=1 --recurse-submodules \
     && cd openocd && ./bootstrap && ./configure --enable-ftdi --enable-sysfsgpio --enable-picoprobe --enable-cmsis-dap && make -j 8 install 
 
-RUN git clone https://github.com/raspberrypi/picotool.git --depth=1 \
-    && cd picotool && mkdir build && cd build && cmake ../ && make -j 8 && cp picotool /usr/local/bin
+# RUN git clone https://github.com/raspberrypi/picotool.git --depth=1 \
+#     && cd picotool && mkdir build && cd build && cmake ../ && make -j 8 && cp picotool /usr/local/bin
 
-RUN git clone https://github.com/wtarreau/bootterm.git --depth=1 \
-    && cd bootterm && make -j 8 install 
+# RUN git clone https://github.com/wtarreau/bootterm.git --depth=1 \
+#     && cd bootterm && make -j 8 install 
 
 WORKDIR /workspaces
 
