@@ -43,8 +43,6 @@ target_compile_definitions (SurfaceGrinderAtomaton PRIVATE
 
 target_compile_definitions(SurfaceGrinderAtomaton PUBLIC CFG_TUSB_CONFIG_FILE="debug/Console/tusb_config.h")
 
-
-
 add_compile_options(
     ### Gnu/Clang C Options
     $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always>
@@ -61,14 +59,15 @@ add_compile_options(
 
 if (WIN32)
 add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
- COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded! Skipping auto flash"
+ COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded! "
+ COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/tools/win64/flash.bat $<TARGET_FILE:SurfaceGrinderAtomaton>
 )
 else()
 
 if(NOT BUILD_TESTS)
 add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
 COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded!"
-COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/flash.sh $<TARGET_FILE:SurfaceGrinderAtomaton>
+COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/tools/linux/flash.sh $<TARGET_FILE:SurfaceGrinderAtomaton>
 )
 endif()
 endif()
@@ -96,6 +95,8 @@ target_include_directories(SurfaceGrinderAtomaton PRIVATE
 target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs tinyusb_device
 tinyusb_board FreeRTOS-Kernel FreeRTOS-Kernel-Heap4)
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
+
+add_dependencies(SurfaceGrinderAtomaton copy_compile_commands)
 
 # Use USB uart
 # pico_enable_stdio_usb(SurfaceGrinderAtomaton 0)

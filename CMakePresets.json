@@ -18,7 +18,7 @@
         "CMAKE_C_STANDARD": "11",
         "PICO_CXX_ENABLE_EXCEPTIONS": "ON",
         "PICO_CXX_ENABLE_RTTI": "ON",
-        "FREERTOS_KERNEL_PATH": "${sourceDir}/FreeRTOS-Kernel",
+        "FREERTOS_KERNEL_PATH": "${sourceDir}/FreeRTOS-Kernel"
       },
       "hidden": true
     },
@@ -77,7 +77,8 @@
       "description": "Build using the default configuration",
       "configurePreset": "default",
       "targets": [
-        "SurfaceGrinderAtomaton.elf"
+        "SurfaceGrinderAtomaton.elf",
+        "copy_compile_commands"
       ],
       "hidden": true
     },
@@ -86,7 +87,8 @@
       "configurePreset": "native-linux-debug",
       "description": "Build using the linux-debug configuration",
       "targets": [
-        "SurfaceGrinderAtomaton.elf"
+        "SurfaceGrinderAtomaton.elf",
+        "copy_compile_commands"
       ]
     },
     {
