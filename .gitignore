@@ -13,3 +13,4 @@ qemu.pid
 pico_sdk/
 out/
 .vs/
+compile_commands.json

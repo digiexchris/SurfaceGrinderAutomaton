@@ -1,2 +1,13 @@
 CompileFlags:
-  Add: ["-isystem /home/chris/pico/pico-sdk/"]
+  Add:
+    - "-isystem../../gcc-arm-none/arm-none-eabi/include/c++/13.3.1"
+    - "-isystem../../gcc-arm-none/arm-none-eabi/include/c++/13.3.1/arm-none-eabi"
+    - "-isystem../../gcc-arm-none/arm-none-eabi/include/c++/13.3.1/backward"
+    - "-isystem../../gcc-arm-none/lib/gcc/arm-none-eabi/13.3.1/include"
+    - "-isystem../../gcc-arm-none/lib/gcc/arm-none-eabi/13.3.1/include-fixed"
+    - "-isystem../../gcc-arm-none/arm-none-eabi/include"
+    - "-isystem../pico/pico-sdk/src/common/pico_base/include"
+    - "-isystem../pico/pico-sdk/src/common/pico_base/include/pico"
+    - "-isystem../pico/pico-sdk/src/common/pico_stdlib/include/pico"
+    - "-isystem../pico/pico-sdk/include"
+    - "-nostdinc"

@@ -21,10 +21,10 @@
             "label": "Flash",
             "type": "process",
             "linux": {
-                "command": "${workspaceFolder}/linux/flash.sh",
+                "command": "${workspaceFolder}/tools/linux/flash.sh",
             },
             "windows": {
-                "command": "${workspaceFolder}/windows/flash.bat",
+                "command": "${workspaceFolder}/tools/windows/flash.bat",
             },
             "group": "build",
             "presentation": {
@@ -41,10 +41,10 @@
             "label": "Flash (Debug)",
             "type": "process",
             "linux": {
-                "command": "${workspaceFolder}/linux/flash.sh",
+                "command": "${workspaceFolder}/tools/linux/flash.sh",
             },
             "windows": {
-                "command": "${workspaceFolder}/windows/flash.bat",
+                "command": "${workspaceFolder}/tools/windows/flash.bat",
             },
             "group": "build",
             "presentation": {

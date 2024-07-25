@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 include(${CMAKE_HOME_DIRECTORY}/pico_sdk_import.cmake)
 
-
 set(PICO_BOARD pico CACHE STRING "Board type")
 project(SurfaceGrinderAtomaton C CXX ASM)
 pico_sdk_init()
@@ -17,7 +16,7 @@ add_library(pico_system_include_dirs INTERFACE)
 target_include_directories(pico_system_include_dirs SYSTEM INTERFACE ${PICO_INCLUDE_DIRS})
 
 # Include directories for other Pico SDK libraries
-target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio pico_multicore  pico_printf
+target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio hardware_gpio pico_multicore  pico_printf
 )
 
 # Add subdirectories
@@ -29,10 +28,17 @@ if (BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+add_custom_command(
+  OUTPUT ${CMAKE_SOURCE_DIR}/compile_commands.json
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+  ${CMAKE_BINARY_DIR}/compile_commands.json
+  ${CMAKE_SOURCE_DIR}/compile_commands.json
+  DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json
+  COMMENT "Copying compile_commands.json to project root"
+)
 
-
-
-
-
-
+# Create a custom target that always runs the above command
+add_custom_target(copy_compile_commands ALL
+  DEPENDS ${CMAKE_SOURCE_DIR}/compile_commands.json
+)
 

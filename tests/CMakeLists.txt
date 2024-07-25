@@ -47,9 +47,23 @@ pico_enable_stdio_uart(SurfaceGrinderAtomaton_tests 1)
 # Create map/bin/hex/uf2 file etc.
 pico_add_extra_outputs(SurfaceGrinderAtomaton_tests)
 
-add_custom_command(TARGET SurfaceGrinderAtomaton_tests POST_BUILD
-COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded!"
-COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/flash.sh $<TARGET_FILE:SurfaceGrinderAtomaton_tests>
+if (WIN32)
+add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
+ COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded! "
+ COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/tools/win64/flash.bat $<TARGET_FILE:SurfaceGrinderAtomaton_tests>
 )
+else()
+
+if(NOT BUILD_TESTS)
+add_custom_command(TARGET SurfaceGrinderAtomaton POST_BUILD
+COMMAND ${CMAKE_COMMAND} -E echo "Build succeeded!"
+COMMAND /bin/bash ${CMAKE_HOME_DIRECTORY}/tools/linux/flash.sh $<TARGET_FILE:SurfaceGrinderAtomaton_tests>
+)
+
+endif()
+
+endif()
+
+add_dependencies(SurfaceGrinderAtomaton_tests copy_compile_commands)
 
 add_dependencies(SurfaceGrinderAtomaton_tests SurfaceGrinderAtomaton)
