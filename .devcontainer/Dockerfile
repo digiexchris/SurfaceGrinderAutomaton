@@ -42,6 +42,14 @@ RUN git clone https://github.com/openocd-org/openocd.git --depth=1 --recurse-sub
 # RUN git clone https://github.com/wtarreau/bootterm.git --depth=1 \
 #     && cd bootterm && make -j 8 install 
 
+
+# Install Node.js and npm for the webserial ui
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm \
+    && npm install -g typescript \
+    && npm install -g nextui-cli
+
 WORKDIR /workspaces
 
 RUN usermod -aG plugdev vscode
