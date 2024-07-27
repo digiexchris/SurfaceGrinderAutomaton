@@ -7,8 +7,8 @@
 #include <semphr.h>
 #include <stdio.h>
 
-Stepper::Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm)
-	: stepPin(stepPin), dirPin(dirPin), pio(pio), sm(sm) //, IStepper(maxSpeed, acceleration)
+Stepper::Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm, TaskHandle_t stateOutputTask)
+	: stepPin(stepPin), dirPin(dirPin), pio(pio), sm(sm), myStateOutputTask(stateOutputTask) //, IStepper(maxSpeed, acceleration)
 {
 	gpio_init(dirPin);
 	gpio_set_dir(dirPin, GPIO_OUT);

@@ -14,8 +14,12 @@ export default function Home() {
         <h1 className={title()}>Surface Grinder Atomaton</h1>
         <br />
         <h2 className={subtitle({ class: "mt-4" })}>
-        Let this be your hands.
+          Let this be your hands.
         </h2>
+        <br />
+        <div className="flex flex-col gap-4">
+          Click Select Device to get started.
+        </div>
       </div>
     </section>
   );

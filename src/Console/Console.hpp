@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Motion/Axis.hpp"
+#include "../Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
 #include "microsh.h"
 #include "usb.hpp"

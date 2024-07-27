@@ -7,6 +7,15 @@
 #include <semphr.h>
 #include <string>
 
+enum class StepperNotifyType : uint32_t
+{
+	NONE = 0x00,
+	CURRENT_POSITION = 0x01,
+	TARGET_POSITION = 0x02,
+	CURRENT_SPEED = 0x03,
+	TARGET_SPEED = 0x04,
+};
+
 enum class StepperError
 {
 	OK = 0,
@@ -71,7 +80,21 @@ struct StepperCommandSetAcceleration : StepperCommand
 class Stepper
 {
 public:
-	Stepper(uint stepPin, uint dirPin, float targetSpeed, float acceleration, PIO pio, uint sm);
+
+	/**
+	 * @brief Construct a new Stepper object
+	 *
+	 * @param stepPin The GPIO pin number for the step signal
+	 * @param dirPin The GPIO pin number for the direction signal
+	 * @param targetSpeed The initial target speed in steps per second
+	 * @param acceleration The acceleration in steps per second squared
+	 * @param pio The PIO instance to use
+	 * @param sm The PIO state machine to use
+	 * @param stateOutputTask The task handle of the task that will receive the position and speed updates
+	 * NOTE: if stateOutputTask is set, a task notification will be sent to that task containing this
+	 * stepper's state (position, speed, etc) every time the state changes.
+	 */
+	Stepper(uint stepPin, uint dirPin, float targetSpeed, float acceleration, PIO pio, uint sm, TaskHandle_t stateOutputTask = nullptr);
 	void InitPIO();
 
 	enum class MoveState
@@ -147,6 +170,7 @@ private:
 	float myAcceleration = 0.0f;	// in steps per second squared
 	absolute_time_t lastUpdateTime; // to calculate the time step in the update() loop
 	QueueHandle_t myCommandQueue;
+	TaskHandle_t myStateOutputTask; //used to send almost up to date position and speed updates to another thread. Used primarily by webusb and UI.
 };
 
 #endif // STEPPER_HPP

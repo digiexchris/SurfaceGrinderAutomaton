@@ -9,7 +9,7 @@
 #include <string.h>
 #include <string>
 
-#include "debug/Console/Console.hpp"
+#include "Console/Console.hpp"
 #include <FreeRTOS.h>
 #include <cstdio>
 #include <task.h>

@@ -1,12 +1,12 @@
 #pragma once
+#include "Enum.hpp"
 #include "pico/stdio/driver.h"
-#include "pico/stdlib.h"
-#include "portmacro.h"
 
 #include <FreeRTOS.h>
 #include <cstdint>
 #include <cstdio>
 #include <pico/stdio.h>
+#include <stdio.h>
 #include <task.h>
 #include <tusb.h>
 
@@ -28,9 +28,17 @@ public:
 	Usb(ProcessBufFn processBufFn = nullptr);
 
 	static void print(const char *buf, int len);
-	// int putc((const char *buf, int len));
+	void WriteWebSerial(void *msg, size_t len);
+	bool IsWebSerialConnected() { return web_serial_connected; }
 
-	static Usb *getInstance() { return myInstance; }
+	static Usb *GetInstance()
+	{
+		if (myInstance == nullptr)
+		{
+			myInstance = new Usb();
+		}
+		return myInstance;
+	}
 	bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request);
 	void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts);
 	void tud_cdc_rx_cb(uint8_t itf);
@@ -41,7 +49,6 @@ public:
 
 private:
 	ProcessBufFn myProcessBufFn = nullptr;
-	// void echo_all(uint8_t buf[], uint32_t count);
 
 	void webserial_task(void);
 	void cdc_task(void);
@@ -53,13 +60,6 @@ private:
 	static const tusb_desc_webusb_url_t desc_url;
 	bool web_serial_connected = false;
 	TaskHandle_t tud_taskhandle;
-
-	// Custom driver structure
-	// const struct __file __stdout_usb = {
-	// 	.putc = putc,
-	// 	.getc = NULL,
-	// 	.flags = 0,
-	// 	.buffer = NULL};
 
 	stdio_driver_t __stdout_usb = {
 		.out_chars = print,

@@ -1,10 +1,10 @@
 #include "MotionController.hpp"
 #include "Axis.hpp"
+#include "Console/WebSerial.hpp"
 #include "Motion/SM.hpp"
 #include "Motion/XAxis/SM.hpp"
 #include "Motion/ZAxis/SM.hpp"
-#include "config.hpp"
-#include "pico/stdlib.h"
+#include "drivers/Motor/Stepper.hpp"
 #include "portmacro.h"
 #include <Enum.hpp>
 #include <FreeRTOS.h>
@@ -54,6 +54,25 @@ MotionController::MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYSt
 	if (status != pdPASS)
 	{
 		panic("Failed to create MotionZThread\n");
+	}
+
+	myStepperStateOutputTaskHandles.emplace(AxisLabel::X, new TaskHandle_t());
+	myStepperStateOutputTaskHandles.emplace(AxisLabel::Z, new TaskHandle_t());
+
+	MotionOutputTaskParams *xParams = new MotionOutputTaskParams(AxisLabel::X, myAxes[AxisLabel::X], this);
+	MotionOutputTaskParams *zParams = new MotionOutputTaskParams(AxisLabel::Z, myAxes[AxisLabel::Z], this);
+
+	status = xTaskCreate(MotionStateOutputTask, "MotionOutputTaskX", 1 * 2048, xParams, 1, myStepperStateOutputTaskHandles[AxisLabel::X]);
+	if (status != pdPASS)
+	{
+		panic("Failed to create MotionOutputTaskX\n");
+	}
+
+	status = xTaskCreate(MotionStateOutputTask, "MotionOutputTaskZ", 1 * 2048, zParams, 1, myStepperStateOutputTaskHandles[AxisLabel::Z]);
+
+	if (status != pdPASS)
+	{
+		panic("Failed to create MotionOutputTaskZ\n");
 	}
 
 	printf("MotionController done\n");
@@ -308,5 +327,36 @@ uint16_t MotionController::GetTargetSpeed(AxisLabel anAxisLabel)
 		return myZAxisSM->GetTargetSpeed();
 	default:
 		return 0;
+	}
+}
+
+void MotionController::MotionStateOutputTask(void *params)
+{
+	auto motionOutputTaskParams = static_cast<MotionOutputTaskParams *>(params);
+	AxisLabel axisLabel = motionOutputTaskParams->axisLabel;
+	Axis *axis = motionOutputTaskParams->axis;
+	MotionController *motionController = motionOutputTaskParams->motionController;
+
+	while (true)
+	{
+		uint32_t value = static_cast<uint32_t>(StepperNotifyType::NONE);
+		xTaskNotifyWait(0, 0, &value, portMAX_DELAY);
+		StepperNotifyType notifyType = static_cast<StepperNotifyType>(value);
+		switch (notifyType)
+		{
+		case StepperNotifyType::CURRENT_POSITION:
+			WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::CURRENT_POSITION, axis->GetCurrentPosition()));
+		case StepperNotifyType::CURRENT_SPEED:
+			WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::CURRENT_SPEED, axis->GetCurrentSpeed()));
+			break;
+		case StepperNotifyType::TARGET_POSITION:
+			WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::TARGET_POSITION, axis->GetTargetPosition()));
+			break;
+		case StepperNotifyType::TARGET_SPEED:
+			WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::TARGET_SPEED, axis->GetTargetSpeed()));
+			break;
+		default:
+			break;
+		}
 	}
 }

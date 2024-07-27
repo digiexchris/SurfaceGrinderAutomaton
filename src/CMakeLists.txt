@@ -41,7 +41,7 @@ target_compile_definitions (SurfaceGrinderAtomaton PRIVATE
 	PICO_RP2040_USB_DEVICE_ENUMERATION_FIX=1
 )
 
-target_compile_definitions(SurfaceGrinderAtomaton PUBLIC CFG_TUSB_CONFIG_FILE="debug/Console/tusb_config.h")
+target_compile_definitions(SurfaceGrinderAtomaton PUBLIC CFG_TUSB_CONFIG_FILE="Console/tusb_config.h")
 
 add_compile_options(
     ### Gnu/Clang C Options

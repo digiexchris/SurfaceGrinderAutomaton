@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <string>
 
-#include "pico/stdio.h"
 
 microsh_t *Console::mySh = nullptr;
 MotionController *Console::myMotionController = nullptr;
@@ -134,7 +133,7 @@ int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *
 	if (argc != 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "speed");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -145,11 +144,6 @@ int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	uint32_t speed = std::stoi(argv[2]);
 
@@ -245,7 +239,7 @@ int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const ch
 	if (argc != 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "mover");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -256,11 +250,6 @@ int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const ch
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	int32_t distance = std::stoi(argv[2]);
 
@@ -289,34 +278,34 @@ int Console::helpCmdCallback(struct microsh *msh, int argc, const char *const *a
 {
 	printf("Help" MICRORL_CFG_END_LINE);
 	auto cmd = microsh_cmd_find(msh, "h");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "s");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "r");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "mode");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "increment");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "setstop");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "speed");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "mover");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "moveto");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "setposition");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	return microshEXEC_OK;
 }
@@ -326,7 +315,7 @@ int Console::setStopCallback(struct microsh *msh, int argc, const char *const *a
 	if (argc != 4)
 	{
 		auto cmd = microsh_cmd_find(msh, "setstop");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -337,11 +326,6 @@ int Console::setStopCallback(struct microsh *msh, int argc, const char *const *a
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	std::string d = argv[2];
 	std::transform(d.begin(), d.end(), d.begin(), ::toupper);
@@ -431,7 +415,7 @@ int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *a
 	if (argc != 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "mode");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -440,11 +424,6 @@ int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *a
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	std::string m = argv[2];
 	std::transform(m.begin(), m.end(), m.begin(), ::toupper);
@@ -481,7 +460,7 @@ int Console::setAdvanceIncrementCallback(struct microsh *msh, int argc, const ch
 	if (argc != 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "increment");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -492,11 +471,6 @@ int Console::setAdvanceIncrementCallback(struct microsh *msh, int argc, const ch
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	uint32_t increment = std::stoi(argv[2]);
 
@@ -577,7 +551,7 @@ void Console::privSetStopCommand(ConsoleCommandSetStop &aCommand)
 	myMotionController->SetStop(aCommand.axis, aCommand.direction, aCommand.position);
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
-	printf("Status: OK, %s Stop: %s, Position: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetStop(aCommand.axis, aCommand.direction));
+	printf("Status: OK, %s Stop: %d, Position: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetStop(aCommand.axis, aCommand.direction), aCommand.position);
 }
 
 void Console::privSetSpeedCommand(ConsoleCommandSetSpeed &aCommand)
@@ -593,7 +567,7 @@ int Console::moveAbsoluteCommandCallback(struct microsh *msh, int argc, const ch
 	if (argc != 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "moveto");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -604,12 +578,6 @@ int Console::moveAbsoluteCommandCallback(struct microsh *msh, int argc, const ch
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
-
 	int32_t position = std::stoi(argv[2]);
 
 	ConsoleCommandMoveAbsolute *command = new ConsoleCommandMoveAbsolute(axis, position);
@@ -630,7 +598,7 @@ void Console::privMoveAbsoluteCommand(ConsoleCommandMoveAbsolute &aCommand)
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
 	auto pos = myMotionController->MoveTo(aCommand.axis, aCommand.position);
-	printf("Status: OK, %s Target Position: %d" MICRORL_CFG_END_LINE, myMotionController->GetTargetPosition(aCommand.axis), pos);
+	printf("Status: OK, %d Target Position: %d" MICRORL_CFG_END_LINE, myMotionController->GetTargetPosition(aCommand.axis), pos);
 }
 
 int Console::setPositionCommandCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -638,7 +606,7 @@ int Console::setPositionCommandCallback(struct microsh *msh, int argc, const cha
 	if (argc < 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "setposition");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -649,11 +617,6 @@ int Console::setPositionCommandCallback(struct microsh *msh, int argc, const cha
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	int32_t position = std::stoi(argv[2]);
 

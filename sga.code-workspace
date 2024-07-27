@@ -47,7 +47,7 @@
 			"microrl.h": "c"
 		},
 		"[cpp]": {
-			"editor.defaultFormatter": "seaube.clangformat"
+			"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
 		},
 		"cmake.cmakelistFile": "${workspaceFolder}/CMakeLists.txt",
 		"cmake.configureOnOpen": false,

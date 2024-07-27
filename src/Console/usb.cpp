@@ -5,6 +5,7 @@ This was taken almost entirely from the tinyusb webserial example.
 #include "usb.hpp"
 #include "bsp/board.h"
 #include "usb_descriptors.h"
+#include <cstddef>
 #include <pico/stdio.h>
 
 #define UART_TASK_PRIO (tskIDLE_PRIORITY + 3)
@@ -80,6 +81,15 @@ void Usb::usb_thread(void *ptr)
 // 	}
 // }
 
+void Usb::WriteWebSerial(void *msg, size_t len)
+{
+	if (web_serial_connected)
+	{
+		tud_vendor_write(&msg, len);
+		tud_vendor_flush();
+	}
+}
+
 // send characters to both CDC and WebUSB
 void Usb::print(const char *buf, int len)
 {
@@ -145,7 +155,7 @@ void Usb::tud_resume_cb(void)
 
 bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request)
 {
-	return Usb::getInstance()->tud_vendor_control_xfer_cb(rhport, stage, request);
+	return Usb::GetInstance()->tud_vendor_control_xfer_cb(rhport, stage, request);
 }
 
 // Invoked when a control transfer occurred on an interface of this class
@@ -264,7 +274,7 @@ void Usb::cdc_task(void)
 
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
-	Usb::getInstance()->tud_cdc_line_state_cb(itf, dtr, rts);
+	Usb::GetInstance()->tud_cdc_line_state_cb(itf, dtr, rts);
 }
 
 // Invoked when cdc when line state changed e.g connected/disconnected
@@ -285,7 +295,7 @@ void Usb::tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 // Invoked when CDC interface received data from host
 void tud_cdc_rx_cb(uint8_t itf)
 {
-	Usb::getInstance()->tud_cdc_rx_cb(itf);
+	Usb::GetInstance()->tud_cdc_rx_cb(itf);
 }
 
 void Usb::tud_cdc_rx_cb(uint8_t itf)

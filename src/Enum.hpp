@@ -1,17 +1,63 @@
 #pragma once
 
 // #include "Axis.hpp"
+#include <array>
+#include <cstdint>
 #include <string>
 
-enum class AxisLabel
+enum class ParameterValueType : uint8_t
 {
-	X,
-	Y,
-	Z,
-	ERROR
+	INT8 = 0x01,
+	INT16 = 0x02,
+	INT32 = 0x03,
+	UINT8 = 0x04,
+	UINT16 = 0x05,
+	UINT32 = 0x06
 };
 
-inline std::string AxisLabelToString(AxisLabel label)
+enum class ParameterCommand : uint8_t
+{
+	READ = 0x01,
+	WRITE = 0x02
+};
+
+enum class AxisLabel : uint8_t
+{
+	X = 0,
+	Y = 1,
+	Z = 2,
+	NUM_AXES = 3
+};
+
+enum class ParameterContext : uint8_t
+{
+	AXIS = 0x00,
+	MOVEMENT_MODE = 0x01,
+}
+
+enum class AxisParameter : uint8_t
+{
+	ACCELERATION = 0x00,
+	DECELERATION = 0x01,
+	CURRENT_SPEED = 0x02,
+	CURRENT_POSITION = 0x03,
+	TARGET_POSITION = 0x04,
+	TARGET_SPEED = 0x05,
+	MIN_STOP = 0x06,
+	MAX_STOP = 0x07,
+	NUM_PARAMETERS
+};
+
+// Define constants for the sizes
+constexpr int numAxes = static_cast<int>(AxisLabel::NUM_AXES);
+constexpr int numParameters = static_cast<int>(AxisParameter::NUM_PARAMETERS);
+
+// Define a 2D array to hold the values TODO this needs to be a dynamic size type so that we only send what's updated.
+using AxisParameterTable = std::array<std::array<int32_t, numParameters>, numAxes>;
+^^do this
+
+ inline std::string
+ AxisLabelToString(AxisLabel label)
 {
 	switch (label)
 	{
@@ -42,7 +88,7 @@ inline AxisLabel AxisLabelFromString(const std::string &label)
 	}
 	else
 	{
-		return AxisLabel::ERROR;
+		return AxisLabel::NUM_AXES;
 	}
 }
 
