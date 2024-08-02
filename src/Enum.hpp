@@ -4,16 +4,9 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
-enum class ParameterValueType : uint8_t
-{
-	INT8 = 0x01,
-	INT16 = 0x02,
-	INT32 = 0x03,
-	UINT8 = 0x04,
-	UINT16 = 0x05,
-	UINT32 = 0x06
-};
+
 
 enum class ParameterCommand : uint8_t
 {
@@ -23,38 +16,41 @@ enum class ParameterCommand : uint8_t
 
 enum class AxisLabel : uint8_t
 {
-	X = 0,
-	Y = 1,
-	Z = 2,
-	NUM_AXES = 3
+	X = 0x00,
+	Y = 0x01,
+	Z = 0x02,
+	NUM_AXES
 };
 
 enum class ParameterContext : uint8_t
 {
 	AXIS = 0x00,
 	MOVEMENT_MODE = 0x01,
-}
-
-enum class AxisParameter : uint8_t
-{
-	ACCELERATION = 0x00,
-	DECELERATION = 0x01,
-	CURRENT_SPEED = 0x02,
-	CURRENT_POSITION = 0x03,
-	TARGET_POSITION = 0x04,
-	TARGET_SPEED = 0x05,
-	MIN_STOP = 0x06,
-	MAX_STOP = 0x07,
-	NUM_PARAMETERS
 };
+
+
+
+
 
 // Define constants for the sizes
 constexpr int numAxes = static_cast<int>(AxisLabel::NUM_AXES);
 constexpr int numParameters = static_cast<int>(AxisParameter::NUM_PARAMETERS);
 
 // Define a 2D array to hold the values TODO this needs to be a dynamic size type so that we only send what's updated.
-using AxisParameterTable = std::array<std::array<int32_t, numParameters>, numAxes>;
-^^do this
+
+//  pair: axis, parameternumber    value: int32
+using Int32ParameterValue = int32_t;
+using AxisParameterValue = std::pair<AxisLabel, AxisParameter>;
+using AxisParameterTable = std::unordered_map<AxisParameterValue, Int32ParameterValue>;
+//using AxisParameterTable = std::array<std::array<int32_t, numParameters>, numAxes>;
+
+template <typename ParameterKeyType, typename ParameterValueType>
+inline int32_t CommandParametersToInt(ParameterContext aParamContext, ParameterKeyType aParamKey, ParameterValueType aParameter) {
+
+	int8_t parameterContext = (int8_t) aParamContext;
+	int8_t axis = (int8_t)anAxisLabel;
+	int8_t parameter = (int8_t
+}
 
  inline std::string
  AxisLabelToString(AxisLabel label)

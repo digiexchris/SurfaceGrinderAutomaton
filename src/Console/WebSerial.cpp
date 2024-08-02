@@ -2,6 +2,7 @@
 #include "CRC.hpp"
 #include "Enum.hpp"
 #include <cstdint>
+#include <unordered_map>
 
 WebSerial *WebSerial::myInstance = nullptr;
 
@@ -18,7 +19,8 @@ void WebSerial::QueueUpdate(WebSerialUpdate *anUpdate)
 	case WebSerialUpdateType::AXIS:
 	{
 		WebSerialAxisUpdate *axisUpdate = static_cast<WebSerialAxisUpdate *>(anUpdate);
-		myAxisParameterTable[axisUpdate->axis][axisUpdate->param] = axisUpdate->value;
+		myAxisParameterTable[{axisUpdate->axis, axisUpdate->param}] = axisUpdate->value;
+		// myAxisParameterTable[axisUpdate->axis][axisUpdate->param] = axisUpdate->value;
 		break;
 	}
 	case WebSerialUpdateType::STEPPER:
@@ -43,7 +45,7 @@ void WebSerial::WritePendingUpdates(void *param)
 
 		if (myInstance->IsConnected())
 		{
-			for (axisParameter : myAxisParameterTable)
+			for (AxisParameterValue axisParameter : myInstance->myAxisParameterTable)
 			{
 				const std::vector<uint8_t> buffer = myInstance->privConstructMessage(
 					ParameterCommand::WRITE,
@@ -54,7 +56,7 @@ void WebSerial::WritePendingUpdates(void *param)
 					23423); // get from axisParameter
 
 				myInstance->myUsb->WriteWebSerial((void *)buffer.data(), buffer.size());
-				myAxisParameterTable.remove(axisParameter)
+				myInstance->myAxisParameterTable.remove(axisParameter);
 			}
 		}
 	}
