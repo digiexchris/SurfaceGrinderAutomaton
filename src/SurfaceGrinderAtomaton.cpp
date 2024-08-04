@@ -97,7 +97,7 @@ int main()
 
 	printf("\n\n--------------\n\n");
 
-	PIO pio = pio0;
+	PIO pio = pio1;
 
 	zAxis = new Axis(AxisLabel::Z, ZAXIS_STEP_PIN, ZAXIS_DIR_PIN, ZAXIS_MAX_SPEED, ZAXIS_ACCELERATION, pio, 0);
 

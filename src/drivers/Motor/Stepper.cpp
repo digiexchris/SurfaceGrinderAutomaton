@@ -218,7 +218,7 @@ void Stepper::Update()
 		// Refill FIFO as needed, but limit the number of steps added in one go in order to allow new target positions to be set
 		// and reacted to if the fifo is draining faster than we can fill it, otherwise this loop would never end until all of the
 		// previously calculated steps were erroneously executed.
-		int stepsToAdd = min(remainingSteps, 4); // Add up to 4 steps at a time
+		int stepsToAdd = min(remainingSteps, 2); // Add up to 4 steps at a time
 		while (!pio_sm_is_tx_fifo_full(pio, sm) && stepsToAdd > 0)
 		{
 			uint32_t delay = static_cast<uint32_t>(stepDelay);
