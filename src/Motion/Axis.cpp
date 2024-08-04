@@ -1,7 +1,6 @@
 #include "Motion/Axis.hpp"
+#include "Console/WebSerial.hpp"
 #include "Enum.hpp"
-#include "config.hpp"
-#include "pico/stdlib.h"
 #include "portmacro.h"
 #include <cmath>
 #include <pico/printf.h>
@@ -113,4 +112,22 @@ void Axis::MoveThread(void *pvParameters)
 		axis->Update();
 		portYIELD();
 	}
+}
+
+void Axis::ProcessStepperNotification(StepperNotifyMessage *aMessage)
+{
+	WebSerialAxisUpdate message(myAxisLabel, AxisParameter::CURRENT_POSITION, aMessage->currentPosition);
+	WebSerial::GetInstance()->QueueUpdate(message);
+
+	message.param = AxisParameter::CURRENT_SPEED;
+	message.value = aMessage->currentSpeed;
+	WebSerial::GetInstance()->QueueUpdate(message);
+
+	message.param = AxisParameter::TARGET_POSITION;
+	message.value = aMessage->targetPosition;
+	WebSerial::GetInstance()->QueueUpdate(message);
+
+	message.param = AxisParameter::TARGET_SPEED;
+	message.value = aMessage->targetSpeed;
+	WebSerial::GetInstance()->QueueUpdate(message);
 }

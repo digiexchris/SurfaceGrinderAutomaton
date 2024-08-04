@@ -235,8 +235,7 @@ void Stepper::Update()
 				remainingSteps = abs(myTargetPosition - myCurrentPosition);
 			}
 
-			privQueueNotifyMessage(StepperNotifyType::CURRENT_POSITION, myCurrentPosition);
-			THIS HAS A QUEUE SIZE OF 1 SO COMBINE ALL NOTIFYTYPES INTO A SINGLE MESSAGE SHOWING THE ENTIRE CURRENT STATE.
+			privQueueNotifyMessage();
 		}
 	}
 
@@ -250,9 +249,9 @@ void Stepper::Update()
 	}
 }
 
-void Stepper::privQueueNotifyMessage(StepperNotifyType aType, int32_t aValue)
+void Stepper::privQueueNotifyMessage()
 {
-	StepperNotifyMessage *message = new StepperNotifyMessage(aType, aValue);
+	StepperNotifyMessage *message = new StepperNotifyMessage(myCurrentPosition, myTargetPosition, myCurrentSpeed, myTargetSpeed);
 	xQueueOverwrite(myNotifyCallbackQueue, &message);
 }
 
@@ -365,7 +364,10 @@ void Stepper::NotifyCallbackTask(void *pvParameters)
 		{
 			if (message != nullptr)
 			{
-				myInstance->myStateOutputCallback(message);
+				if (myInstance->myStateOutputCallback != nullptr)
+				{
+					myInstance->myStateOutputCallback(message);
+				}
 				delete (message); // NOTE (I think this doesn't need to be deleted but maybe? message is a pointer, and queue should have a reference to this pointer, so I think deleting this pointer is correct but the queue should delete it's own ref...?)
 			}
 		}

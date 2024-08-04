@@ -18,7 +18,9 @@ class SerialPort {
   private interfaceNumber: number;
   private endpointIn: number;
   private endpointOut: number;
-  public onReceive: (data: DataView) => void;
+  public onReceive: (data: DataView) => void = (data) => {
+    console.log(data);
+  };
   public onReceiveError: (error: DOMException) => void;
 
   constructor(device: USBDevice) {

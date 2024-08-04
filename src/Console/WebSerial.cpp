@@ -12,25 +12,25 @@ WebSerial::WebSerial(Usb *aUsb)
 {
 	myUsb = aUsb;
 	myInstance = this;
+	myOutputQueueMutex = xSemaphoreCreateMutex();
+
+	BaseType_t status = xTaskCreate(WebSerial::WritePendingUpdates, "WebSerial::WritePendingUpdates", 1 * 2048, NULL, 1, NULL);
+	configASSERT(status == pdPASS);
 }
 
-void WebSerial::QueueUpdate(WebSerialUpdate *anUpdate)
+void WebSerial::QueueUpdate(WebSerialUpdate &anUpdate)
 {
-	switch (anUpdate->type)
+	switch (anUpdate.type)
 	{
 	case WebSerialUpdateType::AXIS:
 	{
-		WebSerialAxisUpdate *axisUpdate = static_cast<WebSerialAxisUpdate *>(anUpdate);
-		Message msg = axisUpdate->ToMessage();
+		WebSerialAxisUpdate &axisUpdate = static_cast<WebSerialAxisUpdate &>(anUpdate);
+		Message msg = axisUpdate.ToMessage();
 
 		xSemaphoreTake(myOutputQueueMutex, portMAX_DELAY);
 		myOutputQueue[msg.ToKey()] = msg.ToValue();
 		xSemaphoreGive(myOutputQueueMutex);
-		delete axisUpdate;
-		break;
-	}
-	case WebSerialUpdateType::STEPPER:
-	{
+		// delete axisUpdate;
 		break;
 	}
 	}
@@ -51,6 +51,8 @@ void WebSerial::WritePendingUpdates(void *param)
 
 		if (myInstance->IsConnected())
 		{
+			// NOTE: it is not necessary to maintain this output queue if nothing is reading it, it will contain the current state of the system and will be sent when the connection is established.
+			// This may not be the desired behavior, if the thing connecting needs to request specific data on startup. In that case, the queue should be cleared each loop iteration until something is connected.
 			xSemaphoreTake(myInstance->myOutputQueueMutex, portMAX_DELAY);
 
 			for (auto m : myInstance->myOutputQueue)

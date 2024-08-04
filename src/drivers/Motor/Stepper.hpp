@@ -8,7 +8,7 @@
 #include <semphr.h>
 #include <string>
 
-enum class StepperNotifyType : uint32_t
+enum class StepperNotifyType : uint8_t
 {
 	NONE = 0x00,
 	CURRENT_POSITION = 0x01,
@@ -80,15 +80,17 @@ struct StepperCommandSetAcceleration : StepperCommand
 
 struct StepperNotifyMessage
 {
-	StepperNotifyMessage(StepperNotifyType aType, int32_t aValue)
-		: type(aType), value(aValue)
+	StepperNotifyMessage(int32_t aCurrentPosition, int32_t aTargetPosition, uint16_t aCurrentSpeed, uint16_t aTargetSpeed)
+		: currentPosition(aCurrentPosition), targetPosition(aTargetPosition), currentSpeed(aCurrentSpeed), targetSpeed(aTargetSpeed)
 	{
 	}
-	StepperNotifyType type;
-	int32_t value;
+	int32_t currentPosition;
+	int32_t targetPosition;
+	uint16_t currentSpeed;
+	uint16_t targetSpeed;
 };
 
-using StepperUpdatedCallback = void (*)(StepperNotifyMessage);
+using StepperUpdatedCallback = void (*)(StepperNotifyMessage *aMessage);
 
 class Stepper
 {
@@ -164,7 +166,7 @@ private:
 	void privSetTargetSpeed(uint16_t aSpeed);
 	void privSetAcceleration(float aAcceleration);
 	void privSetCurrentPosition(int32_t aPosition);
-	void privQueueNotifyMessage(StepperNotifyType aType, int32_t aValue);
+	void privQueueNotifyMessage();
 	StepperError privQueueCommand(StepperCommand *aCommand);
 
 	StepperUpdatedCallback myUpdatedCallback = nullptr;

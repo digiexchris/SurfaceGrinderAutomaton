@@ -47,7 +47,7 @@ class WebSerial
 
 public:
 	WebSerial(Usb *aUsb);
-	void QueueUpdate(WebSerialUpdate *anUpdate);
+	void QueueUpdate(WebSerialUpdate &anUpdate);
 	static void WritePendingUpdates(void *param);
 	static WebSerial *GetInstance()
 	{

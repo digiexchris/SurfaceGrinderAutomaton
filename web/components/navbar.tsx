@@ -25,7 +25,7 @@ import {
   SearchIcon,
   Logo,
 } from "@/components/icons";
-import SerialComponent from "./SerialComponent";
+import SerialComponent from "./USBConnection";
 
 export const Navbar = () => {
 

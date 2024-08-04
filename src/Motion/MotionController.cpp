@@ -339,24 +339,25 @@ void MotionController::MotionStateOutputTask(void *params)
 
 	while (true)
 	{
-		uint32_t value = static_cast<uint32_t>(StepperNotifyType::NONE);
-		xTaskNotifyWait(0, 0, &value, portMAX_DELAY);
-		StepperNotifyType notifyType = static_cast<StepperNotifyType>(value);
-		switch (notifyType)
-		{
-		case StepperNotifyType::CURRENT_POSITION:
-			WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::CURRENT_POSITION, axis->GetCurrentPosition()));
-		case StepperNotifyType::CURRENT_SPEED:
-			WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::CURRENT_SPEED, axis->GetCurrentSpeed()));
-			break;
-		case StepperNotifyType::TARGET_POSITION:
-			WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::TARGET_POSITION, axis->GetTargetPosition()));
-			break;
-		case StepperNotifyType::TARGET_SPEED:
-			WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::TARGET_SPEED, axis->GetTargetSpeed()));
-			break;
-		default:
-			break;
-		}
+		// uint32_t value = static_cast<uint32_t>(StepperNotifyType::NONE);
+		// xTaskNotifyWait(0, 0, &value, portMAX_DELAY);
+		// StepperNotifyType notifyType = static_cast<StepperNotifyType>(value);
+		// switch (notifyType)
+		// {
+		// case StepperNotifyType::CURRENT_POSITION:
+		// 	WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::CURRENT_POSITION, axis->GetCurrentPosition()));
+		// case StepperNotifyType::CURRENT_SPEED:
+		// 	WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::CURRENT_SPEED, axis->GetCurrentSpeed()));
+		// 	break;
+		// case StepperNotifyType::TARGET_POSITION:
+		// 	WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::TARGET_POSITION, axis->GetTargetPosition()));
+		// 	break;
+		// case StepperNotifyType::TARGET_SPEED:
+		// 	WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::TARGET_SPEED, axis->GetTargetSpeed()));
+		// 	break;
+		// default:
+		// 	break;
+		// }
+		vTaskDelay(portMAX_DELAY);
 	}
 }

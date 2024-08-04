@@ -128,6 +128,33 @@ If you have a cmsis-dap debug probe such as the picoprobe attached with a pi pic
 ## Running
 The debug console is available on the usb port as a CDC-ACM device as well as a webusb device.
 
+If you are accessing the web interface in brave or chrome in linux and see this "type=1400 audit(1722797501.568:428): apparmor="DENIED" operation="open" class="file" profile="snap.brave.brave" name="/dev/bus/usb/003/005" pid=6016 comm="ThreadPoolForeg" requested_mask="wr" denied_mask="wr" fsuid=1000 ouid=0"
+
+Add the following to /etc/apparmor/brave
+```
+/dev/bus/usb/003/005 rw,
+```
+
+mine looks like this
+
+```
+abi <abi/4.0>,
+include <tunables/global>
+
+profile brave /opt/brave.com/brave/brave flags=(unconfined) {
+  userns,
+  /dev/bus/usb/003/005 rw,
+  # Site-specific additions and overrides. See local/README for details.
+  include if exists <local/brave>
+}
+```
+
+Or you may be able to simply
+```
+sudo snap connect brave:raw-usb
+```
+
+If you are accessing the normal CDC-ACM serial port, you can use the CLI console.
 Once booted, type h to see the available commands (which may or may not be up to date, see src/debug/Console.cpp)
 
 TODO: list the idosynchracies of the debug console, like an axis must be in manual mode to manually set the target position

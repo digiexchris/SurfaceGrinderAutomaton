@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Serial, SerialPort } from './serial';
+import { Serial, SerialPort } from './usb';
 import { Button, Card } from "@nextui-org/react";
 
-const SerialComponent: React.FC = () => {
+const USBConnection: React.FC = () => {
   const [ports, setPorts] = useState<SerialPort[]>([]);
   const [connectedPort, setConnectedPort] = useState<SerialPort | null>(null);
 
@@ -84,4 +84,4 @@ const SerialComponent: React.FC = () => {
   );
 };
 
-export default SerialComponent;
+export default USBConnection;
