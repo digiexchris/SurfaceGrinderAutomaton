@@ -1,7 +1,9 @@
 #include "WebSerial.hpp"
 #include "CRC.hpp"
 #include "Enum.hpp"
+#include "Proto.hpp"
 #include <cstdint>
+#include <semphr.h>
 #include <unordered_map>
 
 WebSerial *WebSerial::myInstance = nullptr;
@@ -19,8 +21,12 @@ void WebSerial::QueueUpdate(WebSerialUpdate *anUpdate)
 	case WebSerialUpdateType::AXIS:
 	{
 		WebSerialAxisUpdate *axisUpdate = static_cast<WebSerialAxisUpdate *>(anUpdate);
-		myAxisParameterTable[{axisUpdate->axis, axisUpdate->param}] = axisUpdate->value;
-		// myAxisParameterTable[axisUpdate->axis][axisUpdate->param] = axisUpdate->value;
+		Message msg = axisUpdate->ToMessage();
+
+		xSemaphoreTake(myOutputQueueMutex, portMAX_DELAY);
+		myOutputQueue[msg.ToKey()] = msg.ToValue();
+		xSemaphoreGive(myOutputQueueMutex);
+		delete axisUpdate;
 		break;
 	}
 	case WebSerialUpdateType::STEPPER:
@@ -45,19 +51,21 @@ void WebSerial::WritePendingUpdates(void *param)
 
 		if (myInstance->IsConnected())
 		{
-			for (AxisParameterValue axisParameter : myInstance->myAxisParameterTable)
+			xSemaphoreTake(myInstance->myOutputQueueMutex, portMAX_DELAY);
+
+			for (auto m : myInstance->myOutputQueue)
 			{
-				const std::vector<uint8_t> buffer = myInstance->privConstructMessage(
-					ParameterCommand::WRITE,
-					ParameterContext::AXIS,
-					static_cast<uint8_t>(AxisLabel::X), // get from axisParameter
-					AxisParameter::TARGET_SPEED,		// get from axisParameter
-					ParameterValueType::UINT16,
-					23423); // get from axisParameter
+				KeyType key = m.first;
+				ValueType value = m.second;
+
+				const std::vector<uint8_t> buffer = myInstance->privConstructMessage(key, value);
 
 				myInstance->myUsb->WriteWebSerial((void *)buffer.data(), buffer.size());
-				myInstance->myAxisParameterTable.remove(axisParameter);
 			}
+
+			myInstance->myOutputQueue.clear();
+
+			xSemaphoreGive(myInstance->myOutputQueueMutex);
 		}
 	}
 }
@@ -70,32 +78,35 @@ void WebSerial::privAddValueToMessageBuffer(std::vector<uint8_t> &buffer, T valu
 }
 
 std::vector<uint8_t> WebSerial::privConstructMessage(
-	ParameterCommand command,
-	ParameterContext context,
-	uint8_t contextValue,
-	AxisParameter parameter,
-	ParameterValueType valueType,
-	int32_t value)
+	KeyType key,
+	ValueType value)
 {
 	std::vector<uint8_t> buffer;
 
-	// Add command
-	buffer.push_back(static_cast<uint8_t>(command));
-
-	// Add context
-	buffer.push_back(static_cast<uint8_t>(context));
-
-	// Add context value (such as AxisLabel)
-	buffer.push_back(contextValue);
-
-	// Add parameter (such as AxisParameter::TARGET_SPEED)
-	buffer.push_back(static_cast<uint8_t>(parameter));
-
-	// Add parameter type (such as INT32)
-	buffer.push_back(static_cast<uint8_t>(valueType));
-
 	// Add value itself
-	privAddValueToMessageBuffer(buffer, value);
+	uint8_t *keyPtr = reinterpret_cast<uint8_t *>(&key);
+	buffer.insert(buffer.end(), keyPtr, keyPtr + sizeof(key));
+
+	if (std::holds_alternative<uint16_t>(value))
+	{
+		uint16_t val = std::get<uint16_t>(value);
+		privAddValueToMessageBuffer(buffer, val);
+	}
+	else if (std::holds_alternative<float>(value))
+	{
+		float val = std::get<float>(value);
+		privAddValueToMessageBuffer(buffer, val);
+	}
+	else if (std::holds_alternative<double>(value))
+	{
+		double val = std::get<double>(value);
+		privAddValueToMessageBuffer(buffer, val);
+	}
+	else if (std::holds_alternative<int32_t>(value))
+	{
+		int32_t val = std::get<int32_t>(value);
+		privAddValueToMessageBuffer(buffer, val);
+	}
 
 	// Calculate and add CRC
 	uint8_t crc = CalculateCRC16CCITT(buffer);
@@ -105,4 +116,9 @@ std::vector<uint8_t> WebSerial::privConstructMessage(
 	buffer.push_back(0xFF);
 
 	return buffer;
+}
+
+Message WebSerialAxisUpdate::ToMessage()
+{
+	return AxisMessage(axis, param, value);
 }

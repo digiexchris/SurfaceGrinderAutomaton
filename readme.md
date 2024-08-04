@@ -80,18 +80,25 @@ IO Expander:
 	- arm gcc https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 	- cmake
 	- if linux
+				
 		- The devcontainer is recommended.
 			- sudo apt install docker.io
 			- install the vscode Devcontainer extension from Microsoft.
 			- open the repo in vscode, ctrl-shift-p-> reopen in container (it will probably prompt you at first load)
 			- once the container is up, file->open workspace from file->sga.code.workspace
 			- that's it, enjoy!
+			- troubleshooting: check the .devcontainer/devcontainer.json for your debug probe mount if the container fails to mount them. It is only required if you want to debug it, you can build without it just fine.
 		- or:
 			- apt install build-essential
 			- there are flash scripts available in tools/linux, and vscode tasks are setup to use them.
 			- Note: if you want to use webusb, you may require udev permission on Linux (and/or macOS) to access usb device. It depends on your OS distro, typically copy 99-tinyusb.rules and reload your udev is good to go. Other than that, the CDC-ACM debug serial port should Just Work (tm), enumerating as a /dev/ttyACM* or with the udev rule, /dev/ttySGA
 				- ```$ cp 99-tinyusb.rules /etc/udev/rules.d/
 					$ sudo udevadm control --reload-rules && sudo udevadm trigger```
+			- if you have an openocd version lower than 0.12
+				- use the devcontainer
+				- or 
+					- sudo apt remove openocd
+					- git clone https://github.com/openocd-org/openocd.git --depth=1 --recurse-submodules && cd openocd && ./bootstrap && ./configure --enable-ftdi --enable-sysfsgpio --enable-picoprobe --enable-cmsis-dap && make -j 8 install
 	- if Windows
 		- The devcontainer is recommended. 
 			- Install a docker host of some kind (docker.io in wsl is fine), and the vscode Devcontainer extension from Microsoft. 
@@ -109,6 +116,8 @@ IO Expander:
 			- there are flash scripts available in tools/linux, and vscode tasks are setup to use them.
 			- there are usbipd helper scripts (attach-cmsis-dap and attach-bmp) to help give you a one-click attach of your debug probe if you're using WSL or the devcontainer under windows
 - optional
+	- there is a devcontainer!!! might be easier than windows or if you don't want to mess with openocd versions.
+	- clangd for formatting/linting/static analysis along with the vscode clangd extension
 	- clangd for formatting/linting/static analysis along with the vscode clangd extension (provided by the devcontainer)
 	- any of the recommended extensions in this repo
 	- customize cmakepresets.json if your paths are different (not needed with the devcontainer)

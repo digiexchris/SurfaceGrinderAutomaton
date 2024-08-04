@@ -1,6 +1,7 @@
 #ifndef STEPPER_HPP
 #define STEPPER_HPP
 
+#include "Enum.hpp"
 #include "hardware/pio.h"
 #include <FreeRTOS.h>
 #include <cstdint>
@@ -77,10 +78,21 @@ struct StepperCommandSetAcceleration : StepperCommand
 	float acceleration;
 };
 
+struct StepperNotifyMessage
+{
+	StepperNotifyMessage(StepperNotifyType aType, int32_t aValue)
+		: type(aType), value(aValue)
+	{
+	}
+	StepperNotifyType type;
+	int32_t value;
+};
+
+using StepperUpdatedCallback = void (*)(StepperNotifyMessage);
+
 class Stepper
 {
 public:
-
 	/**
 	 * @brief Construct a new Stepper object
 	 *
@@ -94,7 +106,7 @@ public:
 	 * NOTE: if stateOutputTask is set, a task notification will be sent to that task containing this
 	 * stepper's state (position, speed, etc) every time the state changes.
 	 */
-	Stepper(uint stepPin, uint dirPin, float targetSpeed, float acceleration, PIO pio, uint sm, TaskHandle_t stateOutputTask = nullptr);
+	Stepper(uint stepPin, uint dirPin, float targetSpeed, float acceleration, PIO pio, uint sm, StepperUpdatedCallback = nullptr);
 	void InitPIO();
 
 	enum class MoveState
@@ -152,7 +164,11 @@ private:
 	void privSetTargetSpeed(uint16_t aSpeed);
 	void privSetAcceleration(float aAcceleration);
 	void privSetCurrentPosition(int32_t aPosition);
+	void privQueueNotifyMessage(StepperNotifyType aType, int32_t aValue);
 	StepperError privQueueCommand(StepperCommand *aCommand);
+
+	StepperUpdatedCallback myUpdatedCallback = nullptr;
+
 	uint stepPin;
 	uint dirPin;
 
@@ -169,8 +185,11 @@ private:
 	float myCurrentSpeed = 0.0;		// in steps per second
 	float myAcceleration = 0.0f;	// in steps per second squared
 	absolute_time_t lastUpdateTime; // to calculate the time step in the update() loop
+	StepperUpdatedCallback myStateOutputCallback;
 	QueueHandle_t myCommandQueue;
-	TaskHandle_t myStateOutputTask; //used to send almost up to date position and speed updates to another thread. Used primarily by webusb and UI.
+	TaskHandle_t myNotifyCallbackTaskHandle;
+	static void NotifyCallbackTask(void *param);
+	QueueHandle_t myNotifyCallbackQueue; // used to send almost up to date position and speed updates to another thread. Used primarily by webusb and UI.
 };
 
 #endif // STEPPER_HPP

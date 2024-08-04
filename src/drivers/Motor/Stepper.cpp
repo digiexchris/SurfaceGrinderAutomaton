@@ -7,12 +7,16 @@
 #include <semphr.h>
 #include <stdio.h>
 
-Stepper::Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm, TaskHandle_t stateOutputTask)
-	: stepPin(stepPin), dirPin(dirPin), pio(pio), sm(sm), myStateOutputTask(stateOutputTask) //, IStepper(maxSpeed, acceleration)
+Stepper::Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm, StepperUpdatedCallback stateOutputCallback)
+	: stepPin(stepPin), dirPin(dirPin), pio(pio), sm(sm), myStateOutputCallback(stateOutputCallback) //, IStepper(maxSpeed, acceleration)
 {
 	gpio_init(dirPin);
 	gpio_set_dir(dirPin, GPIO_OUT);
 	myCommandQueue = xQueueCreate(2, sizeof(StepperCommand *));
+	myNotifyCallbackQueue = xQueueCreate(1, sizeof(StepperNotifyMessage *)); // TODO make this a ringbuffer and have the function that pushes to this queue delete the oldest if full
+	BaseType_t status = xTaskCreate(NotifyCallbackTask, "Stepper Notify Callback", 2048, this, 1, &myNotifyCallbackTaskHandle);
+	configASSERT(status == pdPASS);
+
 	SetTargetSpeed(maxSpeed);
 	SetAcceleration(acceleration);
 }
@@ -230,6 +234,9 @@ void Stepper::Update()
 			{
 				remainingSteps = abs(myTargetPosition - myCurrentPosition);
 			}
+
+			privQueueNotifyMessage(StepperNotifyType::CURRENT_POSITION, myCurrentPosition);
+			THIS HAS A QUEUE SIZE OF 1 SO COMBINE ALL NOTIFYTYPES INTO A SINGLE MESSAGE SHOWING THE ENTIRE CURRENT STATE.
 		}
 	}
 
@@ -241,6 +248,12 @@ void Stepper::Update()
 		// there should be no timing critical things occurring if we have no speed set so increasing this is probably ok too
 		vTaskDelay(100 * portTICK_PERIOD_MS);
 	}
+}
+
+void Stepper::privQueueNotifyMessage(StepperNotifyType aType, int32_t aValue)
+{
+	StepperNotifyMessage *message = new StepperNotifyMessage(aType, aValue);
+	xQueueOverwrite(myNotifyCallbackQueue, &message);
 }
 
 Stepper::MoveState Stepper::GetMoveState()
@@ -340,4 +353,21 @@ float Stepper::GetAcceleration()
 uint16_t Stepper::GetCurrentSpeed()
 {
 	return myCurrentSpeed;
+}
+
+void Stepper::NotifyCallbackTask(void *pvParameters)
+{
+	Stepper *myInstance = static_cast<Stepper *>(pvParameters);
+	StepperNotifyMessage *message = nullptr;
+	while (true)
+	{
+		if (xQueueReceive(myInstance->myNotifyCallbackQueue, &message, portMAX_DELAY) == pdTRUE)
+		{
+			if (message != nullptr)
+			{
+				myInstance->myStateOutputCallback(message);
+				delete (message); // NOTE (I think this doesn't need to be deleted but maybe? message is a pointer, and queue should have a reference to this pointer, so I think deleting this pointer is correct but the queue should delete it's own ref...?)
+			}
+		}
+	}
 }

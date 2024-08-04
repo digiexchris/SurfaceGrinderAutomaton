@@ -11,7 +11,7 @@ ENV TOOLCHAINDIR="arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi"
 
 # [Optional] Uncomment this section to install additional packages.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends cmake usbutils ninja-build build-essential wget ca-certificates \
+    && apt-get -y install --no-install-recommends cmake clangd usbutils ninja-build build-essential wget ca-certificates \
     gdb-multiarch automake autoconf libtool libftdi-dev libusb-1.0-0-dev pkg-config clang-format libhidapi-dev
 RUN mkdir /workspaces
 WORKDIR /workspaces
