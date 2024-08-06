@@ -7,7 +7,8 @@
 enum class ParameterCommand : uint8_t
 {
 	READ = 0x01,
-	WRITE = 0x02
+	WRITE = 0x02,
+	MESSAGE = 0x03
 };
 
 enum class AxisLabel : uint8_t

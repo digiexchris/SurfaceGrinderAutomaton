@@ -79,6 +79,32 @@ void WebSerial::privAddValueToMessageBuffer(std::vector<uint8_t> &buffer, T valu
 	buffer.insert(buffer.end(), ptr, ptr + sizeof(T));
 }
 
+/**
+	The resulting webserial message should be in the form
+	[command][context][contextValue][parameter][valueType][value][crc][end]
+	where:
+	- command is a ParameterCommand, any message sent back to the host is a MESSAGE command regardless of who initiated it
+	- context is a ParameterContext
+	- contextValue is a uint8_t such as an AxisLabel or some other thing that selects a subcontext
+	- parameter is a parameter of the subcontext to get or modify, such as the target speed of the Axis context of the contextValue AxisLabel::X
+	- valueType is a ParameterValueType such as UINT16 for a speed
+	- value is the value (cast to int32_t might not be necessary, todo: figure that out, it should be dynamic length)
+	- checksum of the message
+	- end of message terminator (0xff)
+
+	eg:
+	the device sending the current speed of the Y axis would look like this
+	0x03     //ParameterCommand::MESSAGE
+	0x00     //ParameterContext::AXIS
+	0x01     //AxisLabel::Y
+	0x02     //AxisParameter::CURRENT_SPEED
+	0x02     //INT16
+	0x00 0xF2  //current speed of 242
+	0x12 0x34     //checksum (dummy of 1234 used for this example)
+	0xFF     //end of message terminator
+
+
+ */
 std::vector<uint8_t> WebSerial::privConstructMessage(
 	KeyType key,
 	ValueType value)

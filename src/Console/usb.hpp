@@ -25,7 +25,7 @@ public:
 		BLINK_ALWAYS_ON = INT32_MAX,
 		BLINK_ALWAYS_OFF = 0
 	};
-	Usb(ProcessBufFn processBufFn = nullptr);
+	Usb(ProcessBufFn processBufFn = nullptr, ProcessBufFn webUsbProcessBufFn = nullptr);
 
 	static void print(const char *buf, int len);
 	void WriteWebSerial(void *msg, size_t len);
@@ -49,6 +49,7 @@ public:
 
 private:
 	ProcessBufFn myProcessBufFn = nullptr;
+	ProcessBufFn myWebUsbProcessBufFn = nullptr;
 
 	void webserial_task(void);
 	void cdc_task(void);

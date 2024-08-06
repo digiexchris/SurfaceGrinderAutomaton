@@ -20,7 +20,7 @@ const tusb_desc_webusb_url_t Usb::desc_url = {
 	.bScheme = 1,		  // 0: http, 1: https
 	.url = {URL}};
 
-Usb::Usb(ProcessBufFn processBufFn)
+Usb::Usb(ProcessBufFn processBufFn, ProcessBufFn webUsbProcessBufFn)
 {
 	myInstance = this;
 	board_init();
@@ -29,6 +29,11 @@ Usb::Usb(ProcessBufFn processBufFn)
 	if (processBufFn)
 	{
 		myProcessBufFn = processBufFn;
+	}
+
+	if (webUsbProcessBufFn)
+	{
+		myWebUsbProcessBufFn = webUsbProcessBufFn;
 	}
 
 	// Redirect stdout to TinyUSB
@@ -64,23 +69,6 @@ void Usb::usb_thread(void *ptr)
 	} while (1);
 }
 
-// int Usb::putc(char aCharacter, FILE *aStream)
-// {
-
-// 	if (web_serial_connected)
-// 	{
-// 		tud_vendor_write(&aCharacter, 1);
-// 		tud_vendor_flush();
-// 	}
-
-// 	// Only send character if USB is connected and ready
-// 	if (tud_cdc_connected() && tud_cdc_write_available())
-// 	{
-// 		tud_cdc_write_char(aCharacter);
-// 		tud_cdc_write_flush();
-// 	}
-// }
-
 void Usb::WriteWebSerial(void *msg, size_t len)
 {
 	if (web_serial_connected)
@@ -96,13 +84,6 @@ void Usb::print(const char *buf, int len)
 	if (!myInstance)
 	{
 		panic("Usb instance not created");
-	}
-
-	// echo to web serial
-	if (myInstance->web_serial_connected)
-	{
-		tud_vendor_write(buf, len);
-		tud_vendor_flush();
 	}
 
 	// echo to cdc
@@ -238,11 +219,9 @@ void Usb::webserial_task(void)
 			uint8_t buf[64];
 			uint32_t count = tud_vendor_read(buf, sizeof(buf));
 
-			// echo back to both web serial and cdc
-			// echo_all(buf, count);
-			if (myProcessBufFn)
+			if (myWebUsbProcessBufFn)
 			{
-				myProcessBufFn(buf, count);
+				myWebUsbProcessBufFn(buf, count);
 			}
 		}
 	}
@@ -262,8 +241,6 @@ void Usb::cdc_task(void)
 
 			uint32_t count = tud_cdc_read(buf, sizeof(buf));
 
-			// echo back to both web serial and cdc
-			// print(buf, count);
 			if (myProcessBufFn)
 			{
 				myProcessBufFn(buf, count);
