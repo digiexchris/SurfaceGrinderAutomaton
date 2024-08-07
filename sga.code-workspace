@@ -32,6 +32,7 @@
 		]
 	},
 	"settings": {
+		"cortex-debug.gdbPath.linux": "/workspaces/gcc-arm-none/bin/arm-none-eabi-gdb",
 		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
 		"C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
 		"files.associations": {
