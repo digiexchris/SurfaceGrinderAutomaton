@@ -52,4 +52,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
 
 WORKDIR /workspaces
 
+COPY 99-picoprobe.rules /etc/udev/rules.d/99-picoprobe.rules
+
 RUN usermod -aG plugdev vscode

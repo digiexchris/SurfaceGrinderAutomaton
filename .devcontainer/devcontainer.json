@@ -9,10 +9,12 @@
         "FLASH_SCRIPT": "flash.sh"
     },
     "runArgs": [
-        // "--cap-add=SYS_PTRACE",
-        // "--security-opt",
-        // "seccomp=unconfined"
-        "--device=/dev/bus/usb"
+        "--cap-add=SYS_PTRACE",
+        "--security-opt",
+        "seccomp=unconfined",
+        "--privileged",
+        "-v", "/dev/bus/usb:/dev/bus/usb",
+        "--device=/dev/bus/usb",
         // "--device=/dev/ttyACM0"
     ],
     "customizations": {
@@ -35,7 +37,8 @@
                 "IBM.output-colorizer",
                 "actboy168.tasks",
                 "SanaAjani.taskrunnercode",
-                "ms-vscode-remote.remote-containers"
+                "ms-vscode-remote.remote-containers",
+                "llvm-vs-code-extensions.vscode-clangd"
             ],
         }
     },

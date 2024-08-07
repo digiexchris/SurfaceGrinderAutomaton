@@ -28,7 +28,6 @@
 			"GitHub.copilot",
 			"GitHub.copilot-chat",
 			"josetr.cmake-language-support-vscode",
-			"raspberry-pi.raspberry-pi-pico",
 			"llvm-vs-code-extensions.vscode-clangd"
 		]
 	},

@@ -10,7 +10,7 @@ if %errorlevel% equ 0 (
     echo.
     echo Flashing %1
     echo.
-    openocd.exe -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program %1 verify reset exit"
+    openocd.exe -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program %1" -c "verify" -c"reset" -c "exit"
     goto :end
 )
 
