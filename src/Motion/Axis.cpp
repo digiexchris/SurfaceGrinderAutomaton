@@ -107,10 +107,15 @@ StepperError Axis::SetTargetSpeed(uint16_t aSpeed)
 void Axis::MoveThread(void *pvParameters)
 {
 	Axis *axis = static_cast<Axis *>(pvParameters);
+	TickType_t wake;
+	wake = xTaskGetTickCount();
+	
 	while (true)
 	{
 		axis->Update();
-		portYIELD();
+		
+		//run this loop at exactly 10khz
+		xTaskDelayUntil(&wake, 1);
 	}
 }
 

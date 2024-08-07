@@ -14,6 +14,7 @@
 #include <pico/stdio.h>
 #include <semphr.h>
 #include <task.h>
+#include "config.hpp"
 
 MotionController::MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYStepper)
 {
@@ -44,13 +45,13 @@ MotionController::MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYSt
 	myTaskHandles.emplace(AxisLabel::X, new TaskHandle_t());
 	myTaskHandles.emplace(AxisLabel::Z, new TaskHandle_t());
 
-	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 1 * 2048, this, 1, myTaskHandles[AxisLabel::X]);
+	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 1 * 2048, this, SM_MOTION_PRIORITY, myTaskHandles[AxisLabel::X]);
 	if (status != pdPASS)
 	{
 		panic("Failed to create MotionXThread\n");
 	}
 
-	status = xTaskCreate(MotionZThread, "MotionZThread", 1 * 2048, this, 1, myTaskHandles[AxisLabel::Z]);
+	status = xTaskCreate(MotionZThread, "MotionZThread", 1 * 2048, this, SM_MOTION_PRIORITY, myTaskHandles[AxisLabel::Z]);
 	if (status != pdPASS)
 	{
 		panic("Failed to create MotionZThread\n");
@@ -62,13 +63,13 @@ MotionController::MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYSt
 	MotionOutputTaskParams *xParams = new MotionOutputTaskParams(AxisLabel::X, myAxes[AxisLabel::X], this);
 	MotionOutputTaskParams *zParams = new MotionOutputTaskParams(AxisLabel::Z, myAxes[AxisLabel::Z], this);
 
-	status = xTaskCreate(MotionStateOutputTask, "MotionOutputTaskX", 1 * 2048, xParams, 1, myStepperStateOutputTaskHandles[AxisLabel::X]);
+	status = xTaskCreate(MotionStateOutputTask, "MotionOutputTaskX", 1 * 2048, xParams, UI_UPDATE_PRIORITY, myStepperStateOutputTaskHandles[AxisLabel::X]);
 	if (status != pdPASS)
 	{
 		panic("Failed to create MotionOutputTaskX\n");
 	}
 
-	status = xTaskCreate(MotionStateOutputTask, "MotionOutputTaskZ", 1 * 2048, zParams, 1, myStepperStateOutputTaskHandles[AxisLabel::Z]);
+	status = xTaskCreate(MotionStateOutputTask, "MotionOutputTaskZ", 1 * 2048, zParams, UI_UPDATE_PRIORITY, myStepperStateOutputTaskHandles[AxisLabel::Z]);
 
 	if (status != pdPASS)
 	{
@@ -119,12 +120,14 @@ void MotionController::MotionXThread(void *pvParameters)
 {
 	printf("MotionXThread Started\n");
 	MotionController *mc = static_cast<MotionController *>(pvParameters);
+	TickType_t wake = xTaskGetTickCount();
 
 	while (true)
 	{
 		mc->myXAxisSM->Update();
-		// vTaskDelay(100); // yeild to another task of the same priority
-		vPortYield();
+		
+		//this is just deciding if we need to reverse or change modes, not as critical as the stepper execution
+		xTaskDelayUntil(&wake, 20* portTICK_PERIOD_MS);
 	}
 }
 
@@ -132,12 +135,13 @@ void MotionController::MotionZThread(void *pvParameters)
 {
 	printf("MotionZThread Started\n");
 	MotionController *mc = static_cast<MotionController *>(pvParameters);
+	TickType_t wake = xTaskGetTickCount();
 
 	while (true)
 	{
+		//this is just deciding if we need to reverse or change modes, not as critical as the stepper execution
 		mc->myZAxisSM->Update();
-		// vTaskDelay(100); // yeild to another task of the same priority
-		vPortYield();
+		xTaskDelayUntil(&wake, 20* portTICK_PERIOD_MS);
 	}
 }
 

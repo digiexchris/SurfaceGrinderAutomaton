@@ -16,10 +16,15 @@
 
 #include "pico/printf.h"
 
+#include "Usb/usb.hpp"
+#include "Usb/WebSerial.hpp"
+#include "portmacro.h"
+
 MotionController *mc;
 Axis *zAxis;
 Axis *xAxis;
 Usb *usb;
+WebSerial *webSerial;
 
 extern "C" void vTaskSwitchedIn(void);
 extern "C" void vTaskSwitchedOut(void);
@@ -90,6 +95,28 @@ extern "C" void isr_hardfault(void)
 		"B PrintStackTrace \n");
 }
 
+void StackHeapDebugTask(void *pvParameters)
+{
+	while (true)
+	{
+		vTaskDelay(10000* portTICK_PERIOD_MS);
+		PrintHeapHighWaterMark();
+		PrintStackHighWaterMark(xTaskGetCurrentTaskHandle());
+	}
+}
+
+void RuntimeStatsDebugTask(void *pvParameters)
+{
+	char buffer[512];
+	while (true)
+	{
+		
+		vTaskDelay(10000* portTICK_PERIOD_MS);
+		vTaskGetRunTimeStats(buffer);
+        printf("Runtime Stats:\n%s\n", buffer);
+	}
+}
+
 int main()
 {
 	stdio_init_all();
@@ -114,6 +141,17 @@ int main()
 
 	Console::Init(mc);
 
+	usb = new Usb(Console::ProcessChars);
+	webSerial = new WebSerial(usb);
+
+#if DEBUG_HEAP_STACK
+	xTaskCreate(StackHeapDebugTask, "StackHeapDebugTask", 1024, nullptr, 1, nullptr);
+#endif
+
+#if DEBUG_RUNTIME_STATS
+	xTaskCreate(RuntimeStatsDebugTask, "RuntimeStatsDebugTask", 1024, nullptr, 1, nullptr);
+#endif
+
 	printf("Boot Complete\n");
 
 	gpio_init(PICO_DEFAULT_LED_PIN);
@@ -123,7 +161,7 @@ int main()
 	vTaskStartScheduler();
 	// It'll never get past here, vTaskStartScheduler() never returns
 
-	printf("If you see this, there is insufficient heap memory\n");
+	printf("If you see this, there is probably insufficient heap memory\n");
 
 	// Console::Init(nullptr);
 

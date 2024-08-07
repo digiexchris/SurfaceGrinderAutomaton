@@ -3,23 +3,8 @@
 #include <pico/printf.h>
 #include <task.h>
 
-#define DEBUG_CONSOLE 1
-
-#ifdef DEBUG_CONSOLE
-#define CONSOLE_USES_UART 0
-#define CONSOLE_USES_USB 1
-#endif
-
 #define STEPPER_DIRECTION_CHANGE_DELAY_MS 5
 #define STEPPER_COMMAND_TIMEOUT 250
-
-#define PRINTF_AXIS_POSITIONS 1
-#define PRINTF_AXIS_DEBUG 0
-#define PRINTF_MOTION_DEBUG 0
-#define PRINTF_STEPPER_DEBUG 0
-#define PRINTF_HEAP_STACK_DEBUG 0
-
-#define ENABLE_DISPLAY 1
 
 #define STEPPER1_ENABLE_POLARITY 0
 
@@ -49,7 +34,7 @@
 
 inline void PrintHeapHighWaterMark()
 {
-#if PRINTF_HEAP_STACK_DEBUG
+#if DEBUG_HEAP_STACK
 	// Get the minimum ever free heap size
 	size_t heapHighWaterMark = xPortGetMinimumEverFreeHeapSize();
 
@@ -60,11 +45,41 @@ inline void PrintHeapHighWaterMark()
 
 inline void PrintStackHighWaterMark(TaskHandle_t taskHandle)
 {
-#if PRINTF_HEAP_STACK_DEBUG
+#if DEBUG_HEAP_STACK
 	// Get the minimum ever free stack space
 	UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
 
 	// Print the high water mark
-	printf("Minimum ever free stack size: %u words\n", (unsigned int)stackHighWaterMark);
+	printf("Minimum ever free stack size: %u wor7ds\n", (unsigned int)stackHighWaterMark);
 #endif
 }
+
+/******** Internal use only, only change if you have a good reason ************/
+
+#define DEBUG_HEAP_STACK 1
+#define DEBUG_RUNTIME_STATS 1
+
+#define DEBUG_CONSOLE 1
+#ifdef DEBUG_CONSOLE
+#define CONSOLE_USES_UART 0
+#define CONSOLE_USES_USB 1
+#endif
+
+#define PRINTF_AXIS_POSITIONS 1
+#define PRINTF_AXIS_DEBUG 0
+#define PRINTF_MOTION_DEBUG 0
+#define PRINTF_STEPPER_DEBUG 0
+
+#define ENABLE_DISPLAY 1 //maybe unused
+
+#define MAX_PRIORITY configMAX_PRIORITIES - 1
+
+#define STEPPER_TASK_PRIORITY MAX_PRIORITY
+
+#define SM_MOTION_PRIORITY MAX_PRIORITY - 1
+#define USB_SERIAL_UPDATE_PRIORITY - 2
+#define UI_UPDATE_PRIORITY MAX_PRIORITY - 3
+
+
+
+

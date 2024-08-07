@@ -35,7 +35,7 @@ public:
 	{
 		if (myInstance == nullptr)
 		{
-			myInstance = new Usb();
+			panic("Usb instance not created");
 		}
 		return myInstance;
 	}

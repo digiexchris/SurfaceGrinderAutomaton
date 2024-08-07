@@ -7,6 +7,7 @@ This was taken almost entirely from the tinyusb webserial example.
 #include "usb_descriptors.h"
 #include <cstddef>
 #include <pico/stdio.h>
+#include "config.hpp"
 
 #define UART_TASK_PRIO (tskIDLE_PRIORITY + 3)
 #define TUD_TASK_PRIO (tskIDLE_PRIORITY + 2)
@@ -44,7 +45,7 @@ Usb::Usb(ProcessBufFn processBufFn, ProcessBufFn webUsbProcessBufFn)
 	setvbuf(stderr, NULL, _IONBF, 0);
 	stdio_set_driver_enabled(&__stderr_usb, true);
 
-	xTaskCreate(usb_thread, "TUD", configMINIMAL_STACK_SIZE, this, TUD_TASK_PRIO, &tud_taskhandle);
+	xTaskCreate(usb_thread, "TUD", configMINIMAL_STACK_SIZE, this, USB_SERIAL_UPDATE_PRIORITY, &tud_taskhandle);
 }
 
 void Usb::usb_thread(void *ptr)
@@ -65,7 +66,7 @@ void Usb::usb_thread(void *ptr)
 #endif
 		// Go to sleep for up to a tick if nothing to do
 		if (!tud_task_event_ready())
-			xTaskDelayUntil(&wake, 1);
+			xTaskDelayUntil(&wake, 100);
 	} while (1);
 }
 

@@ -14,7 +14,7 @@ Stepper::Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, 
 	gpio_set_dir(dirPin, GPIO_OUT);
 	myCommandQueue = xQueueCreate(2, sizeof(StepperCommand *));
 	myNotifyCallbackQueue = xQueueCreate(1, sizeof(StepperNotifyMessage *)); // TODO make this a ringbuffer and have the function that pushes to this queue delete the oldest if full
-	BaseType_t status = xTaskCreate(NotifyCallbackTask, "Stepper Notify Callback", 2048, this, 1, &myNotifyCallbackTaskHandle);
+	BaseType_t status = xTaskCreate(NotifyCallbackTask, "Stepper Notify Callback", 2048, this, STEPPER_TASK_PRIORITY, &myNotifyCallbackTaskHandle);
 	configASSERT(status == pdPASS);
 
 	SetTargetSpeed(maxSpeed);
@@ -69,6 +69,9 @@ void Stepper::Update()
 	float deltaTime = deltaTimeUs / 1e6f; // Convert microseconds to seconds
 	lastUpdateTime = now;
 	StepperCommand *command = nullptr;
+
+	TickType_t wake;
+	wake = xTaskGetTickCount();
 
 	// process up to queueSize of commands per update loop
 	while (xQueueReceive(myCommandQueue, &command, 0) != errQUEUE_EMPTY)
@@ -245,7 +248,7 @@ void Stepper::Update()
 		// update will just relock the mutexes before another thread runs.
 		// delay 10 cycles to allow another thread to modify things critical to this thread
 		// there should be no timing critical things occurring if we have no speed set so increasing this is probably ok too
-		vTaskDelay(100 * portTICK_PERIOD_MS);
+		xTaskDelayUntil(&wake, 100);
 	}
 }
 
@@ -358,6 +361,9 @@ void Stepper::NotifyCallbackTask(void *pvParameters)
 {
 	Stepper *myInstance = static_cast<Stepper *>(pvParameters);
 	StepperNotifyMessage *message = nullptr;
+	TickType_t wake;
+	wake = xTaskGetTickCount();
+	
 	while (true)
 	{
 		if (xQueueReceive(myInstance->myNotifyCallbackQueue, &message, portMAX_DELAY) == pdTRUE)
@@ -371,5 +377,7 @@ void Stepper::NotifyCallbackTask(void *pvParameters)
 				delete (message); // NOTE (I think this doesn't need to be deleted but maybe? message is a pointer, and queue should have a reference to this pointer, so I think deleting this pointer is correct but the queue should delete it's own ref...?)
 			}
 		}
+
+		xTaskDelayUntil(&wake, 10);
 	}
 }

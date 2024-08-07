@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <semphr.h>
 #include <unordered_map>
+#include "config.hpp"
 
 WebSerial *WebSerial::myInstance = nullptr;
 
@@ -14,7 +15,7 @@ WebSerial::WebSerial(Usb *aUsb)
 	myInstance = this;
 	myOutputQueueMutex = xSemaphoreCreateMutex();
 
-	BaseType_t status = xTaskCreate(WebSerial::WritePendingUpdates, "WebSerial::WritePendingUpdates", 1 * 2048, NULL, 1, NULL);
+	BaseType_t status = xTaskCreate(WebSerial::WritePendingUpdates, "WebSerial::WritePendingUpdates", 1 * 2048, NULL, USB_SERIAL_UPDATE_PRIORITY, NULL);
 	configASSERT(status == pdPASS);
 }
 
@@ -44,11 +45,11 @@ bool WebSerial::IsConnected()
 void WebSerial::WritePendingUpdates(void *param)
 {
 
+	TickType_t wait = xTaskGetTickCount();
+
 	WebSerial *myInstance = WebSerial::GetInstance();
 	while (true)
 	{
-		vTaskDelay(100);
-
 		if (myInstance->IsConnected())
 		{
 			// NOTE: it is not necessary to maintain this output queue if nothing is reading it, it will contain the current state of the system and will be sent when the connection is established.
@@ -68,6 +69,8 @@ void WebSerial::WritePendingUpdates(void *param)
 			myInstance->myOutputQueue.clear();
 
 			xSemaphoreGive(myInstance->myOutputQueueMutex);
+
+			vTaskDelayUntil(&wait, 100 * portTICK_PERIOD_MS);
 		}
 	}
 }

@@ -48,7 +48,7 @@
 #define configUSE_TICKLESS_IDLE 0
 #define configUSE_IDLE_HOOK 0
 #define configUSE_TICK_HOOK 0
-#define configTICK_RATE_HZ ((TickType_t)1000) //((TickType_t)1000)
+#define configTICK_RATE_HZ ((TickType_t)10000) //((TickType_t)1000)
 #define configMAX_PRIORITIES 32
 #define configMINIMAL_STACK_SIZE (configSTACK_DEPTH_TYPE)1024
 #define configUSE_16_BIT_TICKS 0
@@ -84,9 +84,9 @@
 #define configUSE_DAEMON_TASK_STARTUP_HOOK 0
 
 /* Run time and task stats gathering related definitions. */
-#define configGENERATE_RUN_TIME_STATS 0
+#define configGENERATE_RUN_TIME_STATS 1
 #define configUSE_TRACE_FACILITY 1
-#define configUSE_STATS_FORMATTING_FUNCTIONS 0
+#define configUSE_STATS_FORMATTING_FUNCTIONS 1
 
 /* Co-routine related definitions. */
 #define configUSE_CO_ROUTINES 0

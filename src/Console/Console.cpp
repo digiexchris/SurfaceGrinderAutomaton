@@ -4,10 +4,10 @@
 #include "Enum.hpp"
 #include "Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
+#include "Usb/usb.hpp"
 #include "config.hpp"
 #include "drivers/Motor/Stepper.hpp"
 #include "microsh.h"
-#include "usb.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <hardware/watchdog.h>
@@ -34,7 +34,7 @@ Console::Commands Console::myCommands[] = {
 	{3, "moveto", Console::moveAbsoluteCommandCallback, "moveto <axis> <position> - Moves the axis to an absolute position in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps"},
 	{3, "setposition", Console::setPositionCommandCallback, "setposition <axis> <position> <type> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps\n\r\t<type> = CURRENT, TARGET, default is TARGET"}};
 
-void Console::Init(MotionController *aMotionController)
+void Console::Init(MotionController *aMotionController, Usb *aUsb)
 {
 	myMotionController = aMotionController;
 	printf("Initializing console" MICRORL_CFG_END_LINE);
@@ -62,7 +62,7 @@ void Console::Init(MotionController *aMotionController)
 
 #if CONSOLE_USES_USB
 
-	myUsb = new Usb(processChars);
+	myUsb = aUsb;
 #endif
 
 	//--------------------------------------------------------------------------------
@@ -120,45 +120,6 @@ void Console::registerCommands()
 		}
 	}
 }
-
-int Console::resetCmdCallback(struct microsh *msh, int argc, const char *const *argv)
-{
-	printf("Resetting system" MICRORL_CFG_END_LINE);
-	watchdog_reboot(0, SRAM_END, 0);
-	return microshEXEC_OK;
-}
-
-int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *argv)
-{
-	if (argc != 3)
-	{
-		auto cmd = microsh_cmd_find(msh, "speed");
-		printf("%s", cmd->desc);
-		printf(MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
-
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-	std::string a = argv[1];
-	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
-
-	AxisLabel axis = AxisLabelFromString(a);
-
-	uint32_t speed = std::stoi(argv[2]);
-
-	ConsoleCommandSetSpeed *command = new ConsoleCommandSetSpeed(axis, speed);
-	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
-	{
-		printf("Failed to send set speed command to queue" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
-
-	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-
-	return microshEXEC_OK;
-}
-
 void Console::consoleTask(void *aCommandQueueHandle)
 {
 	printf("Starting console task" MICRORL_CFG_END_LINE);
@@ -229,10 +190,105 @@ void Console::consoleTask(void *aCommandQueueHandle)
 			{
 				delete (command);
 			}
-			vTaskDelay(10 * portTICK_PERIOD_MS);
+			vTaskDelay(100 * portTICK_PERIOD_MS);
 		}
 	}
 }
+
+int Console::privPrintFn(microrl_t *mrl, const char *str)
+{
+
+#if CONSOLE_USES_UART
+	bool sent = false;
+	while (!sent)
+	{
+		if (uart_is_writable(UART_ID))
+		{
+			uart_puts(UART_ID, str);
+			sent = true;
+		}
+		else
+		{
+			tight_loop_contents();
+			vTaskDelay(10*portTICK_PERIOD_MS);
+		}
+	}
+#endif
+
+#if CONSOLE_USES_USB
+
+	myUsb->print(str, strlen(str));
+
+#endif
+	return microshEXEC_OK;
+}
+
+void Console::ProcessChars(const void *data, size_t len)
+{
+	microrl_processing_input(&mySh->mrl, data, len);
+}
+
+void Console::uartRxInterruptHandler()
+{
+	while (uart_is_readable(UART_ID))
+	{
+		uint8_t ch = uart_getc(UART_ID);
+		// Can we send it back?
+		if (SERIAL_ECHO)
+		{
+			if (uart_is_writable(UART_ID))
+			{
+				uart_putc(UART_ID, ch);
+			}
+		}
+
+		microrl_processing_input(&mySh->mrl, &ch, 1);
+		vTaskDelay(1);
+	}
+}
+
+/********** CALLBACKS ***********/
+
+
+int Console::resetCmdCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	printf("Resetting system" MICRORL_CFG_END_LINE);
+	watchdog_reboot(0, SRAM_END, 0);
+	return microshEXEC_OK;
+}
+
+int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	if (argc != 3)
+	{
+		auto cmd = microsh_cmd_find(msh, "speed");
+		printf("%s", cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	std::string a = argv[1];
+	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
+
+	AxisLabel axis = AxisLabelFromString(a);
+
+	uint32_t speed = std::stoi(argv[2]);
+
+	ConsoleCommandSetSpeed *command = new ConsoleCommandSetSpeed(axis, speed);
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send set speed command to queue" MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+	return microshEXEC_OK;
+}
+
+
 
 int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const char *const *argv)
 {
@@ -495,55 +551,6 @@ void Console::privSetAdvanceIncrementCommand(ConsoleCommandSetAdvanceIncrement &
 	printf("Status: OK, %s Increment: %d" MICRORL_CFG_END_LINE, al.c_str(), ai);
 }
 
-int Console::privPrintFn(microrl_t *mrl, const char *str)
-{
-
-#if CONSOLE_USES_UART
-	bool sent = false;
-	while (!sent)
-	{
-		if (uart_is_writable(UART_ID))
-		{
-			uart_puts(UART_ID, str);
-			sent = true;
-		}
-		else
-		{
-			tight_loop_contents();
-		}
-	}
-#endif
-
-#if CONSOLE_USES_USB
-
-	Usb::print(str, strlen(str));
-
-#endif
-	return microshEXEC_OK;
-}
-
-void Console::processChars(const void *data, size_t len)
-{
-	microrl_processing_input(&mySh->mrl, data, len);
-}
-
-void Console::uartRxInterruptHandler()
-{
-	while (uart_is_readable(UART_ID))
-	{
-		uint8_t ch = uart_getc(UART_ID);
-		// Can we send it back?
-		if (SERIAL_ECHO)
-		{
-			if (uart_is_writable(UART_ID))
-			{
-				uart_putc(UART_ID, ch);
-			}
-		}
-
-		microrl_processing_input(&mySh->mrl, &ch, 1);
-	}
-}
 
 void Console::privSetStopCommand(ConsoleCommandSetStop &aCommand)
 {

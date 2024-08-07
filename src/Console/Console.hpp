@@ -99,7 +99,7 @@ struct ConsoleCommandSetPosition : ConsoleCommand
 class Console
 {
 public:
-	static void Init(MotionController *aMotionController);
+	static void Init(MotionController *aMotionController, Usb* aUsb);
 
 	struct Commands
 	{
@@ -110,6 +110,8 @@ public:
 		microsh_cmd_fn cmdfn;
 		const char *desc;
 	};
+
+	static void ProcessChars(const void *data, size_t len);
 
 private:
 	static Usb *myUsb;
@@ -132,7 +134,6 @@ private:
 
 	static void consoleTask(void *pvParameters);
 	static void registerCommands();
-	static void processChars(const void *data, size_t len);
 
 	static void privStatusCommand(ConsoleCommandStatus &aCommand);
 	static void privModeCommand(ConsoleCommandMode &aCommand);

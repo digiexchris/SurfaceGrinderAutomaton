@@ -1,4 +1,5 @@
 #include "Enum.hpp"
+#include "pico/platform.h"
 #include "usb.hpp"
 #include <semphr.h>
 
@@ -53,10 +54,12 @@ public:
 	{
 		if (myInstance == nullptr)
 		{
-			myInstance = new WebSerial(Usb::GetInstance());
+			panic("WebSerial instance not created");
 		}
 		return myInstance;
 	}
+
+	static void ProcessChars(const void *data, size_t len);
 
 	bool IsConnected();
 
