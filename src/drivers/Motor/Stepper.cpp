@@ -59,7 +59,7 @@ void Stepper::SetDirection(bool direction)
 
 void Stepper::DirectionChangedWait()
 {
-	vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
+	vTaskDelay(MS_TO_TICKS(STEPPER_DIRECTION_CHANGE_DELAY_MS));
 }
 
 void Stepper::Update()
@@ -133,7 +133,7 @@ void Stepper::Update()
 			myMoveState = MoveState::ACCELERATING;
 			return;
 		}
-		vTaskDelay(100 * portTICK_PERIOD_MS);
+		vTaskDelay(MS_TO_TICKS(100));
 		break;
 	case MoveState::ACCELERATING:
 		if (newDirection != myDirection && myCurrentSpeed > 0)
@@ -277,7 +277,7 @@ void Stepper::privSetCurrentPosition(int32_t aPosition)
 
 StepperError Stepper::privQueueCommand(StepperCommand *aCommand)
 {
-	switch (xQueueSend(myCommandQueue, &aCommand, STEPPER_COMMAND_TIMEOUT * portTICK_PERIOD_MS))
+	switch (xQueueSend(myCommandQueue, &aCommand, MS_TO_TICKS(STEPPER_COMMAND_TIMEOUT)))
 	{
 	case pdPASS:
 		return StepperError::OK;
@@ -363,7 +363,7 @@ void Stepper::NotifyCallbackTask(void *pvParameters)
 	StepperNotifyMessage *message = nullptr;
 	TickType_t wake;
 	wake = xTaskGetTickCount();
-	
+
 	while (true)
 	{
 		if (xQueueReceive(myInstance->myNotifyCallbackQueue, &message, portMAX_DELAY) == pdTRUE)

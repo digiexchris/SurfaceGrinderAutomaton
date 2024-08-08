@@ -2,8 +2,8 @@
 
 #include "../Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
+#include "Usb/usb.hpp"
 #include "microsh.h"
-#include "usb.hpp"
 
 #define UART_ID uart0
 #define BAUD_RATE 115200
@@ -24,6 +24,7 @@ enum class ConsoleCommandName
 	MOVE_RELATIVE = 5,
 	MOVE_ABSOLUTE = 6,
 	SET_POSITION = 7,
+	STATS,
 	NONE = -1
 };
 
@@ -43,6 +44,11 @@ struct ConsoleCommand
 struct ConsoleCommandStatus : ConsoleCommand
 {
 	ConsoleCommandStatus() : ConsoleCommand(ConsoleCommandName::STATUS) {}
+};
+
+struct ConsoleCommandStats : ConsoleCommand
+{
+	ConsoleCommandStats() : ConsoleCommand(ConsoleCommandName::STATS) {}
 };
 
 struct ConsoleCommandMode : ConsoleCommand
@@ -99,7 +105,7 @@ struct ConsoleCommandSetPosition : ConsoleCommand
 class Console
 {
 public:
-	static void Init(MotionController *aMotionController, Usb* aUsb);
+	static void Init(MotionController *aMotionController, Usb *aUsb);
 
 	struct Commands
 	{
@@ -114,16 +120,18 @@ public:
 	static void ProcessChars(const void *data, size_t len);
 
 private:
-	static Usb *myUsb;
 	static Commands myCommands[];
 	static QueueHandle_t myCommandQueue;
 	static microsh_t *mySh;
 	static MotionController *myMotionController;
+	static Usb *myUsb;
 	static void uartRxInterruptHandler();
 	static int privPrintFn(microrl_t *mrl, const char *str);
 	static int statusCmdCallback(struct microsh *msh, int argc, const char *const *argv);
 	static int modeCmdCallback(struct microsh *msh, int argc, const char *const *argv);
 	static int setAdvanceIncrementCallback(struct microsh *msh, int argc, const char *const *argv);
+	static int statsCmdCallback(struct microsh *msh, int argc, const char *const *argv);
+	static void privPrintStats(ConsoleCommandStats &aCommand);
 	static int resetCmdCallback(struct microsh *msh, int argc, const char *const *argv);
 	static int setStopCallback(struct microsh *msh, int argc, const char *const *argv);
 	static int setSpeedCallback(struct microsh *msh, int argc, const char *const *argv);

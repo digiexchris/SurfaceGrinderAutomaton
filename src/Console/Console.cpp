@@ -2,8 +2,10 @@
 
 #include "Console.hpp"
 #include "Enum.hpp"
+#include "Helpers.hpp"
 #include "Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
+#include "TaskStats.hpp"
 #include "Usb/usb.hpp"
 #include "config.hpp"
 #include "drivers/Motor/Stepper.hpp"
@@ -15,7 +17,6 @@
 #include <pico/printf.h>
 #include <stdio.h>
 #include <string>
-
 
 microsh_t *Console::mySh = nullptr;
 MotionController *Console::myMotionController = nullptr;
@@ -32,7 +33,9 @@ Console::Commands Console::myCommands[] = {
 	{3, "speed", Console::setSpeedCallback, "speed <axis> <speed> - Sets the speed of the axis for use in auto mode \n\r \t<axis> = X, Z \n\r \t<speed> = 0 - 65535 steps per second"},
 	{3, "mover", Console::moveRelativeCommandCallback, "mover <axis> <distance> - Moves the axis a relative distance in steps \n\r \t<axis> = X, Z \n\r \t<distance> = int32 steps"},
 	{3, "moveto", Console::moveAbsoluteCommandCallback, "moveto <axis> <position> - Moves the axis to an absolute position in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps"},
-	{3, "setposition", Console::setPositionCommandCallback, "setposition <axis> <position> <type> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps\n\r\t<type> = CURRENT, TARGET, default is TARGET"}};
+	{3, "setposition", Console::setPositionCommandCallback, "setposition <axis> <position> <type> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps\n\r\t<type> = CURRENT, TARGET, default is TARGET"},
+	{1, "stats", Console::resetCmdCallback, "Displays task, stack, and heap statistics"},
+};
 
 void Console::Init(MotionController *aMotionController, Usb *aUsb)
 {
@@ -139,6 +142,12 @@ void Console::consoleTask(void *aCommandQueueHandle)
 					privStatusCommand(*statusCommand);
 					break;
 				}
+				case ConsoleCommandName::STATS:
+				{
+					ConsoleCommandStats *statsCommand = static_cast<ConsoleCommandStats *>(command);
+					privPrintStats(*statsCommand);
+					break;
+				}
 				case ConsoleCommandName::MODE:
 				{
 					ConsoleCommandMode *modeCommand = static_cast<ConsoleCommandMode *>(command);
@@ -190,7 +199,7 @@ void Console::consoleTask(void *aCommandQueueHandle)
 			{
 				delete (command);
 			}
-			vTaskDelay(100 * portTICK_PERIOD_MS);
+			vTaskDelay(MS_TO_TICKS(100));
 		}
 	}
 }
@@ -210,7 +219,7 @@ int Console::privPrintFn(microrl_t *mrl, const char *str)
 		else
 		{
 			tight_loop_contents();
-			vTaskDelay(10*portTICK_PERIOD_MS);
+			vTaskDelay(MS_TO_TICKS(10));
 		}
 	}
 #endif
@@ -249,12 +258,40 @@ void Console::uartRxInterruptHandler()
 
 /********** CALLBACKS ***********/
 
-
 int Console::resetCmdCallback(struct microsh *msh, int argc, const char *const *argv)
 {
 	printf("Resetting system" MICRORL_CFG_END_LINE);
 	watchdog_reboot(0, SRAM_END, 0);
 	return microshEXEC_OK;
+}
+
+int Console::statsCmdCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	ConsoleCommandStats *command = new ConsoleCommandStats();
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send stats command to queue" MICRORL_CFG_END_LINE);
+		delete (command); // Clean up if the command wasn't sent
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	return microshEXEC_OK;
+}
+
+void Console::privPrintStats(ConsoleCommandStats &aCommand)
+{
+
+	TaskStatsManager *taskStatsManager = TaskStatsManager::GetInstance();
+	auto taskStats = taskStatsManager->GetTaskAvgRuntime();
+	auto heapStats = taskStatsManager->GetHeapHighWaterMark();
+	auto stackStats = taskStatsManager->GetTasksStackHighWaterMark();
+
+	printf("Task Stats" MICRORL_CFG_END_LINE);
+	printf("%s" MICRORL_CFG_END_LINE, taskStats.c_str());
+	printf("%s" MICRORL_CFG_END_LINE, heapStats.c_str());
+	printf("%s" MICRORL_CFG_END_LINE, stackStats.c_str());
 }
 
 int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -287,8 +324,6 @@ int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *
 
 	return microshEXEC_OK;
 }
-
-
 
 int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const char *const *argv)
 {
@@ -550,7 +585,6 @@ void Console::privSetAdvanceIncrementCommand(ConsoleCommandSetAdvanceIncrement &
 	auto al = AxisLabelToString(aCommand.axis);
 	printf("Status: OK, %s Increment: %d" MICRORL_CFG_END_LINE, al.c_str(), ai);
 }
-
 
 void Console::privSetStopCommand(ConsoleCommandSetStop &aCommand)
 {

@@ -10,8 +10,6 @@
 #include <task.h>
 #include <tusb.h>
 
-#define URL "example.tinyusb.org/webusb-serial/index.html"
-
 class Usb
 {
 public:

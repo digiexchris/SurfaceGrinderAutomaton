@@ -1,11 +1,12 @@
 #include "MovementMode.hpp"
+#include "Helpers.hpp"
 #include <cstdio>
 
 void ZMoveBothEnds::Execute()
 {
 
 	/* wait for X axis to stop moving and tell Z to advance (manual mode to do the same)*/
-	BaseType_t res = xTaskNotifyWait(0, 0, NULL, 20 * portTICK_PERIOD_MS);
+	BaseType_t res = xTaskNotifyWait(0, 0, NULL, MS_TO_TICKS(20));
 	if (res == pdFALSE)
 	{
 		return;

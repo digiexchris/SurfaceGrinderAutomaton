@@ -4,10 +4,10 @@ This was taken almost entirely from the tinyusb webserial example.
 
 #include "usb.hpp"
 #include "bsp/board.h"
+#include "config.hpp"
 #include "usb_descriptors.h"
 #include <cstddef>
 #include <pico/stdio.h>
-#include "config.hpp"
 
 #define UART_TASK_PRIO (tskIDLE_PRIORITY + 3)
 #define TUD_TASK_PRIO (tskIDLE_PRIORITY + 2)
@@ -15,11 +15,13 @@ This was taken almost entirely from the tinyusb webserial example.
 
 Usb *Usb::myInstance = nullptr;
 
+const char URL[] = "example.tinyusb.org/webusb-serial/index.html";
+
 const tusb_desc_webusb_url_t Usb::desc_url = {
 	.bLength = 3 + sizeof(URL) - 1,
 	.bDescriptorType = 3, // WEBUSB URL type
 	.bScheme = 1,		  // 0: http, 1: https
-	.url = {URL}};
+	.url = {*URL}};
 
 Usb::Usb(ProcessBufFn processBufFn, ProcessBufFn webUsbProcessBufFn)
 {
@@ -53,6 +55,7 @@ void Usb::usb_thread(void *ptr)
 	Usb *usb = static_cast<Usb *>(ptr);
 	TickType_t wake;
 	wake = xTaskGetTickCount();
+	xTaskDelayUntil(&wake, 400);
 	do
 	{
 		tud_task();

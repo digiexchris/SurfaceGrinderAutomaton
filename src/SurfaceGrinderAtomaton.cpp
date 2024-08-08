@@ -12,50 +12,22 @@
 #include "Console/Console.hpp"
 #include <FreeRTOS.h>
 #include <cstdio>
+#include <sys/_stdint.h>
 #include <task.h>
+#include <unordered_map>
 
 #include "pico/printf.h"
 
-#include "Usb/usb.hpp"
 #include "Usb/WebSerial.hpp"
+#include "Usb/usb.hpp"
 #include "portmacro.h"
+#include <array>
 
 MotionController *mc;
 Axis *zAxis;
 Axis *xAxis;
 Usb *usb;
 WebSerial *webSerial;
-
-extern "C" void vTaskSwitchedIn(void);
-extern "C" void vTaskSwitchedOut(void);
-
-void vTaskSwitchedIn(void)
-{
-	// TaskHandle_t xTask;
-	// char *pcTaskName;
-
-	// xTask = xTaskGetCurrentTaskHandle();
-	// pcTaskName = pcTaskGetName(xTask);
-
-	// if (pcTaskName != nullptr && strcmp(pcTaskName, "Tmr Svc") != 0)
-	// {
-	// 	printf("Task Switched In: %s\n", pcTaskName);
-	// }
-}
-
-void vTaskSwitchedOut(void)
-{
-	// TaskHandle_t xTask;
-	// char *pcTaskName;
-
-	// xTask = xTaskGetCurrentTaskHandle();
-	// pcTaskName = pcTaskGetName(xTask);
-
-	// if (pcTaskName != nullptr && strcmp(pcTaskName, "Tmr Svc") != 0)
-	// {
-	// 	printf("Task Switched Out: %s\n", pcTaskName);
-	// }
-}
 
 // Forward declaration of the HardFault_Handler
 extern "C" void isr_hardfault(void);
@@ -65,14 +37,14 @@ extern "C" void PrintStackTrace(uint32_t *stackPointer);
 void PrintStackTrace(uint32_t *stackPointer)
 {
 	printf("Hard Fault detected!\n");
-	printf("R0  = %08lx\n", stackPointer[0]);
-	printf("R1  = %08lx\n", stackPointer[1]);
-	printf("R2  = %08lx\n", stackPointer[2]);
-	printf("R3  = %08lx\n", stackPointer[3]);
-	printf("R12 = %08lx\n", stackPointer[4]);
-	printf("LR  = %08lx\n", stackPointer[5]);
-	printf("PC  = %08lx\n", stackPointer[6]);
-	printf("PSR = %08lx\n", stackPointer[7]);
+	printf("R0  = %08x\n", stackPointer[0]);
+	printf("R1  = %08x\n", stackPointer[1]);
+	printf("R2  = %08x\n", stackPointer[2]);
+	printf("R3  = %08x\n", stackPointer[3]);
+	printf("R12 = %08x\n", stackPointer[4]);
+	printf("LR  = %08x\n", stackPointer[5]);
+	printf("PC  = %08x\n", stackPointer[6]);
+	printf("PSR = %08x\n", stackPointer[7]);
 
 	while (true)
 	{
@@ -93,28 +65,6 @@ extern "C" void isr_hardfault(void)
 		"_MSP: \n"
 		"MRS R0, MSP \n"
 		"B PrintStackTrace \n");
-}
-
-void StackHeapDebugTask(void *pvParameters)
-{
-	while (true)
-	{
-		vTaskDelay(10000* portTICK_PERIOD_MS);
-		PrintHeapHighWaterMark();
-		PrintStackHighWaterMark(xTaskGetCurrentTaskHandle());
-	}
-}
-
-void RuntimeStatsDebugTask(void *pvParameters)
-{
-	char buffer[512];
-	while (true)
-	{
-		
-		vTaskDelay(10000* portTICK_PERIOD_MS);
-		vTaskGetRunTimeStats(buffer);
-        printf("Runtime Stats:\n%s\n", buffer);
-	}
 }
 
 int main()
@@ -139,18 +89,9 @@ int main()
 
 	// printf("MotionController created\n");
 
-	Console::Init(mc);
-
 	usb = new Usb(Console::ProcessChars);
 	webSerial = new WebSerial(usb);
-
-#if DEBUG_HEAP_STACK
-	xTaskCreate(StackHeapDebugTask, "StackHeapDebugTask", 1024, nullptr, 1, nullptr);
-#endif
-
-#if DEBUG_RUNTIME_STATS
-	xTaskCreate(RuntimeStatsDebugTask, "RuntimeStatsDebugTask", 1024, nullptr, 1, nullptr);
-#endif
+	Console::Init(mc, usb);
 
 	printf("Boot Complete\n");
 

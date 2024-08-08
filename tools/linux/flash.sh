@@ -6,7 +6,7 @@ if lsusb | grep -q "Raspberry Pi Debugprobe on Pico"; then
     echo ""
     echo "Flashing $1"
     echo ""
-    sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 1000" -c "program $1 verify reset exit"
+    sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program $1 verify reset exit"
 else
     if lsusb | grep -q "Black Magic Debug"; then
         echo "Blackmagic Probe found"
@@ -18,7 +18,7 @@ else
         echo ""
         echo "Flashing $1"
         echo ""
-        sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 1000" -c "program $1 verify reset exit"
+        sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program $1 verify reset exit"
         exit 0
     fi
 fi

@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Cortex Debug",
+      "name": "Pi Pico (Native)",
       "cwd": "${workspaceRoot}",
       "executable": "${command:cmake.launchTargetPath}",
       "request": "launch",
@@ -20,7 +20,7 @@
         "-s",
         "${env:PICO_SDK_PATH}/../openocd/tcl",
         "-c",
-        "adapter speed 1000",
+        "adapter speed 2500",
       ],
       "device": "RP2040",
       "configFiles": [
@@ -29,9 +29,38 @@
       ],
       "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
       //"runToEntryPoint": "main",
-      // Give restart the same functionality as runToEntryPoint - main
       "postRestartCommands": [
-        //"break main",
+        "continue"
+      ]
+    },
+    {
+      "name": "Pi Pico (DevContainer)",
+      "cwd": "${workspaceRoot}",
+      "executable": "${command:cmake.launchTargetPath}",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "openocd",
+      "gdbPath": "/workspaces/gcc-arm-none/bin/arm-none-eabi-gdb",
+      "liveWatch": {
+        "enabled": true,
+        "samplesPerSecond": 4
+      },
+      "toolchainPrefix": "arm-none-eabi",
+      "serverArgs": [
+        "-s",
+        "${env:PICO_SDK_PATH}/../openocd/tcl",
+        "-c",
+        "adapter speed 2500",
+      ],
+      "device": "RP2040",
+      "configFiles": [
+        "interface/cmsis-dap.cfg",
+        "target/rp2040.cfg"
+      ],
+      "showDevDebugOutput": "raw",
+      "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
+      //"runToEntryPoint": "main",
+      "postRestartCommands": [
         "continue"
       ]
     },

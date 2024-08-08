@@ -1,11 +1,12 @@
 #include "WebSerial.hpp"
 #include "CRC.hpp"
 #include "Enum.hpp"
+#include "Helpers.hpp"
 #include "Proto.hpp"
+#include "config.hpp"
 #include <cstdint>
 #include <semphr.h>
 #include <unordered_map>
-#include "config.hpp"
 
 WebSerial *WebSerial::myInstance = nullptr;
 
@@ -70,7 +71,7 @@ void WebSerial::WritePendingUpdates(void *param)
 
 			xSemaphoreGive(myInstance->myOutputQueueMutex);
 
-			vTaskDelayUntil(&wait, 100 * portTICK_PERIOD_MS);
+			vTaskDelayUntil(&wait, MS_TO_TICKS(100));
 		}
 	}
 }
