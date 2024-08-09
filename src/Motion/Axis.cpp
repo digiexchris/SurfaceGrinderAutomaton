@@ -1,7 +1,7 @@
 #include "Motion/Axis.hpp"
 #include "Enum.hpp"
 #include "Helpers.hpp"
-#include "Usb/WebSerial.hpp"
+// #include "Usb/WebSerial.hpp"
 #include "portmacro.h"
 #include <cmath>
 #include <pico/printf.h>
@@ -122,18 +122,20 @@ void Axis::MoveThread(void *pvParameters)
 
 void Axis::ProcessStepperNotification(StepperNotifyMessage *aMessage)
 {
-	WebSerialAxisUpdate message(myAxisLabel, AxisParameter::CURRENT_POSITION, aMessage->currentPosition);
-	WebSerial::GetInstance()->QueueUpdate(message);
+	// todo: send to UI these updates instead of webserial
 
-	message.param = AxisParameter::CURRENT_SPEED;
-	message.value = aMessage->currentSpeed;
-	WebSerial::GetInstance()->QueueUpdate(message);
+	// WebSerialAxisUpdate message(myAxisLabel, AxisParameter::CURRENT_POSITION, aMessage->currentPosition);
+	// WebSerial::GetInstance()->QueueUpdate(message);
 
-	message.param = AxisParameter::TARGET_POSITION;
-	message.value = aMessage->targetPosition;
-	WebSerial::GetInstance()->QueueUpdate(message);
+	// message.param = AxisParameter::CURRENT_SPEED;
+	// message.value = aMessage->currentSpeed;
+	// WebSerial::GetInstance()->QueueUpdate(message);
 
-	message.param = AxisParameter::TARGET_SPEED;
-	message.value = aMessage->targetSpeed;
-	WebSerial::GetInstance()->QueueUpdate(message);
+	// message.param = AxisParameter::TARGET_POSITION;
+	// message.value = aMessage->targetPosition;
+	// WebSerial::GetInstance()->QueueUpdate(message);
+
+	// message.param = AxisParameter::TARGET_SPEED;
+	// message.value = aMessage->targetSpeed;
+	// WebSerial::GetInstance()->QueueUpdate(message);
 }

@@ -49,7 +49,7 @@
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],
     // Use 'postCreateCommand' to run commands after the container is created.
-    "postCreateCommand": "cd /workspaces/Surface-Grinder-Atomaton/pico/pico-sdk && git submodule update --init",
+    "postCreateCommand": "cd /workspaces/Surface-Grinder-Atomaton/pico/pico-sdk && git submodule update --init && cp /workspaces/Surface-Grinder-Atomaton/tools/linux/picotool /usr/local/bin/",
     // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
     "remoteUser": "vscode"
 }

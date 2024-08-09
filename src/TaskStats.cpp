@@ -13,22 +13,11 @@ TaskStats::TaskStats(TaskHandle_t taskHandle, const char *taskName)
 void TaskStats::MarkSwitchedIn()
 {
 	mySwitchedInTime[myIndex] = time_us_64();
-
-	if (myIndex >= mySwitchedInTime.size())
-	{
-		myIndex = 0;
-	}
 }
 
 void TaskStats::MarkSwitchedOut()
 {
 	mySwitchedOutTime[myIndex] = time_us_64();
-
-	if (myIndex >= mySwitchedOutTime.size())
-	{
-		myIndex = 0;
-	}
-
 	myIndex++;
 
 	if (myIndex >= mySwitchedInTime.size())
@@ -40,7 +29,8 @@ void TaskStats::MarkSwitchedOut()
 		{
 			totalRunTime += (mySwitchedOutTime[i] - mySwitchedInTime[i]);
 		}
-		myAverageRunTime = totalRunTime / mySwitchedInTime.size();
+		float runtime = static_cast<float>(totalRunTime) / mySwitchedInTime.size();
+		myAverageRunTime = static_cast<uint32_t>(runtime);
 	}
 }
 
@@ -66,6 +56,7 @@ void TaskStatsManager::MarkTaskSwitchedIn(TaskHandle_t taskHandle)
 	if (taskStatIterator == myTaskStatsMap.end())
 	{
 		myTaskStatsMap.emplace(taskHandle, TaskStats(taskHandle, pcTaskGetName(taskHandle)));
+		MarkTaskSwitchedIn(taskHandle);
 	}
 	else
 	{
@@ -122,7 +113,7 @@ std::string TaskStatsManager::GetTasksStackHighWaterMark()
 
 /******* the functions defined in FreeRTOS_config.h *******/
 
-void vTaskSwitchedIn(void)
+void TaskStatsTaskSwitchedIn(void)
 {
 	TaskHandle_t xTask;
 	char *pcTaskName;
@@ -136,7 +127,7 @@ void vTaskSwitchedIn(void)
 	}
 }
 
-void vTaskSwitchedOut(void)
+void TaskStatsTaskSwitchedOut(void)
 {
 	TaskHandle_t xTask;
 	char *pcTaskName;

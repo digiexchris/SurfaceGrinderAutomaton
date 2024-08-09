@@ -10,10 +10,12 @@
 #include <task.h>
 #include <tusb.h>
 
+#define USB_CONNECTED_LED PICO_DEFAULT_LED_PIN
+
 class Usb
 {
 public:
-	typedef void (*ProcessBufFn)(const void *data, size_t len);
+	typedef void (*ProcessBufFn)(const char *data, size_t len);
 
 	enum class Blink
 	{
@@ -23,11 +25,13 @@ public:
 		BLINK_ALWAYS_ON = INT32_MAX,
 		BLINK_ALWAYS_OFF = 0
 	};
-	Usb(ProcessBufFn processBufFn = nullptr, ProcessBufFn webUsbProcessBufFn = nullptr);
+
+	Usb();
 
 	static void print(const char *buf, int len);
-	void WriteWebSerial(void *msg, size_t len);
-	bool IsWebSerialConnected() { return web_serial_connected; }
+	// void WriteWebSerial(void *msg, size_t len);
+	// bool IsWebSerialConnected() { return web_serial_connected; }
+	void Start(ProcessBufFn aProcessBufFn);
 
 	static Usb *GetInstance()
 	{
@@ -37,7 +41,7 @@ public:
 		}
 		return myInstance;
 	}
-	bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request);
+	// bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request);
 	void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts);
 	void tud_cdc_rx_cb(uint8_t itf);
 	void tud_mount_cb(void);
@@ -49,7 +53,7 @@ private:
 	ProcessBufFn myProcessBufFn = nullptr;
 	ProcessBufFn myWebUsbProcessBufFn = nullptr;
 
-	void webserial_task(void);
+	// void webserial_task(void);
 	void cdc_task(void);
 
 	static void usb_thread(void *ptr);
@@ -57,7 +61,7 @@ private:
 
 	uint32_t blink_interval_ms = (uint32_t)Blink::BLINK_NOT_MOUNTED;
 	static const tusb_desc_webusb_url_t desc_url;
-	bool web_serial_connected = false;
+	// bool web_serial_connected = false;
 	TaskHandle_t tud_taskhandle;
 
 	stdio_driver_t __stdout_usb = {

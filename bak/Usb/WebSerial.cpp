@@ -15,7 +15,10 @@ WebSerial::WebSerial(Usb *aUsb)
 	myUsb = aUsb;
 	myInstance = this;
 	myOutputQueueMutex = xSemaphoreCreateMutex();
+}
 
+void WebSerial::Start()
+{
 	BaseType_t status = xTaskCreate(WebSerial::WritePendingUpdates, "WebSerial::WritePendingUpdates", 1 * 2048, NULL, USB_SERIAL_UPDATE_PRIORITY, NULL);
 	configASSERT(status == pdPASS);
 }
@@ -40,7 +43,7 @@ void WebSerial::QueueUpdate(WebSerialUpdate &anUpdate)
 
 bool WebSerial::IsConnected()
 {
-	return myUsb->IsWebSerialConnected();
+	return false; // myUsb->IsWebSerialConnected();
 }
 
 void WebSerial::WritePendingUpdates(void *param)
@@ -64,7 +67,7 @@ void WebSerial::WritePendingUpdates(void *param)
 
 				const std::vector<uint8_t> buffer = myInstance->privConstructMessage(key, value);
 
-				myInstance->myUsb->WriteWebSerial((void *)buffer.data(), buffer.size());
+				myInstance->myUsb->print((char *)buffer.data(), buffer.size());
 			}
 
 			myInstance->myOutputQueue.clear();
@@ -153,4 +156,16 @@ std::vector<uint8_t> WebSerial::privConstructMessage(
 Message WebSerialAxisUpdate::ToMessage()
 {
 	return AxisMessage(axis, param, value);
+}
+
+void WebSerial::ProcessChars(const char *data, size_t len)
+{
+	printf("WebSerial::ProcessChars\n");
+	printf("len: %d\n", len);
+	const uint8_t *buf = (const uint8_t *)data;
+	for (size_t i = 0; i < len; i++)
+	{
+		printf("%02x ", buf[i]);
+	}
+	printf("\n");
 }

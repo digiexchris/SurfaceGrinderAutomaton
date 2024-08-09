@@ -34,6 +34,32 @@
 
 // #define TOUCH_CS 33
 
+/******** Internal use only, only change if you have a good reason ************/
+
+#define DEBUG_HEAP_STACK 1
+#define DEBUG_RUNTIME_STATS 1
+
+#define DEBUG_CONSOLE 1
+#ifdef DEBUG_CONSOLE
+#define CONSOLE_USES_UART 0
+#define CONSOLE_USES_PICO_USB_UART 1
+#endif
+
+#define PRINTF_AXIS_POSITIONS 0
+#define PRINTF_AXIS_DEBUG 0
+#define PRINTF_MOTION_DEBUG 0
+#define PRINTF_STEPPER_DEBUG 0
+
+#define ENABLE_DISPLAY 1 // maybe unused
+
+#define MAX_PRIORITY configMAX_PRIORITIES - 1
+
+#define STEPPER_TASK_PRIORITY MAX_PRIORITY
+
+#define SM_MOTION_PRIORITY MAX_PRIORITY - 1
+#define USB_SERIAL_UPDATE_PRIORITY -2
+#define UI_UPDATE_PRIORITY MAX_PRIORITY - 3
+
 inline void PrintHeapHighWaterMark()
 {
 #if DEBUG_HEAP_STACK
@@ -55,29 +81,3 @@ inline void PrintStackHighWaterMark(TaskHandle_t taskHandle)
 	printf("Minimum ever free stack size: %u wor7ds\n", (unsigned int)stackHighWaterMark);
 #endif
 }
-
-/******** Internal use only, only change if you have a good reason ************/
-
-#define DEBUG_HEAP_STACK 1
-#define DEBUG_RUNTIME_STATS 1
-
-#define DEBUG_CONSOLE 1
-#ifdef DEBUG_CONSOLE
-#define CONSOLE_USES_UART 0
-#define CONSOLE_USES_USB 1
-#endif
-
-#define PRINTF_AXIS_POSITIONS 1
-#define PRINTF_AXIS_DEBUG 0
-#define PRINTF_MOTION_DEBUG 0
-#define PRINTF_STEPPER_DEBUG 0
-
-#define ENABLE_DISPLAY 1 // maybe unused
-
-#define MAX_PRIORITY configMAX_PRIORITIES - 1
-
-#define STEPPER_TASK_PRIORITY MAX_PRIORITY
-
-#define SM_MOTION_PRIORITY MAX_PRIORITY - 1
-#define USB_SERIAL_UPDATE_PRIORITY -2
-#define UI_UPDATE_PRIORITY MAX_PRIORITY - 3

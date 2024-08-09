@@ -41,7 +41,7 @@ target_compile_definitions (SurfaceGrinderAtomaton PRIVATE
 	PICO_RP2040_USB_DEVICE_ENUMERATION_FIX=1
 )
 
-target_compile_definitions(SurfaceGrinderAtomaton PUBLIC CFG_TUSB_CONFIG_FILE="Usb/tusb_config.h")
+# target_compile_definitions(SurfaceGrinderAtomaton PUBLIC CFG_TUSB_CONFIG_FILE="Usb/tusb_config.h")
 
 add_compile_options(
     ### Gnu/Clang C Options
@@ -92,12 +92,11 @@ target_include_directories(SurfaceGrinderAtomaton PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs tinyusb_device
-tinyusb_board FreeRTOS-Kernel FreeRTOS-Kernel-Heap4)
+target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs pico_stdio_usb  FreeRTOS-Kernel FreeRTOS-Kernel-Heap4)
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
 add_dependencies(SurfaceGrinderAtomaton copy_compile_commands)
 
 # Use USB uart
-# pico_enable_stdio_usb(SurfaceGrinderAtomaton 0)
-# pico_enable_stdio_uart(SurfaceGrinderAtomaton 1)
+pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
+# pico_enable_stdio_uart(SurfaceGrinderAtomaton 0)

@@ -6,7 +6,7 @@
 #include "Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
 #include "TaskStats.hpp"
-#include "Usb/usb.hpp"
+// #include "Usb/usb.hpp"
 #include "config.hpp"
 #include "drivers/Motor/Stepper.hpp"
 #include "microsh.h"
@@ -15,13 +15,13 @@
 #include <hardware/watchdog.h>
 #include <malloc.h>
 #include <pico/printf.h>
+#include <pico/stdio_usb.h>
 #include <stdio.h>
 #include <string>
 
 microsh_t *Console::mySh = nullptr;
 MotionController *Console::myMotionController = nullptr;
 QueueHandle_t Console::myCommandQueue;
-Usb *Console::myUsb = nullptr;
 
 Console::Commands Console::myCommands[] = {
 	{1, "h", Console::helpCmdCallback, "Help"},
@@ -34,10 +34,10 @@ Console::Commands Console::myCommands[] = {
 	{3, "mover", Console::moveRelativeCommandCallback, "mover <axis> <distance> - Moves the axis a relative distance in steps \n\r \t<axis> = X, Z \n\r \t<distance> = int32 steps"},
 	{3, "moveto", Console::moveAbsoluteCommandCallback, "moveto <axis> <position> - Moves the axis to an absolute position in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps"},
 	{3, "setposition", Console::setPositionCommandCallback, "setposition <axis> <position> <type> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps\n\r\t<type> = CURRENT, TARGET, default is TARGET"},
-	{1, "stats", Console::resetCmdCallback, "Displays task, stack, and heap statistics"},
+	{1, "stats", Console::statsCmdCallback, "Displays task, stack, and heap statistics"},
 };
 
-void Console::Init(MotionController *aMotionController, Usb *aUsb)
+void Console::Init(MotionController *aMotionController)
 {
 	myMotionController = aMotionController;
 	printf("Initializing console" MICRORL_CFG_END_LINE);
@@ -63,11 +63,12 @@ void Console::Init(MotionController *aMotionController, Usb *aUsb)
 	printf("UART initialized" MICRORL_CFG_END_LINE);
 #endif
 
-#if CONSOLE_USES_USB
+#if CONSOLE_USES_PICO_USB_UART
 
-	myUsb = aUsb;
+	stdio_usb_init();
+
+	xTaskCreate(GetFromDefaultUartTask, "GetFromDefaultUartTask", 1024, NULL, 1, NULL);
 #endif
-
 	//--------------------------------------------------------------------------------
 
 	registerCommands();
@@ -123,6 +124,21 @@ void Console::registerCommands()
 		}
 	}
 }
+
+void Console::GetFromDefaultUartTask(void *pvParameters)
+{
+	while (true)
+	{
+		int receivedChar = getchar();
+		if (receivedChar != PICO_ERROR_TIMEOUT)
+		{
+			ProcessChars(&receivedChar, 1);
+		}
+
+		vTaskDelay(MS_TO_TICKS(10));
+	}
+}
+
 void Console::consoleTask(void *aCommandQueueHandle)
 {
 	printf("Starting console task" MICRORL_CFG_END_LINE);
@@ -224,11 +240,10 @@ int Console::privPrintFn(microrl_t *mrl, const char *str)
 	}
 #endif
 
-#if CONSOLE_USES_USB
-
-	myUsb->print(str, strlen(str));
-
+#if CONSOLE_USES_PICO_USB_UART
+	printf("%s", str);
 #endif
+
 	return microshEXEC_OK;
 }
 

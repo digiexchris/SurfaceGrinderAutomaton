@@ -59,9 +59,11 @@ public:
 		return myInstance;
 	}
 
-	static void ProcessChars(const void *data, size_t len);
+	static void ProcessChars(const char *data, size_t len);
 
 	bool IsConnected();
+
+	void Start();
 
 private:
 	Usb *myUsb;

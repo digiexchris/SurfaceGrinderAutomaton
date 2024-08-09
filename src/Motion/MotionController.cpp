@@ -4,7 +4,6 @@
 #include "Motion/SM.hpp"
 #include "Motion/XAxis/SM.hpp"
 #include "Motion/ZAxis/SM.hpp"
-#include "Usb/WebSerial.hpp"
 #include "config.hpp"
 #include "drivers/Motor/Stepper.hpp"
 #include "portmacro.h"

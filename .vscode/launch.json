@@ -106,10 +106,10 @@
       "servertype": "bmp",
       "request": "launch",
       "cwd": "${workspaceRoot}",
-      "showDevDebugOutput": "raw",
-      "preLaunchCommands": [
-        "monitor freq 900k"
-      ],
+      "showDevDebugOutput": "none",
+      // "preLaunchCommands": [
+      //   "monitor freq 900k"
+      // ],
       "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
       "armToolchainPath": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin",
       "executable": "${command:cmake.launchTargetPath}", // replace with your executable
@@ -117,8 +117,44 @@
       "interface": "swd",
       "device": "RP2040",
       "BMPGDBSerialPort": "/dev/ttyACM0", // Use whatever serial port makes sense for your OS and BMP setup
-      //"runToEntryPoint": "main" // runToMain is deprecated.
-      "loadFiles": []
+      //"runToEntryPoint": "main", // runToMain is deprecated.
+      "loadFiles": [],
+      // "postLaunchCommands": [
+      //   "monitor reset",
+      //   "monitor halt",
+      // ],
+      "postRestartCommands": [
+        "break main",
+        "continue"
+      ]
+    },
+    {
+      "name": "BMP Debug (Devcontainer)",
+      "type": "cortex-debug",
+      "servertype": "bmp",
+      "request": "launch",
+      "cwd": "${workspaceRoot}",
+      "showDevDebugOutput": "parsed",
+      // "preLaunchCommands": [
+      //   "monitor freq 900k"
+      // ],
+      "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
+      "armToolchainPath": "/workspaces/gcc-arm-none/bin",
+      "executable": "${command:cmake.launchTargetPath}", // replace with your executable
+      // "preLaunchTask": "Build STM", // using stm32-for-vscode extension, this is the build task
+      "interface": "swd",
+      "device": "RP2040",
+      "BMPGDBSerialPort": "/dev/ttyACM0", // Use whatever serial port makes sense for your OS and BMP setup
+      //"runToEntryPoint": "main", // runToMain is deprecated.
+      "loadFiles": [],
+      // "postLaunchCommands": [
+      //   "monitor reset",
+      //   "monitor halt",
+      // ],
+      // "postRestartCommands": [
+      //   "break main",
+      //   "continue"
+      // ]
     }
   ]
 }

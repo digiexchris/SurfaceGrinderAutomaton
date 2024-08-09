@@ -2,7 +2,7 @@
 
 #include "../Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
-#include "Usb/usb.hpp"
+// #include "Usb/usb.hpp"
 #include "microsh.h"
 
 #define UART_ID uart0
@@ -105,7 +105,7 @@ struct ConsoleCommandSetPosition : ConsoleCommand
 class Console
 {
 public:
-	static void Init(MotionController *aMotionController, Usb *aUsb);
+	static void Init(MotionController *aMotionController);
 
 	struct Commands
 	{
@@ -118,13 +118,14 @@ public:
 	};
 
 	static void ProcessChars(const void *data, size_t len);
+	static void GetFromDefaultUartTask(void *pvParameters);
 
 private:
 	static Commands myCommands[];
 	static QueueHandle_t myCommandQueue;
 	static microsh_t *mySh;
 	static MotionController *myMotionController;
-	static Usb *myUsb;
+	// static Usb *myUsb;
 	static void uartRxInterruptHandler();
 	static int privPrintFn(microrl_t *mrl, const char *str);
 	static int statusCmdCallback(struct microsh *msh, int argc, const char *const *argv);

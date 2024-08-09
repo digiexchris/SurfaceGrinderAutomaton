@@ -16,10 +16,12 @@
 #include <task.h>
 #include <unordered_map>
 
-#include "pico/printf.h"
+#include <pico/printf.h>
 
-#include "Usb/WebSerial.hpp"
-#include "Usb/usb.hpp"
+#include <hardware/clocks.h>
+
+// #include "Usb/WebSerial.hpp"
+// #include "Usb/usb.hpp"
 #include "portmacro.h"
 #include <array>
 
@@ -30,8 +32,8 @@
 MotionController *mc;
 Axis *zAxis;
 Axis *xAxis;
-Usb *usb;
-WebSerial *webSerial;
+// Usb *usb;
+// WebSerial *webSerial;
 
 // Forward declaration of the HardFault_Handler
 extern "C" void isr_hardfault(void);
@@ -101,7 +103,7 @@ int main()
 
 	zAxis = new Axis(AxisLabel::Z, ZAXIS_STEP_PIN, ZAXIS_DIR_PIN, ZAXIS_MAX_SPEED, ZAXIS_ACCELERATION, pio, 0);
 
-	// up/down stepper, not implemented Stepper yStepper(YAXIS_STEP_PIN, YAXIS_DIR_PIN, YAXIS_MAX_SPEED, YAXIS_ACCELERATION, pio, 1);
+	// up/down stepper, not implemented Stepper yet Stepper(YAXIS_STEP_PIN, YAXIS_DIR_PIN, YAXIS_MAX_SPEED, YAXIS_ACCELERATION, pio, 1);
 
 	xAxis = new Axis(AxisLabel::X, XAXIS_STEP_PIN, XAXIS_DIR_PIN, XAXIS_MAX_SPEED, XAXIS_ACCELERATION, pio, 2);
 
@@ -110,24 +112,16 @@ int main()
 
 	mc = new MotionController(zAxis, xAxis, nullptr);
 
-	// printf("MotionController created\n");
-
-	usb = new Usb(Console::ProcessChars);
-	webSerial = new WebSerial(usb);
-	Console::Init(mc, usb);
+	Console::Init(mc);
 
 	printf("Boot Complete\n");
 
-	gpio_init(PICO_DEFAULT_LED_PIN);
-	gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
-	gpio_put(PICO_DEFAULT_LED_PIN, 1);
+	xTaskCreate(BlinkTask, "BlinkTask", 1024, NULL, 1, NULL);
 
 	vTaskStartScheduler();
 	// It'll never get past here, vTaskStartScheduler() never returns
 
 	printf("If you see this, there is probably insufficient heap memory\n");
-
-	// Console::Init(nullptr);
 
 	while (true)
 	{

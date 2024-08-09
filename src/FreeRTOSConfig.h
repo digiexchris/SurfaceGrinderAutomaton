@@ -28,6 +28,8 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
+// #include <hardware/timer.h>
+
 /*#pragma GCC diagnostic ignored "-Wmissing-parameter-type"
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"*/
 
@@ -48,7 +50,7 @@
 #define configUSE_TICKLESS_IDLE 0
 #define configUSE_IDLE_HOOK 0
 #define configUSE_TICK_HOOK 0
-#define configTICK_RATE_HZ ((TickType_t)10000) //((TickType_t)1000)
+#define configTICK_RATE_HZ ((TickType_t)1000) //((TickType_t)1000)
 #define configMAX_PRIORITIES 32
 #define configMINIMAL_STACK_SIZE (configSTACK_DEPTH_TYPE)1024
 #define configUSE_16_BIT_TICKS 0
@@ -84,7 +86,7 @@
 #define configUSE_DAEMON_TASK_STARTUP_HOOK 0
 
 /* Run time and task stats gathering related definitions. */
-#define configGENERATE_RUN_TIME_STATS 1
+#define configGENERATE_RUN_TIME_STATS 0
 #define configUSE_TRACE_FACILITY 1
 #define configUSE_STATS_FORMATTING_FUNCTIONS 1
 
@@ -110,11 +112,11 @@
 #define configTICK_CORE 1
 #define configRUN_MULTIPLE_PRIORITIES 1
 
-extern void vTaskSwitchedIn(void);
-extern void vTaskSwitchedOut(void);
+extern void TaskStatsTaskSwitchedIn(void);
+extern void TaskStatsTaskSwitchedOut(void);
 
-#define traceTASK_SWITCHED_IN() vTaskSwitchedIn()
-#define traceTASK_SWITCHED_OUT() vTaskSwitchedOut()
+#define traceTASK_SWITCHED_IN() TaskStatsTaskSwitchedIn()
+#define traceTASK_SWITCHED_OUT() TaskStatsTaskSwitchedOut()
 
 /* RP2040 specific */
 #define configSUPPORT_PICO_SYNC_INTEROP 1
@@ -145,9 +147,9 @@ to exclude the API function. */
 
 /* A header file that defines trace macro can be included here. */
 
-#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-extern uint64_t time_us_64(void);														  // "hardware/timer.h"
-#define RUN_TIME_STAT_time_us_64Divider 1000											  // stat granularity is mS
-#define portGET_RUN_TIME_COUNTER_VALUE() (time_us_64() / RUN_TIME_STAT_time_us_64Divider) // runtime counter in mS
+// #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
+// extern uint64_t time_us_64(void);														  // "hardware/timer.h"
+// #define RUN_TIME_STAT_time_us_64Divider 1000											  // stat granularity is mS
+// #define portGET_RUN_TIME_COUNTER_VALUE() (time_us_64() / RUN_TIME_STAT_time_us_64Divider) // runtime counter in mS
 
 #endif /* FREERTOS_CONFIG_H */
