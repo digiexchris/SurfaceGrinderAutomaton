@@ -24,6 +24,9 @@ RUN tar xf $TOOLCHAINARCHIVE
 RUN mv $TOOLCHAINDIR gcc-arm-none && \
     rm $TOOLCHAINARCHIVE
 ENV PATH=$PATH:/workspaces/gcc-arm-none/bin
+
+RUN ln -s /lib/x86_64-linux-gnu/libncursesw.so.6 /lib/x86_64-linux-gnu/libncursesw.so.5 && \
+    ln -s /lib/x86_64-linux-gnu/libtinfo.so.6 /lib/x86_64-linux-gnu/libtinfo.so.5
 # RUN mkdir -p /workspaces/pico
 # WORKDIR /workspaces/pico
 # RUN git clone -b master https://github.com/raspberrypi/pico-sdk.git --depth=1 && git -C pico-sdk submodule update --init

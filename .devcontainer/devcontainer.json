@@ -13,7 +13,8 @@
         "--security-opt",
         "seccomp=unconfined",
         "--privileged",
-        "-v", "/dev/bus/usb:/dev/bus/usb",
+        "-v",
+        "/dev/bus/usb:/dev/bus/usb",
         "--device=/dev/bus/usb",
         // "--device=/dev/ttyACM0"
     ],
@@ -24,7 +25,8 @@
                     "bash": {
                         "path": "/usr/bin/bash"
                     }
-                }
+                },
+                "cortex-debug.armToolchainPath.linux": "/workspaces/gcc-arm-none/bin"
             },
             "extensions": [
                 "ms-vscode.cpptools",

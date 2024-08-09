@@ -31,7 +31,8 @@
       //"runToEntryPoint": "main",
       "postRestartCommands": [
         "continue"
-      ]
+      ],
+      "loadFiles": []
     },
     {
       "name": "Pi Pico (DevContainer)",
@@ -45,13 +46,34 @@
         "enabled": true,
         "samplesPerSecond": 4
       },
+      "searchDir": [
+        "/usr/local/share/openocd/scripts"
+      ],
+      "debuggerArgs": [
+        "set remotetimeout"
+      ],
       "toolchainPrefix": "arm-none-eabi",
       "serverArgs": [
-        "-s",
-        "${env:PICO_SDK_PATH}/../openocd/tcl",
+        // "-s",
+        // "${env:PICO_SDK_PATH}/../openocd/tcl",
         "-c",
-        "adapter speed 2500",
+        "adapter speed 5000",
       ],
+      "postLaunchCommands": [
+        "monitor arm semihosting enable",
+      ],
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+          {
+            "label": "",
+            "port": 0,
+            "type": "console"
+          }
+        ]
+      },
+      "rtos": "FreeRTOS",
       "device": "RP2040",
       "configFiles": [
         "interface/cmsis-dap.cfg",
@@ -62,7 +84,8 @@
       //"runToEntryPoint": "main",
       "postRestartCommands": [
         "continue"
-      ]
+      ],
+      "loadFiles": []
     },
     {
       "name": "BMP Attach",
@@ -70,11 +93,12 @@
       "servertype": "bmp",
       "request": "attach",
       "cwd": "${workspaceRoot}",
-      "executable": "${workspaceRoot}/build/src/SurfaceGrinderAtomaton.elf", // replace with your executable
+      "executable": "${command:cmake.launchTargetPath}", // replace with your executable
       "interface": "swd",
       "device": "RP2040",
       "BMPGDBSerialPort": "/dev/ttyACM0", // Use whatever serial port makes sense for your OS and BMP setup
       "runToEntryPoint": "main",
+      "showDevDebugOutput": "raw"
     },
     {
       "name": "BMP Debug",
@@ -83,12 +107,12 @@
       "request": "launch",
       "cwd": "${workspaceRoot}",
       "showDevDebugOutput": "raw",
-      // "preLaunchCommands": [
-      //     "monitor freq 900k"
-      // ],
+      "preLaunchCommands": [
+        "monitor freq 900k"
+      ],
       "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
       "armToolchainPath": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin",
-      "executable": "${workspaceRoot}/build/tests/SurfaceGrinderAtomaton_tests.elf", // replace with your executable
+      "executable": "${command:cmake.launchTargetPath}", // replace with your executable
       // "preLaunchTask": "Build STM", // using stm32-for-vscode extension, this is the build task
       "interface": "swd",
       "device": "RP2040",

@@ -3,6 +3,8 @@
 #include <pico/printf.h>
 #include <task.h>
 
+#define PICO_W_LED 0
+
 #define STEPPER_DIRECTION_CHANGE_DELAY_MS 5
 #define STEPPER_COMMAND_TIMEOUT 250
 
@@ -70,16 +72,12 @@ inline void PrintStackHighWaterMark(TaskHandle_t taskHandle)
 #define PRINTF_MOTION_DEBUG 0
 #define PRINTF_STEPPER_DEBUG 0
 
-#define ENABLE_DISPLAY 1 //maybe unused
+#define ENABLE_DISPLAY 1 // maybe unused
 
 #define MAX_PRIORITY configMAX_PRIORITIES - 1
 
 #define STEPPER_TASK_PRIORITY MAX_PRIORITY
 
 #define SM_MOTION_PRIORITY MAX_PRIORITY - 1
-#define USB_SERIAL_UPDATE_PRIORITY - 2
+#define USB_SERIAL_UPDATE_PRIORITY -2
 #define UI_UPDATE_PRIORITY MAX_PRIORITY - 3
-
-
-
-

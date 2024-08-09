@@ -23,6 +23,10 @@
 #include "portmacro.h"
 #include <array>
 
+#if PICO_W_LED
+#include "pico/cyw43_arch.h"
+#endif
+
 MotionController *mc;
 Axis *zAxis;
 Axis *xAxis;
@@ -49,6 +53,25 @@ void PrintStackTrace(uint32_t *stackPointer)
 	while (true)
 	{
 		tight_loop_contents();
+	}
+}
+
+void BlinkTask(void *pvParameters)
+{
+	while (true)
+	{
+
+#if PICO_W_LED
+		cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+		sleep_ms(250);
+		cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+		sleep_ms(250);
+#else
+		gpio_put(PICO_DEFAULT_LED_PIN, 0);
+		vTaskDelay(pdMS_TO_TICKS(500));
+		gpio_put(PICO_DEFAULT_LED_PIN, 1);
+		vTaskDelay(pdMS_TO_TICKS(500));
+#endif
 	}
 }
 

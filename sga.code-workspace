@@ -77,6 +77,7 @@
 		"cmake.options.statusBarVisibility": "visible",
 		"cmake.showSystemKits": false,
 		"cmake.sourceDirectory": "${workspaceFolder}",
-		"cmake.useCMakePresets": "always"
+		"cmake.useCMakePresets": "always",
+		"device-manager.manageAllDevices": true
 	}
 }
