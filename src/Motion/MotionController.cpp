@@ -1,10 +1,11 @@
 #include "MotionController.hpp"
 #include "Axis.hpp"
+#include "Helpers.hpp"
 #include "Motion/SM.hpp"
 #include "Motion/XAxis/SM.hpp"
 #include "Motion/ZAxis/SM.hpp"
 #include "config.hpp"
-#include "pico/stdlib.h"
+#include "drivers/Motor/Stepper.hpp"
 #include "portmacro.h"
 #include <Enum.hpp>
 #include <FreeRTOS.h>
@@ -44,16 +45,35 @@ MotionController::MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYSt
 	myTaskHandles.emplace(AxisLabel::X, new TaskHandle_t());
 	myTaskHandles.emplace(AxisLabel::Z, new TaskHandle_t());
 
-	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 1 * 2048, this, 1, myTaskHandles[AxisLabel::X]);
+	BaseType_t status = xTaskCreate(MotionXThread, "MotionXThread", 1 * 2048, this, SM_MOTION_PRIORITY, myTaskHandles[AxisLabel::X]);
 	if (status != pdPASS)
 	{
 		panic("Failed to create MotionXThread\n");
 	}
 
-	status = xTaskCreate(MotionZThread, "MotionZThread", 1 * 2048, this, 1, myTaskHandles[AxisLabel::Z]);
+	status = xTaskCreate(MotionZThread, "MotionZThread", 1 * 2048, this, SM_MOTION_PRIORITY, myTaskHandles[AxisLabel::Z]);
 	if (status != pdPASS)
 	{
 		panic("Failed to create MotionZThread\n");
+	}
+
+	myStepperStateOutputTaskHandles.emplace(AxisLabel::X, new TaskHandle_t());
+	myStepperStateOutputTaskHandles.emplace(AxisLabel::Z, new TaskHandle_t());
+
+	MotionOutputTaskParams *xParams = new MotionOutputTaskParams(AxisLabel::X, myAxes[AxisLabel::X], this);
+	MotionOutputTaskParams *zParams = new MotionOutputTaskParams(AxisLabel::Z, myAxes[AxisLabel::Z], this);
+
+	status = xTaskCreate(MotionStateOutputTask, "MotionOutputTaskX", 1 * 2048, xParams, UI_UPDATE_PRIORITY, myStepperStateOutputTaskHandles[AxisLabel::X]);
+	if (status != pdPASS)
+	{
+		panic("Failed to create MotionOutputTaskX\n");
+	}
+
+	status = xTaskCreate(MotionStateOutputTask, "MotionOutputTaskZ", 1 * 2048, zParams, UI_UPDATE_PRIORITY, myStepperStateOutputTaskHandles[AxisLabel::Z]);
+
+	if (status != pdPASS)
+	{
+		panic("Failed to create MotionOutputTaskZ\n");
 	}
 
 	printf("MotionController done\n");
@@ -100,12 +120,14 @@ void MotionController::MotionXThread(void *pvParameters)
 {
 	printf("MotionXThread Started\n");
 	MotionController *mc = static_cast<MotionController *>(pvParameters);
+	TickType_t wake = xTaskGetTickCount();
 
 	while (true)
 	{
 		mc->myXAxisSM->Update();
-		// vTaskDelay(100); // yeild to another task of the same priority
-		vPortYield();
+
+		// this is just deciding if we need to reverse or change modes, not as critical as the stepper execution
+		xTaskDelayUntil(&wake, MS_TO_TICKS(20));
 	}
 }
 
@@ -113,12 +135,13 @@ void MotionController::MotionZThread(void *pvParameters)
 {
 	printf("MotionZThread Started\n");
 	MotionController *mc = static_cast<MotionController *>(pvParameters);
+	TickType_t wake = xTaskGetTickCount();
 
 	while (true)
 	{
+		// this is just deciding if we need to reverse or change modes, not as critical as the stepper execution
 		mc->myZAxisSM->Update();
-		// vTaskDelay(100); // yeild to another task of the same priority
-		vPortYield();
+		xTaskDelayUntil(&wake, MS_TO_TICKS(20));
 	}
 }
 
@@ -308,5 +331,37 @@ uint16_t MotionController::GetTargetSpeed(AxisLabel anAxisLabel)
 		return myZAxisSM->GetTargetSpeed();
 	default:
 		return 0;
+	}
+}
+
+void MotionController::MotionStateOutputTask(void *params)
+{
+	auto motionOutputTaskParams = static_cast<MotionOutputTaskParams *>(params);
+	AxisLabel axisLabel = motionOutputTaskParams->axisLabel;
+	Axis *axis = motionOutputTaskParams->axis;
+	MotionController *motionController = motionOutputTaskParams->motionController;
+
+	while (true)
+	{
+		// uint32_t value = static_cast<uint32_t>(StepperNotifyType::NONE);
+		// xTaskNotifyWait(0, 0, &value, portMAX_DELAY);
+		// StepperNotifyType notifyType = static_cast<StepperNotifyType>(value);
+		// switch (notifyType)
+		// {
+		// case StepperNotifyType::CURRENT_POSITION:
+		// 	WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::CURRENT_POSITION, axis->GetCurrentPosition()));
+		// case StepperNotifyType::CURRENT_SPEED:
+		// 	WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::CURRENT_SPEED, axis->GetCurrentSpeed()));
+		// 	break;
+		// case StepperNotifyType::TARGET_POSITION:
+		// 	WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::TARGET_POSITION, axis->GetTargetPosition()));
+		// 	break;
+		// case StepperNotifyType::TARGET_SPEED:
+		// 	WebSerial::GetInstance()->QueueUpdate(new WebSerialAxisUpdate(axisLabel, AxisParameter::TARGET_SPEED, axis->GetTargetSpeed()));
+		// 	break;
+		// default:
+		// 	break;
+		// }
+		vTaskDelay(portMAX_DELAY);
 	}
 }

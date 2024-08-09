@@ -2,26 +2,25 @@
 
 #include "Console.hpp"
 #include "Enum.hpp"
+#include "Helpers.hpp"
 #include "Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
+#include "TaskStats.hpp"
 #include "config.hpp"
 #include "drivers/Motor/Stepper.hpp"
 #include "microsh.h"
-#include "usb.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <hardware/watchdog.h>
 #include <malloc.h>
 #include <pico/printf.h>
+#include <pico/stdio_usb.h>
 #include <stdio.h>
 #include <string>
-
-#include "pico/stdio.h"
 
 microsh_t *Console::mySh = nullptr;
 MotionController *Console::myMotionController = nullptr;
 QueueHandle_t Console::myCommandQueue;
-Usb *Console::myUsb = nullptr;
 
 Console::Commands Console::myCommands[] = {
 	{1, "h", Console::helpCmdCallback, "Help"},
@@ -33,7 +32,9 @@ Console::Commands Console::myCommands[] = {
 	{3, "speed", Console::setSpeedCallback, "speed <axis> <speed> - Sets the speed of the axis for use in auto mode \n\r \t<axis> = X, Z \n\r \t<speed> = 0 - 65535 steps per second"},
 	{3, "mover", Console::moveRelativeCommandCallback, "mover <axis> <distance> - Moves the axis a relative distance in steps \n\r \t<axis> = X, Z \n\r \t<distance> = int32 steps"},
 	{3, "moveto", Console::moveAbsoluteCommandCallback, "moveto <axis> <position> - Moves the axis to an absolute position in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps"},
-	{3, "setposition", Console::setPositionCommandCallback, "setposition <axis> <position> <type> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps\n\r\t<type> = CURRENT, TARGET, default is TARGET"}};
+	{3, "setposition", Console::setPositionCommandCallback, "setposition <axis> <position> <type> - Sets the position of the axis in steps \n\r \t<axis> = X, Z \n\r \t<position> = int32 steps\n\r\t<type> = CURRENT, TARGET, default is TARGET"},
+	{1, "stats", Console::statsCmdCallback, "Displays task, stack, and heap statistics"},
+};
 
 void Console::Init(MotionController *aMotionController)
 {
@@ -61,11 +62,12 @@ void Console::Init(MotionController *aMotionController)
 	printf("UART initialized" MICRORL_CFG_END_LINE);
 #endif
 
-#if CONSOLE_USES_USB
+#if CONSOLE_USES_PICO_USB_UART
 
-	myUsb = new Usb(processChars);
+	stdio_usb_init();
+
+	xTaskCreate(GetFromDefaultUartTask, "GetFromDefaultUartTask", 1024, NULL, 1, NULL);
 #endif
-
 	//--------------------------------------------------------------------------------
 
 	registerCommands();
@@ -122,47 +124,18 @@ void Console::registerCommands()
 	}
 }
 
-int Console::resetCmdCallback(struct microsh *msh, int argc, const char *const *argv)
+void Console::GetFromDefaultUartTask(void *pvParameters)
 {
-	printf("Resetting system" MICRORL_CFG_END_LINE);
-	watchdog_reboot(0, SRAM_END, 0);
-	return microshEXEC_OK;
-}
-
-int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *argv)
-{
-	if (argc != 3)
+	while (true)
 	{
-		auto cmd = microsh_cmd_find(msh, "speed");
-		printf(cmd->desc);
-		printf(MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
+		int receivedChar = getchar();
+		if (receivedChar != PICO_ERROR_TIMEOUT)
+		{
+			ProcessChars(&receivedChar, 1);
+		}
+
+		vTaskDelay(MS_TO_TICKS(10));
 	}
-
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-	std::string a = argv[1];
-	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
-
-	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
-
-	uint32_t speed = std::stoi(argv[2]);
-
-	ConsoleCommandSetSpeed *command = new ConsoleCommandSetSpeed(axis, speed);
-	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
-	{
-		printf("Failed to send set speed command to queue" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
-
-	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-
-	return microshEXEC_OK;
 }
 
 void Console::consoleTask(void *aCommandQueueHandle)
@@ -182,6 +155,12 @@ void Console::consoleTask(void *aCommandQueueHandle)
 				{
 					ConsoleCommandStatus *statusCommand = static_cast<ConsoleCommandStatus *>(command);
 					privStatusCommand(*statusCommand);
+					break;
+				}
+				case ConsoleCommandName::STATS:
+				{
+					ConsoleCommandStats *statsCommand = static_cast<ConsoleCommandStats *>(command);
+					privPrintStats(*statsCommand);
 					break;
 				}
 				case ConsoleCommandName::MODE:
@@ -235,17 +214,106 @@ void Console::consoleTask(void *aCommandQueueHandle)
 			{
 				delete (command);
 			}
-			vTaskDelay(10 * portTICK_PERIOD_MS);
+			vTaskDelay(MS_TO_TICKS(100));
 		}
 	}
 }
 
-int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const char *const *argv)
+int Console::privPrintFn(microrl_t *mrl, const char *str)
+{
+
+#if CONSOLE_USES_UART
+	bool sent = false;
+	while (!sent)
+	{
+		if (uart_is_writable(UART_ID))
+		{
+			uart_puts(UART_ID, str);
+			sent = true;
+		}
+		else
+		{
+			tight_loop_contents();
+			vTaskDelay(MS_TO_TICKS(10));
+		}
+	}
+#endif
+
+#if CONSOLE_USES_PICO_USB_UART
+	printf("%s", str);
+#endif
+
+	return microshEXEC_OK;
+}
+
+void Console::ProcessChars(const void *data, size_t len)
+{
+	microrl_processing_input(&mySh->mrl, data, len);
+}
+
+void Console::uartRxInterruptHandler()
+{
+	while (uart_is_readable(UART_ID))
+	{
+		uint8_t ch = uart_getc(UART_ID);
+		// Can we send it back?
+		if (SERIAL_ECHO)
+		{
+			if (uart_is_writable(UART_ID))
+			{
+				uart_putc(UART_ID, ch);
+			}
+		}
+
+		microrl_processing_input(&mySh->mrl, &ch, 1);
+		vTaskDelay(1);
+	}
+}
+
+/********** CALLBACKS ***********/
+
+int Console::resetCmdCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	printf("Resetting system" MICRORL_CFG_END_LINE);
+	watchdog_reboot(0, SRAM_END, 0);
+	return microshEXEC_OK;
+}
+
+int Console::statsCmdCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	ConsoleCommandStats *command = new ConsoleCommandStats();
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
+	{
+		printf("Failed to send stats command to queue" MICRORL_CFG_END_LINE);
+		delete (command); // Clean up if the command wasn't sent
+		return microshEXEC_ERROR;
+	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	return microshEXEC_OK;
+}
+
+void Console::privPrintStats(ConsoleCommandStats &aCommand)
+{
+
+	TaskStatsManager *taskStatsManager = TaskStatsManager::GetInstance();
+	auto taskStats = taskStatsManager->GetTaskAvgRuntime();
+	auto heapStats = taskStatsManager->GetHeapHighWaterMark();
+	auto stackStats = taskStatsManager->GetTasksStackHighWaterMark();
+
+	printf("Task Stats" MICRORL_CFG_END_LINE);
+	printf("%s" MICRORL_CFG_END_LINE, taskStats.c_str());
+	printf("%s" MICRORL_CFG_END_LINE, heapStats.c_str());
+	printf("%s" MICRORL_CFG_END_LINE, stackStats.c_str());
+}
+
+int Console::setSpeedCallback(struct microsh *msh, int argc, const char *const *argv)
 {
 	if (argc != 3)
 	{
-		auto cmd = microsh_cmd_find(msh, "mover");
-		printf(cmd->desc);
+		auto cmd = microsh_cmd_find(msh, "speed");
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -256,11 +324,37 @@ int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const ch
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
+
+	uint32_t speed = std::stoi(argv[2]);
+
+	ConsoleCommandSetSpeed *command = new ConsoleCommandSetSpeed(axis, speed);
+	if (xQueueSendFromISR(Console::myCommandQueue, &command, &xHigherPriorityTaskWoken) != pdPASS)
 	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
+		printf("Failed to send set speed command to queue" MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+	return microshEXEC_OK;
+}
+
+int Console::moveRelativeCommandCallback(struct microsh *msh, int argc, const char *const *argv)
+{
+	if (argc != 3)
+	{
+		auto cmd = microsh_cmd_find(msh, "mover");
+		printf("%s", cmd->desc);
+		printf(MICRORL_CFG_END_LINE);
+		return microshEXEC_ERROR;
+	}
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	std::string a = argv[1];
+	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
+
+	AxisLabel axis = AxisLabelFromString(a);
 
 	int32_t distance = std::stoi(argv[2]);
 
@@ -289,34 +383,34 @@ int Console::helpCmdCallback(struct microsh *msh, int argc, const char *const *a
 {
 	printf("Help" MICRORL_CFG_END_LINE);
 	auto cmd = microsh_cmd_find(msh, "h");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "s");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "r");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "mode");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "increment");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "setstop");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "speed");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "mover");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "moveto");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	cmd = microsh_cmd_find(msh, "setposition");
-	printf(cmd->desc);
+	printf("%s", cmd->desc);
 	printf(MICRORL_CFG_END_LINE);
 	return microshEXEC_OK;
 }
@@ -326,7 +420,7 @@ int Console::setStopCallback(struct microsh *msh, int argc, const char *const *a
 	if (argc != 4)
 	{
 		auto cmd = microsh_cmd_find(msh, "setstop");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -337,11 +431,6 @@ int Console::setStopCallback(struct microsh *msh, int argc, const char *const *a
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	std::string d = argv[2];
 	std::transform(d.begin(), d.end(), d.begin(), ::toupper);
@@ -431,7 +520,7 @@ int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *a
 	if (argc != 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "mode");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -440,11 +529,6 @@ int Console::modeCmdCallback(struct microsh *msh, int argc, const char *const *a
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	std::string m = argv[2];
 	std::transform(m.begin(), m.end(), m.begin(), ::toupper);
@@ -481,7 +565,7 @@ int Console::setAdvanceIncrementCallback(struct microsh *msh, int argc, const ch
 	if (argc != 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "increment");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -492,11 +576,6 @@ int Console::setAdvanceIncrementCallback(struct microsh *msh, int argc, const ch
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	uint32_t increment = std::stoi(argv[2]);
 
@@ -521,63 +600,13 @@ void Console::privSetAdvanceIncrementCommand(ConsoleCommandSetAdvanceIncrement &
 	printf("Status: OK, %s Increment: %d" MICRORL_CFG_END_LINE, al.c_str(), ai);
 }
 
-int Console::privPrintFn(microrl_t *mrl, const char *str)
-{
-
-#if CONSOLE_USES_UART
-	bool sent = false;
-	while (!sent)
-	{
-		if (uart_is_writable(UART_ID))
-		{
-			uart_puts(UART_ID, str);
-			sent = true;
-		}
-		else
-		{
-			tight_loop_contents();
-		}
-	}
-#endif
-
-#if CONSOLE_USES_USB
-
-	Usb::print(str, strlen(str));
-
-#endif
-	return microshEXEC_OK;
-}
-
-void Console::processChars(const void *data, size_t len)
-{
-	microrl_processing_input(&mySh->mrl, data, len);
-}
-
-void Console::uartRxInterruptHandler()
-{
-	while (uart_is_readable(UART_ID))
-	{
-		uint8_t ch = uart_getc(UART_ID);
-		// Can we send it back?
-		if (SERIAL_ECHO)
-		{
-			if (uart_is_writable(UART_ID))
-			{
-				uart_putc(UART_ID, ch);
-			}
-		}
-
-		microrl_processing_input(&mySh->mrl, &ch, 1);
-	}
-}
-
 void Console::privSetStopCommand(ConsoleCommandSetStop &aCommand)
 {
 
 	myMotionController->SetStop(aCommand.axis, aCommand.direction, aCommand.position);
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
-	printf("Status: OK, %s Stop: %s, Position: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetStop(aCommand.axis, aCommand.direction));
+	printf("Status: OK, %s Stop: %d, Position: %d" MICRORL_CFG_END_LINE, al.c_str(), myMotionController->GetStop(aCommand.axis, aCommand.direction), aCommand.position);
 }
 
 void Console::privSetSpeedCommand(ConsoleCommandSetSpeed &aCommand)
@@ -593,7 +622,7 @@ int Console::moveAbsoluteCommandCallback(struct microsh *msh, int argc, const ch
 	if (argc != 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "moveto");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -604,12 +633,6 @@ int Console::moveAbsoluteCommandCallback(struct microsh *msh, int argc, const ch
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
-
 	int32_t position = std::stoi(argv[2]);
 
 	ConsoleCommandMoveAbsolute *command = new ConsoleCommandMoveAbsolute(axis, position);
@@ -630,7 +653,7 @@ void Console::privMoveAbsoluteCommand(ConsoleCommandMoveAbsolute &aCommand)
 	vTaskDelay(1);
 	auto al = AxisLabelToString(aCommand.axis);
 	auto pos = myMotionController->MoveTo(aCommand.axis, aCommand.position);
-	printf("Status: OK, %s Target Position: %d" MICRORL_CFG_END_LINE, myMotionController->GetTargetPosition(aCommand.axis), pos);
+	printf("Status: OK, %d Target Position: %d" MICRORL_CFG_END_LINE, myMotionController->GetTargetPosition(aCommand.axis), pos);
 }
 
 int Console::setPositionCommandCallback(struct microsh *msh, int argc, const char *const *argv)
@@ -638,7 +661,7 @@ int Console::setPositionCommandCallback(struct microsh *msh, int argc, const cha
 	if (argc < 3)
 	{
 		auto cmd = microsh_cmd_find(msh, "setposition");
-		printf(cmd->desc);
+		printf("%s", cmd->desc);
 		printf(MICRORL_CFG_END_LINE);
 		return microshEXEC_ERROR;
 	}
@@ -649,11 +672,6 @@ int Console::setPositionCommandCallback(struct microsh *msh, int argc, const cha
 	std::transform(a.begin(), a.end(), a.begin(), ::toupper);
 
 	AxisLabel axis = AxisLabelFromString(a);
-	if (axis == AxisLabel::ERROR)
-	{
-		printf("Invalid axis" MICRORL_CFG_END_LINE);
-		return microshEXEC_ERROR;
-	}
 
 	int32_t position = std::stoi(argv[2]);
 

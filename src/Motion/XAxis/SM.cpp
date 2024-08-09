@@ -73,7 +73,6 @@ void XAxisSM::Update()
 			// maybe we need another enum to indicate this axis and another axis are sychronized or not.
 			xTaskNotifyGive(myMotionController->GetTaskHandle(AxisLabel::Z));
 			xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
-			vTaskDelay(1 * portTICK_PERIOD_MS);
 		}
 	}
 	break;

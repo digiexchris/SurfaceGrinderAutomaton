@@ -7,12 +7,16 @@
 #include <semphr.h>
 #include <stdio.h>
 
-Stepper::Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm)
-	: stepPin(stepPin), dirPin(dirPin), pio(pio), sm(sm) //, IStepper(maxSpeed, acceleration)
+Stepper::Stepper(uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm, StepperUpdatedCallback stateOutputCallback)
+	: stepPin(stepPin), dirPin(dirPin), pio(pio), sm(sm), myStateOutputCallback(stateOutputCallback) //, IStepper(maxSpeed, acceleration)
 {
 	gpio_init(dirPin);
 	gpio_set_dir(dirPin, GPIO_OUT);
 	myCommandQueue = xQueueCreate(2, sizeof(StepperCommand *));
+	myNotifyCallbackQueue = xQueueCreate(1, sizeof(StepperNotifyMessage *)); // TODO make this a ringbuffer and have the function that pushes to this queue delete the oldest if full
+	BaseType_t status = xTaskCreate(NotifyCallbackTask, "Stepper Notify Callback", 2048, this, STEPPER_TASK_PRIORITY, &myNotifyCallbackTaskHandle);
+	configASSERT(status == pdPASS);
+
 	SetTargetSpeed(maxSpeed);
 	SetAcceleration(acceleration);
 }
@@ -55,7 +59,7 @@ void Stepper::SetDirection(bool direction)
 
 void Stepper::DirectionChangedWait()
 {
-	vTaskDelay(STEPPER_DIRECTION_CHANGE_DELAY_MS * portTICK_PERIOD_MS);
+	vTaskDelay(MS_TO_TICKS(STEPPER_DIRECTION_CHANGE_DELAY_MS));
 }
 
 void Stepper::Update()
@@ -65,6 +69,9 @@ void Stepper::Update()
 	float deltaTime = deltaTimeUs / 1e6f; // Convert microseconds to seconds
 	lastUpdateTime = now;
 	StepperCommand *command = nullptr;
+
+	TickType_t wake;
+	wake = xTaskGetTickCount();
 
 	// process up to queueSize of commands per update loop
 	while (xQueueReceive(myCommandQueue, &command, 0) != errQUEUE_EMPTY)
@@ -126,7 +133,7 @@ void Stepper::Update()
 			myMoveState = MoveState::ACCELERATING;
 			return;
 		}
-		vTaskDelay(100 * portTICK_PERIOD_MS);
+		vTaskDelay(MS_TO_TICKS(100));
 		break;
 	case MoveState::ACCELERATING:
 		if (newDirection != myDirection && myCurrentSpeed > 0)
@@ -214,7 +221,7 @@ void Stepper::Update()
 		// Refill FIFO as needed, but limit the number of steps added in one go in order to allow new target positions to be set
 		// and reacted to if the fifo is draining faster than we can fill it, otherwise this loop would never end until all of the
 		// previously calculated steps were erroneously executed.
-		int stepsToAdd = min(remainingSteps, 4); // Add up to 4 steps at a time
+		int stepsToAdd = min(remainingSteps, 2); // Add up to 4 steps at a time
 		while (!pio_sm_is_tx_fifo_full(pio, sm) && stepsToAdd > 0)
 		{
 			uint32_t delay = static_cast<uint32_t>(stepDelay);
@@ -230,6 +237,8 @@ void Stepper::Update()
 			{
 				remainingSteps = abs(myTargetPosition - myCurrentPosition);
 			}
+
+			privQueueNotifyMessage();
 		}
 	}
 
@@ -239,8 +248,14 @@ void Stepper::Update()
 		// update will just relock the mutexes before another thread runs.
 		// delay 10 cycles to allow another thread to modify things critical to this thread
 		// there should be no timing critical things occurring if we have no speed set so increasing this is probably ok too
-		vTaskDelay(100 * portTICK_PERIOD_MS);
+		xTaskDelayUntil(&wake, 100);
 	}
+}
+
+void Stepper::privQueueNotifyMessage()
+{
+	StepperNotifyMessage *message = new StepperNotifyMessage(myCurrentPosition, myTargetPosition, myCurrentSpeed, myTargetSpeed);
+	xQueueOverwrite(myNotifyCallbackQueue, &message);
 }
 
 Stepper::MoveState Stepper::GetMoveState()
@@ -262,7 +277,7 @@ void Stepper::privSetCurrentPosition(int32_t aPosition)
 
 StepperError Stepper::privQueueCommand(StepperCommand *aCommand)
 {
-	switch (xQueueSend(myCommandQueue, &aCommand, STEPPER_COMMAND_TIMEOUT * portTICK_PERIOD_MS))
+	switch (xQueueSend(myCommandQueue, &aCommand, MS_TO_TICKS(STEPPER_COMMAND_TIMEOUT)))
 	{
 	case pdPASS:
 		return StepperError::OK;
@@ -340,4 +355,29 @@ float Stepper::GetAcceleration()
 uint16_t Stepper::GetCurrentSpeed()
 {
 	return myCurrentSpeed;
+}
+
+void Stepper::NotifyCallbackTask(void *pvParameters)
+{
+	Stepper *myInstance = static_cast<Stepper *>(pvParameters);
+	StepperNotifyMessage *message = nullptr;
+	TickType_t wake;
+	wake = xTaskGetTickCount();
+
+	while (true)
+	{
+		if (xQueueReceive(myInstance->myNotifyCallbackQueue, &message, portMAX_DELAY) == pdTRUE)
+		{
+			if (message != nullptr)
+			{
+				if (myInstance->myStateOutputCallback != nullptr)
+				{
+					myInstance->myStateOutputCallback(message);
+				}
+				delete (message); // NOTE (I think this doesn't need to be deleted but maybe? message is a pointer, and queue should have a reference to this pointer, so I think deleting this pointer is correct but the queue should delete it's own ref...?)
+			}
+		}
+
+		xTaskDelayUntil(&wake, 10);
+	}
 }

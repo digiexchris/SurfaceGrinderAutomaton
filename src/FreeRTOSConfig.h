@@ -28,6 +28,8 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
+// #include <hardware/timer.h>
+
 /*#pragma GCC diagnostic ignored "-Wmissing-parameter-type"
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"*/
 
@@ -86,7 +88,7 @@
 /* Run time and task stats gathering related definitions. */
 #define configGENERATE_RUN_TIME_STATS 0
 #define configUSE_TRACE_FACILITY 1
-#define configUSE_STATS_FORMATTING_FUNCTIONS 0
+#define configUSE_STATS_FORMATTING_FUNCTIONS 1
 
 /* Co-routine related definitions. */
 #define configUSE_CO_ROUTINES 0
@@ -106,12 +108,15 @@
 */
 
 /* SMP port only */
-#define configNUM_CORES 1
+#define configNUM_CORES 2
 #define configTICK_CORE 1
 #define configRUN_MULTIPLE_PRIORITIES 1
 
-#define traceTASK_SWITCHED_IN() vTaskSwitchedIn()
-#define traceTASK_SWITCHED_OUT() vTaskSwitchedOut()
+extern void TaskStatsTaskSwitchedIn(void);
+extern void TaskStatsTaskSwitchedOut(void);
+
+#define traceTASK_SWITCHED_IN() TaskStatsTaskSwitchedIn()
+#define traceTASK_SWITCHED_OUT() TaskStatsTaskSwitchedOut()
 
 /* RP2040 specific */
 #define configSUPPORT_PICO_SYNC_INTEROP 1
@@ -141,5 +146,10 @@ to exclude the API function. */
 #define INCLUDE_xQueueGetMutexHolder 1
 
 /* A header file that defines trace macro can be included here. */
+
+// #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
+// extern uint64_t time_us_64(void);														  // "hardware/timer.h"
+// #define RUN_TIME_STAT_time_us_64Divider 1000											  // stat granularity is mS
+// #define portGET_RUN_TIME_COUNTER_VALUE() (time_us_64() / RUN_TIME_STAT_time_us_64Divider) // runtime counter in mS
 
 #endif /* FREERTOS_CONFIG_H */
