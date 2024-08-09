@@ -55,7 +55,7 @@
         // "CMAKE_C_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc",
         // "CMAKE_CXX_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++",
         "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja",
-        "PICO_SDK_PATH": "/workspaces/SurfaceGrinderAutomaton/pico/pico-sdk"
+        "PICO_SDK_PATH": "../pico/pico-sdk"
       }
     },
     {
@@ -67,7 +67,8 @@
         "CMAKE_C_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc",
         "CMAKE_CXX_COMPILER": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++",
         "CMAKE_MAKE_PROGRAM": "/usr/bin/ninja",
-        "PICO_SDK_PATH": "/workspaces/SurfaceGrinderAutomaton/pico/pico-sdk"
+        "PICO_SDK_PATH": "../pico/pico-sdk",
+        "PICO_TOOLCHAIN_PATH": "/opt/toolchains/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi"
       }
     }
   ],
@@ -104,7 +105,8 @@
       "configurePreset": "devcontainer-linux-debug",
       "description": "Build using the linux-debug configuration",
       "targets": [
-        "SurfaceGrinderAtomaton.elf"
+        "SurfaceGrinderAtomaton.elf",
+        "copy_compile_commands"
       ]
     },
     {
@@ -120,7 +122,8 @@
       "configurePreset": "x64-debug",
       "description": "Build using the linux-debug configuration",
       "targets": [
-        "SurfaceGrinderAtomaton.elf"
+        "SurfaceGrinderAtomaton.elf",
+        "copy_compile_commands"
       ]
     },
     {

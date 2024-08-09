@@ -4,7 +4,9 @@ This was taken almost entirely from the tinyusb webserial example.
 
 #include "usb.hpp"
 #include "bsp/board.h"
+#include "config.hpp"
 #include "usb_descriptors.h"
+#include <cstddef>
 #include <pico/stdio.h>
 
 #define UART_TASK_PRIO (tskIDLE_PRIORITY + 3)
@@ -13,13 +15,15 @@ This was taken almost entirely from the tinyusb webserial example.
 
 Usb *Usb::myInstance = nullptr;
 
+const char URL[] = "example.tinyusb.org/webusb-serial/index.html";
+
 const tusb_desc_webusb_url_t Usb::desc_url = {
 	.bLength = 3 + sizeof(URL) - 1,
 	.bDescriptorType = 3, // WEBUSB URL type
 	.bScheme = 1,		  // 0: http, 1: https
-	.url = {URL}};
+	.url = {*URL}};
 
-Usb::Usb(ProcessBufFn processBufFn)
+Usb::Usb(ProcessBufFn processBufFn, ProcessBufFn webUsbProcessBufFn)
 {
 	myInstance = this;
 	board_init();
@@ -30,6 +34,11 @@ Usb::Usb(ProcessBufFn processBufFn)
 		myProcessBufFn = processBufFn;
 	}
 
+	if (webUsbProcessBufFn)
+	{
+		myWebUsbProcessBufFn = webUsbProcessBufFn;
+	}
+
 	// Redirect stdout to TinyUSB
 	setvbuf(stdout, NULL, _IONBF, 0);
 	stdio_set_driver_enabled(&__stdout_usb, true);
@@ -38,7 +47,7 @@ Usb::Usb(ProcessBufFn processBufFn)
 	setvbuf(stderr, NULL, _IONBF, 0);
 	stdio_set_driver_enabled(&__stderr_usb, true);
 
-	xTaskCreate(usb_thread, "TUD", configMINIMAL_STACK_SIZE, this, TUD_TASK_PRIO, &tud_taskhandle);
+	xTaskCreate(usb_thread, "TUD", configMINIMAL_STACK_SIZE, this, USB_SERIAL_UPDATE_PRIORITY, &tud_taskhandle);
 }
 
 void Usb::usb_thread(void *ptr)
@@ -46,6 +55,7 @@ void Usb::usb_thread(void *ptr)
 	Usb *usb = static_cast<Usb *>(ptr);
 	TickType_t wake;
 	wake = xTaskGetTickCount();
+	xTaskDelayUntil(&wake, 400);
 	do
 	{
 		tud_task();
@@ -59,26 +69,18 @@ void Usb::usb_thread(void *ptr)
 #endif
 		// Go to sleep for up to a tick if nothing to do
 		if (!tud_task_event_ready())
-			xTaskDelayUntil(&wake, 1);
+			xTaskDelayUntil(&wake, 100);
 	} while (1);
 }
 
-// int Usb::putc(char aCharacter, FILE *aStream)
-// {
-
-// 	if (web_serial_connected)
-// 	{
-// 		tud_vendor_write(&aCharacter, 1);
-// 		tud_vendor_flush();
-// 	}
-
-// 	// Only send character if USB is connected and ready
-// 	if (tud_cdc_connected() && tud_cdc_write_available())
-// 	{
-// 		tud_cdc_write_char(aCharacter);
-// 		tud_cdc_write_flush();
-// 	}
-// }
+void Usb::WriteWebSerial(void *msg, size_t len)
+{
+	if (web_serial_connected)
+	{
+		tud_vendor_write(&msg, len);
+		tud_vendor_flush();
+	}
+}
 
 // send characters to both CDC and WebUSB
 void Usb::print(const char *buf, int len)
@@ -86,13 +88,6 @@ void Usb::print(const char *buf, int len)
 	if (!myInstance)
 	{
 		panic("Usb instance not created");
-	}
-
-	// echo to web serial
-	if (myInstance->web_serial_connected)
-	{
-		tud_vendor_write(buf, len);
-		tud_vendor_flush();
 	}
 
 	// echo to cdc
@@ -145,7 +140,7 @@ void Usb::tud_resume_cb(void)
 
 bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request)
 {
-	return Usb::getInstance()->tud_vendor_control_xfer_cb(rhport, stage, request);
+	return Usb::GetInstance()->tud_vendor_control_xfer_cb(rhport, stage, request);
 }
 
 // Invoked when a control transfer occurred on an interface of this class
@@ -228,11 +223,9 @@ void Usb::webserial_task(void)
 			uint8_t buf[64];
 			uint32_t count = tud_vendor_read(buf, sizeof(buf));
 
-			// echo back to both web serial and cdc
-			// echo_all(buf, count);
-			if (myProcessBufFn)
+			if (myWebUsbProcessBufFn)
 			{
-				myProcessBufFn(buf, count);
+				myWebUsbProcessBufFn(buf, count);
 			}
 		}
 	}
@@ -252,8 +245,6 @@ void Usb::cdc_task(void)
 
 			uint32_t count = tud_cdc_read(buf, sizeof(buf));
 
-			// echo back to both web serial and cdc
-			// print(buf, count);
 			if (myProcessBufFn)
 			{
 				myProcessBufFn(buf, count);
@@ -264,7 +255,7 @@ void Usb::cdc_task(void)
 
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
-	Usb::getInstance()->tud_cdc_line_state_cb(itf, dtr, rts);
+	Usb::GetInstance()->tud_cdc_line_state_cb(itf, dtr, rts);
 }
 
 // Invoked when cdc when line state changed e.g connected/disconnected
@@ -285,7 +276,7 @@ void Usb::tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 // Invoked when CDC interface received data from host
 void tud_cdc_rx_cb(uint8_t itf)
 {
-	Usb::getInstance()->tud_cdc_rx_cb(itf);
+	Usb::GetInstance()->tud_cdc_rx_cb(itf);
 }
 
 void Usb::tud_cdc_rx_cb(uint8_t itf)

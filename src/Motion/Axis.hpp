@@ -127,4 +127,6 @@ private:
 	uint16_t myMaxSpeed = 0;
 
 	static void MoveThread(void *pvParameters);
+
+	void ProcessStepperNotification(StepperNotifyMessage *aMessage);
 };

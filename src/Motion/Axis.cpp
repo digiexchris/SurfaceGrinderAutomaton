@@ -1,7 +1,7 @@
 #include "Motion/Axis.hpp"
 #include "Enum.hpp"
-#include "config.hpp"
-#include "pico/stdlib.h"
+#include "Helpers.hpp"
+#include "Usb/WebSerial.hpp"
 #include "portmacro.h"
 #include <cmath>
 #include <pico/printf.h>
@@ -90,7 +90,7 @@ bool Axis::WaitUntilMovementComplete(TickType_t aTimeout)
 			return false;
 		}
 		// wait the shortest step width before checking again
-		vTaskDelay(1 / GetTargetSpeed() * portTICK_PERIOD_MS);
+		vTaskDelay(MS_TO_TICKS(1 / GetTargetSpeed()));
 	}
 
 	return true;
@@ -108,9 +108,32 @@ StepperError Axis::SetTargetSpeed(uint16_t aSpeed)
 void Axis::MoveThread(void *pvParameters)
 {
 	Axis *axis = static_cast<Axis *>(pvParameters);
+	TickType_t wake;
+	wake = xTaskGetTickCount();
+
 	while (true)
 	{
 		axis->Update();
-		portYIELD();
+
+		// run this loop at exactly 10khz
+		xTaskDelayUntil(&wake, 1);
 	}
+}
+
+void Axis::ProcessStepperNotification(StepperNotifyMessage *aMessage)
+{
+	WebSerialAxisUpdate message(myAxisLabel, AxisParameter::CURRENT_POSITION, aMessage->currentPosition);
+	WebSerial::GetInstance()->QueueUpdate(message);
+
+	message.param = AxisParameter::CURRENT_SPEED;
+	message.value = aMessage->currentSpeed;
+	WebSerial::GetInstance()->QueueUpdate(message);
+
+	message.param = AxisParameter::TARGET_POSITION;
+	message.value = aMessage->targetPosition;
+	WebSerial::GetInstance()->QueueUpdate(message);
+
+	message.param = AxisParameter::TARGET_SPEED;
+	message.value = aMessage->targetSpeed;
+	WebSerial::GetInstance()->QueueUpdate(message);
 }

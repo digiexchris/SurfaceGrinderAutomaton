@@ -14,3 +14,5 @@ pico_sdk/
 out/
 .vs/
 compile_commands.json
+web/*/.next/
+web/*/node_modules/

@@ -3,6 +3,7 @@
 #include "Axis.hpp"
 #include "Enum.hpp"
 
+#include "Helpers.hpp"
 #include <cstdint>
 #include <semphr.h>
 
@@ -62,7 +63,7 @@ public:
 
 	BaseType_t WaitForTrigger()
 	{
-		return xSemaphoreTake(myTriggerSemaphore, 100 * portTICK_PERIOD_MS);
+		return xSemaphoreTake(myTriggerSemaphore, MS_TO_TICKS(100));
 	}
 
 	Stepper::MoveState GetMoveState() const

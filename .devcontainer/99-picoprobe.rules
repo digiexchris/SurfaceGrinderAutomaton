@@ -1,0 +1,6 @@
+# Remember to  udevadm control --reload  after any changes.
+ 
+ # Assume that the CDC serial device (typically /dev/ttyACM0) has already been
+ # assigned to root:dialout on account of its class.
+ 
+ SUBSYSTEMS=="usb", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="0004", ATTRS{product}=="Raspberry Pi Debugprobe on Pico (CMSIS-DAP)", GROUP="plugdev", MODE="0666"

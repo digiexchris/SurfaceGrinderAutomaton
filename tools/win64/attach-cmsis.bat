@@ -11,4 +11,7 @@ EXIT
 
 usbipd.exe bind -i 2e8a:000c --force
 usbipd.exe attach -i 2e8a:000c --wsl
+
+usbipd.exe bind -i 0d28:0204 --force
+usbipd.exe attach -i 0d28:0204 --wsl
 pause

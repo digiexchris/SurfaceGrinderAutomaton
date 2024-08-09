@@ -19,6 +19,17 @@
 class MotionController : public Controller
 {
 public:
+
+	struct MotionOutputTaskParams
+	{
+		MotionOutputTaskParams(AxisLabel anAxisLabel, Axis *anAxis, MotionController* aMotionController)
+			: axisLabel(anAxisLabel), axis(anAxis), motionController(aMotionController)
+		{
+		}
+		AxisLabel axisLabel;
+		Axis *axis;
+		MotionController* motionController;
+	};
 	MotionController(Axis *anXStepper, Axis *aZStepper, Axis *aYStepper = nullptr);
 	virtual bool SetMode(AxisLabel anAxisLabel, AxisMode aMode) override;
 	virtual AxisMode GetMode(AxisLabel anAxisLabel) override;
@@ -50,6 +61,10 @@ private:
 	XAxisSM *myXAxisSM;
 
 	std::unordered_map<AxisLabel, TaskHandle_t *> myTaskHandles;
+
+	std::unordered_map<AxisLabel, TaskHandle_t *> myStepperStateOutputTaskHandles;
+
+	static void MotionStateOutputTask(void *pvParameters);
 
 	uint16_t myZConstantSpeed = 100;
 	static void MotionXThread(void *pvParameters);

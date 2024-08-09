@@ -2,7 +2,7 @@
 
 #include "hardware/gpio.h"
 
-#class GPIO
+class GPIO
 {
     public:
     GPIO();

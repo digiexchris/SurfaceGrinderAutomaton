@@ -19,22 +19,20 @@
 			"ms-vscode.vscode-embedded-tools",
 			"ms-vscode.vscode-serial-monitor",
 			"marus25.cortex-debug",
-			"seaube.clangformat",
 			"spmeesseman.vscode-taskexplorer",
 			"IBM.output-colorizer",
 			"actboy168.tasks",
 			"SanaAjani.taskrunnercode",
-			"raspberry-pi.raspberry-pi-pico",
 			"ms-vscode.cmake-tools",
 			"EditorConfig.EditorConfig",
 			"GitHub.copilot",
 			"GitHub.copilot-chat",
 			"josetr.cmake-language-support-vscode",
-			"raspberry-pi.raspberry-pi-pico",
 			"llvm-vs-code-extensions.vscode-clangd"
 		]
 	},
 	"settings": {
+		"cortex-debug.gdbPath.linux": "/workspaces/gcc-arm-none/bin/arm-none-eabi-gdb",
 		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
 		"C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
 		"files.associations": {
@@ -47,7 +45,7 @@
 			"microrl.h": "c"
 		},
 		"[cpp]": {
-			"editor.defaultFormatter": "seaube.clangformat"
+			"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
 		},
 		"cmake.cmakelistFile": "${workspaceFolder}/CMakeLists.txt",
 		"cmake.configureOnOpen": false,
@@ -79,6 +77,7 @@
 		"cmake.options.statusBarVisibility": "visible",
 		"cmake.showSystemKits": false,
 		"cmake.sourceDirectory": "${workspaceFolder}",
-		"cmake.useCMakePresets": "always"
+		"cmake.useCMakePresets": "always",
+		"device-manager.manageAllDevices": true
 	}
 }

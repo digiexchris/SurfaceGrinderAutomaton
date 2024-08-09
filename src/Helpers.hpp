@@ -16,3 +16,5 @@ T min(T a, T2 b)
 {
 	return static_cast<T>(a < b ? a : b);
 }
+
+#define MS_TO_TICKS(ms) (ms * configTICK_RATE_HZ / 1000)
