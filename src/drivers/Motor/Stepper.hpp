@@ -1,11 +1,21 @@
 #ifndef STEPPER_HPP
 #define STEPPER_HPP
 
+#include "Enum.hpp"
 #include "hardware/pio.h"
 #include <FreeRTOS.h>
 #include <cstdint>
 #include <semphr.h>
 #include <string>
+
+enum class StepperNotifyType : uint8_t
+{
+	NONE = 0x00,
+	CURRENT_POSITION = 0x01,
+	TARGET_POSITION = 0x02,
+	CURRENT_SPEED = 0x03,
+	TARGET_SPEED = 0x04,
+};
 
 enum class StepperError
 {
@@ -68,10 +78,37 @@ struct StepperCommandSetAcceleration : StepperCommand
 	float acceleration;
 };
 
+struct StepperNotifyMessage
+{
+	StepperNotifyMessage(int32_t aCurrentPosition, int32_t aTargetPosition, uint16_t aCurrentSpeed, uint16_t aTargetSpeed)
+		: currentPosition(aCurrentPosition), targetPosition(aTargetPosition), currentSpeed(aCurrentSpeed), targetSpeed(aTargetSpeed)
+	{
+	}
+	int32_t currentPosition;
+	int32_t targetPosition;
+	uint16_t currentSpeed;
+	uint16_t targetSpeed;
+};
+
+using StepperUpdatedCallback = void (*)(StepperNotifyMessage *aMessage);
+
 class Stepper
 {
 public:
-	Stepper(uint stepPin, uint dirPin, float targetSpeed, float acceleration, PIO pio, uint sm);
+	/**
+	 * @brief Construct a new Stepper object
+	 *
+	 * @param stepPin The GPIO pin number for the step signal
+	 * @param dirPin The GPIO pin number for the direction signal
+	 * @param targetSpeed The initial target speed in steps per second
+	 * @param acceleration The acceleration in steps per second squared
+	 * @param pio The PIO instance to use
+	 * @param sm The PIO state machine to use
+	 * @param stateOutputTask The task handle of the task that will receive the position and speed updates
+	 * NOTE: if stateOutputTask is set, a task notification will be sent to that task containing this
+	 * stepper's state (position, speed, etc) every time the state changes.
+	 */
+	Stepper(uint stepPin, uint dirPin, float targetSpeed, float acceleration, PIO pio, uint sm, StepperUpdatedCallback = nullptr);
 	void InitPIO();
 
 	enum class MoveState
@@ -129,7 +166,11 @@ private:
 	void privSetTargetSpeed(uint16_t aSpeed);
 	void privSetAcceleration(float aAcceleration);
 	void privSetCurrentPosition(int32_t aPosition);
+	void privQueueNotifyMessage();
 	StepperError privQueueCommand(StepperCommand *aCommand);
+
+	StepperUpdatedCallback myUpdatedCallback = nullptr;
+
 	uint stepPin;
 	uint dirPin;
 
@@ -146,7 +187,11 @@ private:
 	float myCurrentSpeed = 0.0;		// in steps per second
 	float myAcceleration = 0.0f;	// in steps per second squared
 	absolute_time_t lastUpdateTime; // to calculate the time step in the update() loop
+	StepperUpdatedCallback myStateOutputCallback;
 	QueueHandle_t myCommandQueue;
+	TaskHandle_t myNotifyCallbackTaskHandle;
+	static void NotifyCallbackTask(void *param);
+	QueueHandle_t myNotifyCallbackQueue; // used to send almost up to date position and speed updates to another thread. Used primarily by webusb and UI.
 };
 
 #endif // STEPPER_HPP
