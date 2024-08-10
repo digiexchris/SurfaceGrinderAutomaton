@@ -13,3 +13,6 @@
 [submodule "pico/debugprobe"]
 	path = pico/debugprobe
 	url = https://github.com/raspberrypi/debugprobe.git
+[submodule "lib/pico-ssd1306"]
+	path = lib/pico-ssd1306
+	url = git@github.com:digiexchris/pico-ssd1306.git

@@ -13,6 +13,8 @@ INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}
 )
 
+add_subdirectory(${CMAKE_HOME_DIRECTORY}/lib/pico-ssd1306 pico-ssd1306)
+
 target_compile_definitions(freertos_config
   INTERFACE
     projCOVERAGE_TEST=0
@@ -92,7 +94,7 @@ target_include_directories(SurfaceGrinderAtomaton PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs pico_stdio_usb  FreeRTOS-Kernel FreeRTOS-Kernel-Heap4)
+target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs pico_stdio_usb  FreeRTOS-Kernel FreeRTOS-Kernel-Heap4 pico_ssd1306)
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
 add_dependencies(SurfaceGrinderAtomaton copy_compile_commands)

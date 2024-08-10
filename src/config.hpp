@@ -24,6 +24,12 @@
 #define ZAXIS_DIR_PIN 6
 #define ZAXIS_ENABLE_PIN 5
 
+#define I2C_PORT i2c0
+#define I2C_SDA 20
+#define I2C_SCL 21
+#define GPIO_EXPANDER_INT_A 19
+#define GPIO_EXPANDER_INT_B 18
+
 // #define TFT_MISO 16
 // #define TFT_MOSI 13
 // #define TFT_SCLK 14

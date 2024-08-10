@@ -34,8 +34,8 @@ The basic control is provided by an rp2040 (raspberry pi pico) with the followin
 | 23         | GND  |    |
 | 24         | GP18  | MCP23017 IntB    |
 | 25         | GP19  | MCP23017 IntA    |
-| 26         | GP20 / I2C0-SDA | Waveshare MCP23017 IO expander  & SH1122 Display |
-| 27         | GP21 / I2C0-SCL  | Waveshare MCP23017 IO expander  & SH1122 Display |
+| 26         | GP20 / I2C0-SDA | Waveshare MCP23017 IO expander  & SSD1309 Display |
+| 27         | GP21 / I2C0-SCL  | Waveshare MCP23017 IO expander  & SSD1309 Display |
 | 28         | GND  |     |
 | 29         | GP22  |     |
 | 30         | RUN  | RESET (AKA estop)    |

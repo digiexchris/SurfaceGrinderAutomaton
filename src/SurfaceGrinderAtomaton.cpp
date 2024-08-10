@@ -1,4 +1,5 @@
 #include "Console/Console.hpp"
+#include "Ui/ControlPanel/Display/Display.hpp"
 #include "config.hpp"
 #include "pico/platform.h"
 #include "pico/stdlib.h"
@@ -25,6 +26,8 @@
 MotionController *mc;
 Axis *zAxis;
 Axis *xAxis;
+
+Display *display;
 
 // Forward declaration of the HardFault_Handler
 extern "C" void isr_hardfault(void);
@@ -87,6 +90,8 @@ int main()
 {
 	stdio_init_all();
 	set_sys_clock_khz(120000, true);
+
+	display = new Display();
 
 	printf("\n\n--------------\n\n");
 
