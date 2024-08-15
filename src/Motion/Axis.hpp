@@ -3,6 +3,7 @@
 #include "Enum.hpp"
 #include "drivers/Motor/Stepper.hpp"
 #include <FreeRTOS.h>
+#include <cstdint>
 #include <queue.h>
 #include <semphr.h>
 #include <task.h>
@@ -74,7 +75,7 @@ class Axis : public Stepper
 // TODO extend from an interface that abstracts Stepper, Axis just adds in the concept of stops and current and previous directions now.The movement thread just calls stepper update as fast as possible if it's !Idle or if it is idle, update() should block until something requests a new target position (save them cpu cycles)
 {
 public:
-	Axis(AxisLabel anAxisLabel, uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm);
+	Axis(AxisLabel anAxisLabel, uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm, int aStepsPerRevolution, int aDistancePerRevolution);
 	void SetMinStop(int32_t aMinStop);
 	int32_t GetMinStop();
 	void SetMaxStop(int32_t aMaxStop);
@@ -119,14 +120,19 @@ public:
 	 */
 	// void Stop();
 
+	void setPostion(float targetPosition, Unit unit);
+
 private:
 	int32_t myMinStop = 0;
 	int32_t myMaxStop = 0;
 	AxisLabel myAxisLabel;
 	int32_t myPreviousTargetPosition = 0;
 	uint16_t myMaxSpeed = 0;
+	int32_t stepsPerRevolution = 0;
+	int32_t distancePerRevolution = 0;
 
 	static void MoveThread(void *pvParameters);
 
 	void ProcessStepperNotification(StepperNotifyMessage *aMessage);
+	float getNultiplicationFactor(Unit unit)
 };

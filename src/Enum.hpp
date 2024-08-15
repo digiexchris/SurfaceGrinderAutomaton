@@ -190,6 +190,13 @@ enum class MotionState
 	STOPPED
 };
 
+enum class Unit
+{
+	STEPS,
+	MM,
+	INCH
+};
+
 #include <FreeRTOS.h>
 #include <task.h>
 class Controller
