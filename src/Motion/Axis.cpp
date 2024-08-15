@@ -1,14 +1,16 @@
 #include "Motion/Axis.hpp"
 #include "Enum.hpp"
 #include "Helpers.hpp"
+#include "drivers/Motor/Stepper.hpp"
 #include "portmacro.h"
+#include "Motion/UnitConverter.hpp"
 #include <cmath>
 #include <pico/printf.h>
 #include <semphr.h>
 #include <stdio.h>
 #include <task.h>
 
-Axis::Axis(AxisLabel anAxisLabel, uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm)
+Axis::Axis(AxisLabel anAxisLabel, uint stepPin, uint dirPin, float maxSpeed, float acceleration, PIO pio, uint sm, int aStepsPerRevolution, int aDistancePerRevolution)
 	: myAxisLabel(anAxisLabel), Stepper(stepPin, dirPin, 0, acceleration, pio, sm)
 
 {
@@ -16,6 +18,8 @@ Axis::Axis(AxisLabel anAxisLabel, uint stepPin, uint dirPin, float maxSpeed, flo
 	auto axisThreadName = "AxisMove" + std::to_string(static_cast<int>(anAxisLabel));
 	BaseType_t status = xTaskCreate(MoveThread, axisThreadName.c_str(), 2048, this, 1, NULL);
 	configASSERT(status == pdPASS);
+	stepsPerRevolution = aStepsPerRevolution;
+	distancePerRevolution = aDistancePerRevolution;
 }
 
 void Axis::SetMinStop(int32_t aMinStop)
@@ -137,4 +141,25 @@ void Axis::ProcessStepperNotification(StepperNotifyMessage *aMessage)
 	// message.param = AxisParameter::TARGET_SPEED;
 	// message.value = aMessage->targetSpeed;
 	// WebSerial::GetInstance()->QueueUpdate(message);
+}
+
+void Axis::setPostion(float targetPosition, Unit unit)
+{
+	UnitConverter unitConverter(unit, 1);
+	SetTargetPosition(unitConverter.GetSteps(targetPosition));
+}
+
+float Axis::getNultiplicationFactor(Unit unit)
+{
+	switch (unit) {
+		case Unit::MM:
+			return 1.0;
+			break;
+		case Unit::INCH:
+			return 0.03937008;
+			break;
+		case Unit::STEPS:
+			return distancePerRevolution / stepsPerRevolution;
+			break;
+	}
 }
