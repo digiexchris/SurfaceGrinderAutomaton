@@ -78,6 +78,7 @@
 		"cmake.showSystemKits": false,
 		"cmake.sourceDirectory": "${workspaceFolder}",
 		"cmake.useCMakePresets": "always",
-		"device-manager.manageAllDevices": true
+		"device-manager.manageAllDevices": true,
+		"remote.autoForwardPorts": false
 	}
 }

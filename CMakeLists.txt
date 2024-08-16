@@ -16,7 +16,10 @@ add_library(pico_system_include_dirs INTERFACE)
 target_include_directories(pico_system_include_dirs SYSTEM INTERFACE ${PICO_INCLUDE_DIRS})
 
 # Include directories for other Pico SDK libraries
-target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio hardware_gpio pico_multicore pico_stdio_usb pico_printf pico_async_context_threadsafe_background
+# target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio hardware_gpio pico_multicore pico_stdio_usb pico_printf pico_async_context_threadsafe_background
+# )
+
+target_link_libraries(pico_system_include_dirs INTERFACE pico_stdlib hardware_pio hardware_gpio pico_multicore pico_printf pico_async_context_threadsafe_background
 )
 
 # Add subdirectories

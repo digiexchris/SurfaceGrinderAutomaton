@@ -2,6 +2,7 @@
 #include "FreeRTOS.h"
 #include "pico/time.h"
 #include "task.h"
+#include <cstdio>
 #include <string>
 
 TaskStats::TaskStats(TaskHandle_t taskHandle, const char *taskName)
@@ -24,7 +25,7 @@ void TaskStats::MarkSwitchedOut()
 	{
 		myIndex = 0;
 
-		uint64_t totalRunTime = 0;
+		uint32_t totalRunTime = 0;
 		for (int i = 0; i < mySwitchedInTime.size(); i++)
 		{
 			totalRunTime += (mySwitchedOutTime[i] - mySwitchedInTime[i]);
@@ -55,6 +56,7 @@ void TaskStatsManager::MarkTaskSwitchedIn(TaskHandle_t taskHandle)
 	auto taskStatIterator = myTaskStatsMap.find(taskHandle);
 	if (taskStatIterator == myTaskStatsMap.end())
 	{
+		printf("Task %s not found in TaskStatsManager, adding...\n", pcTaskGetName(taskHandle));
 		myTaskStatsMap.emplace(taskHandle, TaskStats(taskHandle, pcTaskGetName(taskHandle)));
 		MarkTaskSwitchedIn(taskHandle);
 	}
@@ -73,7 +75,7 @@ void TaskStatsManager::MarkTaskSwitchedOut(TaskHandle_t taskHandle)
 	}
 	else
 	{
-		panic("Task not found in TaskStatsManager, switched out might have been called before switched in!!");
+		printf("Task %s not found in TaskStatsManager, switched out might have been called before switched in!!", pcTaskGetName(taskHandle));
 	}
 }
 
@@ -137,6 +139,6 @@ void TaskStatsTaskSwitchedOut(void)
 
 	if (pcTaskName != nullptr && strcmp(pcTaskName, "Tmr Svc") != 0)
 	{
-		TaskStatsManager::GetInstance()->MarkTaskSwitchedIn(xTask);
+		TaskStatsManager::GetInstance()->MarkTaskSwitchedOut(xTask);
 	}
 }

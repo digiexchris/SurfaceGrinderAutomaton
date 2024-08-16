@@ -85,7 +85,7 @@ endif()
 #     SET(${return_list} ${dir_list})
 # ENDMACRO()
 
-pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_HOME_DIRECTORY}/pio/blink.pio)
+# pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_HOME_DIRECTORY}/pio/blink.pio)
 pico_generate_pio_header(SurfaceGrinderAtomaton ${CMAKE_HOME_DIRECTORY}/pio/stepper.pio)
 
 target_include_directories(SurfaceGrinderAtomaton PRIVATE
@@ -94,11 +94,11 @@ target_include_directories(SurfaceGrinderAtomaton PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs pico_stdio_usb  FreeRTOS-Kernel FreeRTOS-Kernel-Heap4 pico_ssd1306)
+target_link_libraries(SurfaceGrinderAtomaton pico_system_include_dirs FreeRTOS-Kernel FreeRTOS-Kernel-Heap4 pico_ssd1306)
 pico_add_extra_outputs(SurfaceGrinderAtomaton)
 
 add_dependencies(SurfaceGrinderAtomaton copy_compile_commands)
 
 # Use USB uart
-pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
-# pico_enable_stdio_uart(SurfaceGrinderAtomaton 0)
+# pico_enable_stdio_usb(SurfaceGrinderAtomaton 1)
+pico_enable_stdio_uart(SurfaceGrinderAtomaton 1)

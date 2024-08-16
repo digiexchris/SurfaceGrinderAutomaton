@@ -1,22 +1,25 @@
 {
     "version": "2.0.0",
     "tasks": [
-        // {
-        //     "label": "Compile Project",
-        //     "type": "process",
-        //     "isBuildCommand": true,
-        //     "command": "/usr/bin/ninja",
-        //     "args": ["-C", "${workspaceFolder}/build"],
-        //     "group": "build",
-        //     "presentation": {
-        //         "reveal":"never",
-        //         "panel": "dedicated"
-        //     },
-        //     "problemMatcher": "$gcc",
-        //     "windows": {
-        //         "command": "/workspaces/pico/pico-sdk/ninja/v1.12.1/ninja.exe"
-        //     }
-        // },
+        {
+            "label": "Build",
+            "type": "process",
+            "isBuildCommand": true,
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset ${command:cmake.activeBuildPresetName}"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": "$gcc",
+            "windows": {
+                "command": "cmake.exe"
+            }
+        },
         {
             "label": "Flash",
             "type": "process",

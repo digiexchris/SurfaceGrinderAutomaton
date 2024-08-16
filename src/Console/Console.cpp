@@ -14,7 +14,10 @@
 #include <hardware/watchdog.h>
 #include <malloc.h>
 #include <pico/printf.h>
+
+#if CONSOLE_USES_USB
 #include <pico/stdio_usb.h>
+#endif
 #include <stdio.h>
 #include <string>
 
@@ -50,6 +53,8 @@ void Console::Init(MotionController *aMotionController)
 #if CONSOLE_USES_UART
 	uart_init(UART_ID, BAUD_RATE);
 	// Set UART flow control CTS/RTS, we don't want these, so turn them off
+	gpio_set_function(PICO_DEFAULT_UART_TX_PIN, GPIO_FUNC_UART);
+	gpio_set_function(PICO_DEFAULT_UART_RX_PIN, GPIO_FUNC_UART);
 	uart_set_hw_flow(UART_ID, false, false);
 	int UART_IRQ = UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
 
@@ -253,6 +258,8 @@ void Console::ProcessChars(const void *data, size_t len)
 
 void Console::uartRxInterruptHandler()
 {
+
+	// this might be a bug, maybe make a queued event that fires off to do this instead.
 	while (uart_is_readable(UART_ID))
 	{
 		uint8_t ch = uart_getc(UART_ID);
@@ -266,7 +273,6 @@ void Console::uartRxInterruptHandler()
 		}
 
 		microrl_processing_input(&mySh->mrl, &ch, 1);
-		vTaskDelay(1);
 	}
 }
 

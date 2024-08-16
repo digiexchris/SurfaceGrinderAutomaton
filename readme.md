@@ -8,8 +8,8 @@ The basic control is provided by an rp2040 (raspberry pi pico) with the followin
 | Pin Number | PINMUX | Use |
 |------------|---|-----|
 | USB        | Serial | Debug Console |
-| 1          | UART0_TX  | Modbus TX |
-| 2          | UART0_RX  | Modbus RX    |
+| 1          | UART0_TX  | DEBUG UART TX |
+| 2          | UART0_RX  | DEBUG UART RX    |
 | 3          | GND  |     |
 | 4          | GP2  | MPG ENCA |
 | 5          | GP3  | MPG ENCB |

@@ -2,7 +2,6 @@
 
 #include "../Motion/Axis.hpp"
 #include "Motion/MotionController.hpp"
-// #include "Usb/usb.hpp"
 #include "microsh.h"
 
 #define UART_ID uart0

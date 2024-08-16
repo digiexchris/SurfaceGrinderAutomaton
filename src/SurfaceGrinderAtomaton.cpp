@@ -11,6 +11,7 @@
 #include <hardware/clocks.h>
 #include <iostream>
 #include <pico.h>
+#include <pico/bootrom.h>
 #include <pico/printf.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,19 +38,14 @@ extern "C" void PrintStackTrace(uint32_t *stackPointer);
 void PrintStackTrace(uint32_t *stackPointer)
 {
 	printf("Hard Fault detected!\n");
-	printf("R0  = %08x\n", stackPointer[0]);
-	printf("R1  = %08x\n", stackPointer[1]);
-	printf("R2  = %08x\n", stackPointer[2]);
-	printf("R3  = %08x\n", stackPointer[3]);
-	printf("R12 = %08x\n", stackPointer[4]);
-	printf("LR  = %08x\n", stackPointer[5]);
-	printf("PC  = %08x\n", stackPointer[6]);
-	printf("PSR = %08x\n", stackPointer[7]);
-
-	while (true)
-	{
-		tight_loop_contents();
-	}
+	printf("R0  = 0x%08x\n", stackPointer[0]);
+	printf("R1  = 0x%08x\n", stackPointer[1]);
+	printf("R2  = 0x%08x\n", stackPointer[2]);
+	printf("R3  = 0x%08x\n", stackPointer[3]);
+	printf("R12 = 0x%08x\n", stackPointer[4]);
+	printf("LR  = 0x%08x\n", stackPointer[5]);
+	printf("PC  = 0x%08x\n", stackPointer[6]);
+	printf("PSR = 0x%08x\n", stackPointer[7]);
 }
 
 void BlinkTask(void *pvParameters)
@@ -73,6 +69,8 @@ void BlinkTask(void *pvParameters)
 
 extern "C" void isr_hardfault(void)
 {
+	printf("Hard Fault detected!\n");
+
 	__breakpoint();
 	__asm volatile(
 		"MOVS R0, #4 \n"
@@ -84,12 +82,20 @@ extern "C" void isr_hardfault(void)
 		"_MSP: \n"
 		"MRS R0, MSP \n"
 		"B PrintStackTrace \n");
+
+	__breakpoint();
+
+	sleep_ms(10000);	  // Sleep for 10 seconds
+	reset_usb_boot(0, 0); // Reboot the Raspberry Pi Pico
 }
 
 int main()
 {
 	stdio_init_all();
 	set_sys_clock_khz(120000, true);
+	Console::Init(mc);
+
+	asserts aren't working, figure that out  assert(1 != 0);
 
 	display = new Display();
 
@@ -107,8 +113,6 @@ int main()
 	xAxis->InitPIO();
 
 	mc = new MotionController(zAxis, xAxis, nullptr);
-
-	Console::Init(mc);
 
 	printf("Boot Complete\n");
 
